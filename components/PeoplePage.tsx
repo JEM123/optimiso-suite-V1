@@ -1,0 +1,108 @@
+
+import React, { useState, useMemo } from 'react';
+import type { Personne } from '../types';
+import { Plus, Search, Trash2, Edit, Users } from 'lucide-react';
+import PersonDetailPanel from './PersonDetailPanel';
+import PersonFormModal from './PersonFormModal';
+import { useDataContext } from '../context/AppContext';
+
+const PERSON_STATUS_COLORS: Record<Personne['statut'], string> = {
+    'brouillon': 'bg-gray-200 text-gray-800', 'en_cours': 'bg-yellow-100 text-yellow-800',
+    'valide': 'bg-green-100 text-green-800', 'archive': 'bg-red-100 text-red-800',
+    'à_créer': 'bg-cyan-100 text-cyan-800', 'en_recrutement': 'bg-yellow-100 text-yellow-800',
+    'gelé': 'bg-purple-100 text-purple-800', 'figé': 'bg-indigo-100 text-indigo-800',
+    'planifié': 'bg-blue-100 text-blue-800', 'terminé': 'bg-green-100 text-green-800',
+    'non-conforme': 'bg-red-200 text-red-900', 'clôturé': 'bg-gray-300 text-gray-800',
+    'a_faire': 'bg-yellow-100 text-yellow-800', 'en_retard': 'bg-red-100 text-red-800',
+    'en_validation': 'bg-yellow-100 text-yellow-800',
+    'publie': 'bg-green-100 text-green-800',
+    'rejete': 'bg-red-100 text-red-800',
+};
+
+interface PeoplePageProps {
+    onShowRelations: (entity: any, entityType: string) => void;
+    setActiveModule: (moduleId: string) => void;
+}
+
+const PeoplePage: React.FC<PeoplePageProps> = ({ onShowRelations, setActiveModule }) => {
+    const { data, actions } = useDataContext();
+    const { personnes } = data;
+
+    const [selectedPerson, setSelectedPerson] = useState<Personne | null>(null);
+    const [isModalOpen, setIsModalOpen] = useState(false);
+    const [editingPerson, setEditingPerson] = useState<Partial<Personne> | null>(null);
+    const [searchTerm, setSearchTerm] = useState('');
+    const [filters, setFilters] = useState<{ profil: string, statut: string }>({ profil: 'all', statut: 'all' });
+
+    const filteredPeople = useMemo(() => {
+        return (personnes as Personne[]).filter(p => 
+            (p.nom.toLowerCase().includes(searchTerm.toLowerCase()) || p.prenom.toLowerCase().includes(searchTerm.toLowerCase()) || p.email.toLowerCase().includes(searchTerm.toLowerCase())) &&
+            (filters.profil === 'all' || p.profil === filters.profil) &&
+            (filters.statut === 'all' || p.statut === filters.statut)
+        );
+    }, [personnes, searchTerm, filters]);
+
+    const handleOpenModal = (person?: Personne) => { 
+        setEditingPerson(person || {}); 
+        setIsModalOpen(true); 
+    };
+
+    const handleSavePerson = async (personToSave: Personne) => {
+        await actions.savePerson(personToSave);
+        setIsModalOpen(false);
+    };
+
+    const handleDeletePerson = async (id: string) => {
+        if (window.confirm("Êtes-vous sûr de vouloir supprimer cette personne ?")) {
+            await actions.deletePerson(id);
+            if (selectedPerson?.id === id) setSelectedPerson(null);
+        }
+    };
+
+    return (
+        <div className="flex h-[calc(100vh-150px)]">
+            <div className="flex-1 flex flex-col min-w-0">
+                <div className="p-4 border-b bg-white flex flex-wrap items-center justify-between gap-2">
+                    <div className="flex items-center space-x-3">
+                        <Users className="h-8 w-8 text-gray-600" />
+                        <h1 className="text-2xl font-bold text-gray-900">Personnes</h1>
+                    </div>
+                    <div className="flex items-center gap-2">
+                        <button onClick={() => handleOpenModal()} className="flex items-center space-x-2 bg-blue-600 text-white px-3 py-1.5 rounded-lg hover:bg-blue-700 text-sm font-medium"><Plus className="h-4 w-4" /><span>Ajouter</span></button>
+                    </div>
+                </div>
+                <div className="p-2 border-b bg-white flex flex-wrap items-center gap-2">
+                    <div className="relative flex-grow max-w-xs"><Search className="absolute left-2 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" /><input type="text" placeholder="Rechercher..." value={searchTerm} onChange={e => setSearchTerm(e.target.value)} className="pl-8 pr-2 py-1.5 border rounded-lg w-full text-sm"/></div>
+                    {/* FIX: Explicitly type `p` as string to resolve type error. */}
+                    <select onChange={e => setFilters(f => ({...f, profil: e.target.value}))} className="border rounded-lg py-1.5 px-2 text-sm"><option value="all">Tous les profils</option>{[...new Set((personnes as Personne[]).map(p => p.profil))].map((p: string)=><option key={p} value={p} className="capitalize">{p}</option>)}</select>
+                    {/* FIX: Explicitly type `s` as string to resolve type error. */}
+                    <select onChange={e => setFilters(f => ({...f, statut: e.target.value}))} className="border rounded-lg py-1.5 px-2 text-sm"><option value="all">Tous les statuts</option>{[...new Set((personnes as Personne[]).map(p => p.statut))].map((s: string)=><option key={s} value={s} className="capitalize">{s.replace(/_/g, ' ')}</option>)}</select>
+                </div>
+                <div className="flex-1 overflow-auto p-4 bg-gray-50">
+                    <div className="bg-white border rounded-lg">
+                        <table className="min-w-full">
+                            <thead className="bg-gray-50"><tr>{['Nom', 'Email', 'Profil', 'Statut', 'Actions'].map(h => <th key={h} className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">{h}</th>)}</tr></thead>
+                            <tbody className="divide-y divide-gray-200">
+                                {filteredPeople.map(person => (
+                                <tr key={person.id} onClick={() => setSelectedPerson(person)} className={`hover:bg-gray-50 cursor-pointer ${selectedPerson?.id === person.id ? 'bg-blue-50' : ''}`}>
+                                    <td className="px-4 py-2 text-sm font-medium text-gray-900">{person.prenom} {person.nom}</td>
+                                    <td className="px-4 py-2 text-sm text-gray-500">{person.email}</td>
+                                    <td className="px-4 py-2 text-sm text-gray-500 capitalize">{person.profil}</td>
+                                    <td className="px-4 py-2 text-sm"><span className={`px-2 py-0.5 text-xs font-medium rounded-full capitalize ${PERSON_STATUS_COLORS[person.statut]}`}>{person.statut.replace(/_/g, ' ')}</span></td>
+                                    <td className="px-4 py-2"><div className="flex items-center space-x-2">
+                                        <button onClick={(e) => {e.stopPropagation(); handleOpenModal(person)}} className="p-1 hover:bg-gray-200 rounded"><Edit className="h-4 w-4 text-blue-600"/></button>
+                                        <button onClick={(e) => {e.stopPropagation(); handleDeletePerson(person.id)}} className="p-1 hover:bg-gray-200 rounded"><Trash2 className="h-4 w-4 text-red-600"/></button>
+                                    </div></td>
+                                </tr>))}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            {selectedPerson && <PersonDetailPanel person={selectedPerson} onClose={() => setSelectedPerson(null)} onEdit={handleOpenModal} onNavigate={setActiveModule} />}
+            <PersonFormModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} onSave={handleSavePerson} person={editingPerson} />
+        </div>
+    );
+};
+
+export default PeoplePage;
