@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { mockData } from '../constants';
 import type { Tache, TachePriorite, TacheStatut } from '../types';
 import { Plus, Search, List, LayoutGrid, Calendar, SlidersHorizontal, Users } from 'lucide-react';
@@ -6,6 +6,7 @@ import TaskKanbanBoard from './TaskKanbanBoard';
 import TaskCalendar from './TaskCalendar';
 import TaskDetailPanel from './TaskDetailPanel';
 import TaskFormModal from './TaskFormModal';
+import { useAppContext } from '../context/AppContext';
 
 const newAdHocTaskTemplate = (): Partial<Tache> => ({
     titre: '', statut: 'A faire', priorite: 'Normale', sourceModule: 'AdHoc',
@@ -13,13 +14,28 @@ const newAdHocTaskTemplate = (): Partial<Tache> => ({
     createur: 'pers-1' // Assume current user is pers-1
 });
 
-const ToDoPage: React.FC = () => {
+interface ToDoPageProps {
+    notifiedItemId: string | null;
+}
+
+const ToDoPage: React.FC<ToDoPageProps> = ({ notifiedItemId }) => {
+    const { clearNotifiedTarget } = useAppContext();
     const [tasks, setTasks] = useState<Tache[]>(mockData.taches);
     const [view, setView] = useState<'kanban' | 'list' | 'calendar'>('kanban');
     const [selectedTask, setSelectedTask] = useState<Tache | null>(null);
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editingTask, setEditingTask] = useState<Partial<Tache> | null>(null);
     const [filters, setFilters] = useState<{ assignee: string, priority: string, status: string }>({ assignee: 'all', priority: 'all', status: 'all' });
+
+    useEffect(() => {
+        if (notifiedItemId) {
+            const taskToSelect = tasks.find(t => t.id === notifiedItemId);
+            if (taskToSelect) {
+                setSelectedTask(taskToSelect);
+            }
+            clearNotifiedTarget();
+        }
+    }, [notifiedItemId, tasks, clearNotifiedTarget]);
 
     const filteredTasks = useMemo(() => {
         return tasks.filter(t =>

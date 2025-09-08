@@ -1,7 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { useDataContext } from '../context/AppContext';
 import type { Processus } from '../types';
-import { Target, Plus, ChevronDown, Edit, Trash2, Workflow } from 'lucide-react';
+import { Target, Plus, ChevronDown, Edit, Trash2, Workflow, Link as LinkIcon } from 'lucide-react';
 import ProcessusDetailPanel from './ProcessusDetailPanel';
 import ProcessusFormModal from './ProcessusFormModal';
 
@@ -16,8 +16,9 @@ const ProcessusNode: React.FC<{
     onSelect: (p: Processus) => void, 
     onEdit: (p: Processus) => void,
     onAddSub: (p: Processus) => void,
+    onShowRelations: (entity: any, entityType: string) => void,
     selectedId?: string 
-}> = ({ node, onSelect, onEdit, onAddSub, selectedId }) => {
+}> = ({ node, onSelect, onEdit, onAddSub, onShowRelations, selectedId }) => {
     const [isExpanded, setIsExpanded] = useState(true);
     const { data } = useDataContext();
     const proprietaire = data.postes.find((p: any) => p.id === node.proprietaireProcessusId);
@@ -40,6 +41,7 @@ const ProcessusNode: React.FC<{
                         <p className="text-xs text-gray-500">{node.reference} | {proprietaire?.intitule || 'N/A'}</p>
                     </div>
                      <div className="opacity-0 group-hover:opacity-100 transition-opacity flex items-center bg-white/50 backdrop-blur-sm rounded-md p-1 space-x-1">
+                        <button onClick={(e) => { e.stopPropagation(); onShowRelations(node, 'processus') }} title="Voir les relations" className="p-1 hover:bg-gray-200 rounded"><LinkIcon className="h-4 w-4 text-gray-500"/></button>
                         {node.niveau !== 'L3' && <button onClick={(e) => { e.stopPropagation(); onAddSub(node); }} title="Ajouter sous-processus" className="p-1 hover:bg-gray-200 rounded"><Plus className="h-4 w-4 text-green-600"/></button>}
                         <button onClick={(e) => { e.stopPropagation(); onEdit(node); }} title="Modifier" className="p-1 hover:bg-gray-200 rounded"><Edit className="h-4 w-4 text-blue-600"/></button>
                     </div>
@@ -52,14 +54,18 @@ const ProcessusNode: React.FC<{
             </div>
             {isExpanded && node.children.length > 0 && (
                 <div className="border-l-2 border-gray-200 ml-4">
-                    {node.children.map(child => <ProcessusNode key={child.id} node={child} onSelect={onSelect} onEdit={onEdit} onAddSub={onAddSub} selectedId={selectedId} />)}
+                    {node.children.map(child => <ProcessusNode key={child.id} node={child} onSelect={onSelect} onEdit={onEdit} onAddSub={onAddSub} onShowRelations={onShowRelations} selectedId={selectedId} />)}
                 </div>
             )}
         </div>
     );
 };
 
-const ProcessusPage: React.FC = () => {
+interface ProcessusPageProps {
+    onShowRelations: (entity: any, entityType: string) => void;
+}
+
+const ProcessusPage: React.FC<ProcessusPageProps> = ({ onShowRelations }) => {
     const { data, actions } = useDataContext();
     const { processus } = data as { processus: Processus[] };
 
@@ -107,6 +113,7 @@ const ProcessusPage: React.FC = () => {
                             onSelect={setSelectedProcessus} 
                             onEdit={handleOpenModal}
                             onAddSub={handleAddSub}
+                            onShowRelations={onShowRelations}
                             selectedId={selectedProcessus?.id} 
                         />
                     ))}
@@ -117,6 +124,7 @@ const ProcessusPage: React.FC = () => {
                     processus={selectedProcessus} 
                     onClose={() => setSelectedProcessus(null)} 
                     onEdit={handleOpenModal} 
+                    onShowRelations={onShowRelations}
                 />
             )}
             <ProcessusFormModal 

@@ -1,7 +1,6 @@
-
 import React, { useState, useMemo } from 'react';
 import type { Personne } from '../types';
-import { Plus, Search, Trash2, Edit, Users } from 'lucide-react';
+import { Plus, Search, Trash2, Edit, Users, Link as LinkIcon } from 'lucide-react';
 import PersonDetailPanel from './PersonDetailPanel';
 import PersonFormModal from './PersonFormModal';
 import { useDataContext } from '../context/AppContext';
@@ -90,6 +89,7 @@ const PeoplePage: React.FC<PeoplePageProps> = ({ onShowRelations, setActiveModul
                                     <td className="px-4 py-2 text-sm text-gray-500 capitalize">{person.profil}</td>
                                     <td className="px-4 py-2 text-sm"><span className={`px-2 py-0.5 text-xs font-medium rounded-full capitalize ${PERSON_STATUS_COLORS[person.statut]}`}>{person.statut.replace(/_/g, ' ')}</span></td>
                                     <td className="px-4 py-2"><div className="flex items-center space-x-2">
+                                        <button onClick={(e) => {e.stopPropagation(); onShowRelations(person, 'personnes')}} className="p-1 hover:bg-gray-200 rounded"><LinkIcon className="h-4 w-4 text-gray-500"/></button>
                                         <button onClick={(e) => {e.stopPropagation(); handleOpenModal(person)}} className="p-1 hover:bg-gray-200 rounded"><Edit className="h-4 w-4 text-blue-600"/></button>
                                         <button onClick={(e) => {e.stopPropagation(); handleDeletePerson(person.id)}} className="p-1 hover:bg-gray-200 rounded"><Trash2 className="h-4 w-4 text-red-600"/></button>
                                     </div></td>
@@ -99,7 +99,7 @@ const PeoplePage: React.FC<PeoplePageProps> = ({ onShowRelations, setActiveModul
                     </div>
                 </div>
             </div>
-            {selectedPerson && <PersonDetailPanel person={selectedPerson} onClose={() => setSelectedPerson(null)} onEdit={handleOpenModal} onNavigate={setActiveModule} />}
+            {selectedPerson && <PersonDetailPanel person={selectedPerson} onClose={() => setSelectedPerson(null)} onEdit={handleOpenModal} onNavigate={setActiveModule} onShowRelations={onShowRelations} />}
             <PersonFormModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} onSave={handleSavePerson} person={editingPerson} />
         </div>
     );

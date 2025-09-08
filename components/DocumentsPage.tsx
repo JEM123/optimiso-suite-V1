@@ -1,9 +1,9 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import type { Document } from '../types';
-import { Plus, Search, Trash2, Edit, FileText } from 'lucide-react';
+import { Plus, Search, Trash2, Edit, FileText, Link as LinkIcon } from 'lucide-react';
 import DocumentDetailPanel from './DocumentDetailPanel';
 import DocumentFormModal from './DocumentFormModal';
-import { useDataContext } from '../context/AppContext';
+import { useDataContext, useAppContext } from '../context/AppContext';
 
 // --- UTILITY FUNCTIONS & CONSTANTS ---
 const DOC_STATUS_COLORS: Record<Document['statut'], string> = {
@@ -36,11 +36,13 @@ const newDocumentTemplate = (): Partial<Document> => ({
 interface DocumentsPageProps {
     onShowValidation: (doc: Document) => void;
     onShowRelations: (entity: any, entityType: string) => void;
+    notifiedItemId: string | null;
 }
 
 // --- MAIN PAGE COMPONENT ---
-const DocumentsPage: React.FC<DocumentsPageProps> = ({ onShowValidation, onShowRelations }) => {
+const DocumentsPage: React.FC<DocumentsPageProps> = ({ onShowValidation, onShowRelations, notifiedItemId }) => {
     const { data, actions } = useDataContext();
+    const { clearNotifiedTarget } = useAppContext();
     const { documents, categoriesDocuments } = data;
     
     const [selectedDocument, setSelectedDocument] = useState<Document | null>(null);
@@ -48,6 +50,16 @@ const DocumentsPage: React.FC<DocumentsPageProps> = ({ onShowValidation, onShowR
     const [editingDocument, setEditingDocument] = useState<Partial<Document> | null>(null);
     const [searchTerm, setSearchTerm] = useState('');
     const [filters, setFilters] = useState<{ categorieId: string, statut: string }>({ categorieId: 'all', statut: 'all' });
+
+    useEffect(() => {
+        if (notifiedItemId) {
+            const docToSelect = documents.find(d => d.id === notifiedItemId);
+            if (docToSelect) {
+                setSelectedDocument(docToSelect);
+            }
+            clearNotifiedTarget();
+        }
+    }, [notifiedItemId, documents, clearNotifiedTarget]);
 
     const filteredDocuments = useMemo(() => {
         return documents.filter(d => 
@@ -104,6 +116,7 @@ const DocumentsPage: React.FC<DocumentsPageProps> = ({ onShowValidation, onShowR
                                     <td className="px-4 py-2 text-sm text-gray-500">{doc.champsLibres?.dateEcheance ? new Date(doc.champsLibres.dateEcheance).toLocaleDateString('fr-FR') : '-'}</td>
                                     <td className="px-4 py-2 text-sm"><span className={`px-2 py-0.5 text-xs font-medium rounded-full capitalize ${DOC_STATUS_COLORS[doc.statut]}`}>{doc.statut.replace(/_/g, ' ')}</span></td>
                                     <td className="px-4 py-2"><div className="flex items-center space-x-2">
+                                        <button onClick={(e) => { e.stopPropagation(); onShowRelations(doc, 'documents'); }} title="Voir les relations" className="p-1 hover:bg-gray-200 rounded"><LinkIcon className="h-4 w-4 text-gray-500"/></button>
                                         <button onClick={(e) => {e.stopPropagation(); handleOpenModal(doc)}} className="p-1 hover:bg-gray-200 rounded"><Edit className="h-4 w-4 text-blue-600"/></button>
                                         <button onClick={(e) => {e.stopPropagation(); handleDeleteDocument(doc.id)}} className="p-1 hover:bg-gray-200 rounded"><Trash2 className="h-4 w-4 text-red-600"/></button>
                                     </div></td>

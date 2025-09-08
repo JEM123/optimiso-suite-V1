@@ -23,7 +23,14 @@ const POST_STATUS_COLORS: Record<Poste['statut'], string> = {
     'rejete': 'bg-red-100 text-red-800',
 };
 
-const PosteDetailPanel: React.FC<{ poste: Poste; onClose: () => void; onEdit: (p: Poste) => void; }> = ({ poste, onClose, onEdit }) => {
+interface PosteDetailPanelProps {
+    poste: Poste;
+    onClose: () => void;
+    onEdit: (p: Poste) => void;
+    onShowRelations: (entity: any, entityType: string) => void;
+}
+
+const PosteDetailPanel: React.FC<PosteDetailPanelProps> = ({ poste, onClose, onEdit, onShowRelations }) => {
     const [activeTab, setActiveTab] = useState('details');
     const { entites, personnes, competences, roles, raci, occupationHistory, processus, controles } = mockData;
     
@@ -46,7 +53,11 @@ const PosteDetailPanel: React.FC<{ poste: Poste; onClose: () => void; onEdit: (p
         <div className="w-full max-w-md bg-white border-l shadow-lg flex flex-col h-full absolute right-0 top-0 md:relative animate-slide-in-right">
             <div className="p-4 border-b flex items-center justify-between bg-gray-50">
                 <div><h2 className="text-lg font-semibold text-gray-800">{poste.intitule}</h2><p className="text-sm text-gray-500">{poste.reference}</p></div>
-                <div className="flex space-x-1"><button onClick={() => onEdit(poste)} className="p-2 text-gray-500 hover:text-gray-800 hover:bg-gray-200 rounded-md"><Edit className="h-4 w-4"/></button><button onClick={onClose} className="p-2 text-gray-500 hover:text-gray-800 hover:bg-gray-200 rounded-md"><X className="h-5 w-5" /></button></div>
+                <div className="flex space-x-1">
+                    <button onClick={() => onShowRelations(poste, 'postes')} className="p-2 text-gray-500 hover:text-gray-800 hover:bg-gray-200 rounded-md"><LinkIcon className="h-4 w-4"/></button>
+                    <button onClick={() => onEdit(poste)} className="p-2 text-gray-500 hover:text-gray-800 hover:bg-gray-200 rounded-md"><Edit className="h-4 w-4"/></button>
+                    <button onClick={onClose} className="p-2 text-gray-500 hover:text-gray-800 hover:bg-gray-200 rounded-md"><X className="h-5 w-5" /></button>
+                </div>
             </div>
             <div className="border-b"><nav className="flex space-x-1 sm:space-x-2 px-2 sm:px-4">
                 {[ {id: 'details', label: 'Détails', icon: Info}, {id: 'mission', label: 'Mission', icon: BookOpen}, {id: 'competences', label: 'Compétences', icon: UserCheck}, {id: 'occupants', label: 'Occupants', icon: Users}, {id: 'raci', label: 'RACI', icon: LinkIcon} ].map(tab => (

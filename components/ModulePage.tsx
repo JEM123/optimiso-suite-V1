@@ -1,7 +1,6 @@
 import React from 'react';
 import { modules } from '../constants';
 import type { Document } from '../types';
-import { Plus, Filter, Download, Users } from 'lucide-react';
 import EntitiesPage from './EntitiesPage';
 import PostesPage from './PostesPage';
 import RisksPage from './RisksPage';
@@ -30,6 +29,7 @@ interface ModulePageProps {
   onShowRelations: (entity: any, entityType: string) => void;
   onShowValidation: (doc: Document) => void;
   setActiveModule: (moduleId: string) => void;
+  notifiedItemId: string | null;
 }
 
 // --- MODULE-SPECIFIC VIEW COMPONENTS (Defined outside main component) ---
@@ -45,7 +45,7 @@ const GenericModulePlaceholder: React.FC<{ name: string; icon: React.ElementType
 
 // --- MAIN PAGE COMPONENT ---
 
-const ModulePage: React.FC<ModulePageProps> = ({ moduleId, onShowRelations, onShowValidation, setActiveModule }) => {
+const ModulePage: React.FC<ModulePageProps> = ({ moduleId, onShowRelations, onShowValidation, setActiveModule, notifiedItemId }) => {
     const module = modules.find(m => m.id === moduleId);
 
     const renderModuleContent = () => {
@@ -53,48 +53,32 @@ const ModulePage: React.FC<ModulePageProps> = ({ moduleId, onShowRelations, onSh
             case 'personnes': return <PeoplePage onShowRelations={onShowRelations} setActiveModule={setActiveModule} />;
             case 'roles': return <RolesPage />;
             case 'entites': return <EntitiesPage />;
-            case 'postes': return <PostesPage />;
+            case 'postes': return <PostesPage onShowRelations={onShowRelations} />;
             case 'missions': return <MissionsPage onShowRelations={onShowRelations} />;
-            case 'processus': return <ProcessusPage />;
-            case 'risques': return <RisksPage onShowRelations={onShowRelations} />;
-            case 'documents': return <DocumentsPage onShowValidation={onShowValidation} onShowRelations={onShowRelations} />;
-            case 'controles': return <ControlsPage />;
+            case 'processus': return <ProcessusPage onShowRelations={onShowRelations} />;
+            case 'risques': return <RisksPage onShowRelations={onShowRelations} notifiedItemId={notifiedItemId} />;
+            case 'documents': return <DocumentsPage onShowValidation={onShowValidation} onShowRelations={onShowRelations} notifiedItemId={notifiedItemId} />;
+            case 'controles': return <ControlsPage onShowRelations={onShowRelations} />;
             case 'procedures': return <ProceduresPage onShowRelations={onShowRelations} />;
-            case 'todo': return <ToDoPage />;
-            case 'incidents': return <IncidentsPage onShowRelations={onShowRelations} />;
+            case 'todo': return <ToDoPage notifiedItemId={notifiedItemId} />;
+            case 'incidents': return <IncidentsPage onShowRelations={onShowRelations} notifiedItemId={notifiedItemId} />;
             case 'ameliorations': return <AmeliorationsPage onShowRelations={onShowRelations} />;
             case 'actifs': return <ActifsPage />;
             case 'indicateurs': return <IndicatorsPage onShowRelations={onShowRelations} />;
             case 'sync-flux': return <SyncAndFlowPage />;
             case 'mes-validations': return <MyValidationsPage />;
             case 'normes-lois': return <NormesLoisPage />;
-            case 'competences': return <CompetencesPage />;
+            case 'competences': return <CompetencesPage notifiedItemId={notifiedItemId} />;
             case 'actualites': return <NewsPage />;
             default:
                 return module ? <GenericModulePlaceholder name={module.nom} icon={module.icon} /> : <p>Module non trouvé</p>;
         }
     };
     
-    // Hide main header buttons for specific complex modules
-    const showHeaderActions = !['entites', 'postes', 'risques', 'controles', 'documents', 'procedures', 'personnes', 'roles', 'todo', 'incidents', 'ameliorations', 'actifs', 'indicateurs', 'sync-flux', 'mes-validations', 'normes-lois', 'competences', 'missions', 'processus', 'actualites'].includes(moduleId);
-
+    // The specific page components now handle their own headers.
+    // This component is now just a router.
     return (
-        <div className="space-y-6">
-            {/* This header is now simplified as the complex modules have their own headers */}
-            {showHeaderActions && (
-                 <div className="flex items-center justify-between">
-                    <div className="flex items-center space-x-3">
-                        {module && <module.icon className="h-8 w-8 text-gray-600" />}
-                        <h1 className="text-2xl font-bold text-gray-900">{module?.nom || 'Module'}</h1>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                        <button className="flex items-center space-x-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 font-medium"><Plus className="h-4 w-4" /><span>Nouveau</span></button>
-                        <button className="hidden sm:flex items-center space-x-2 bg-white border border-gray-300 px-4 py-2 rounded-lg hover:bg-gray-50 font-medium"><Filter className="h-4 w-4" /><span>Filtrer</span></button>
-                        <button className="hidden sm:flex items-center space-x-2 bg-white border border-gray-300 px-4 py-2 rounded-lg hover:bg-gray-50 font-medium"><Download className="h-4 w-4" /><span>Exporter</span></button>
-                    </div>
-                </div>
-            )}
-            
+        <div className="h-full">
             {renderModuleContent()}
         </div>
     );

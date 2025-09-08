@@ -1,4 +1,3 @@
-
 // FIX: Import `useMemo` from `react` to resolve the `Cannot find name 'useMemo'` error.
 import React, { useState, useMemo } from 'react';
 import type { Tache, TacheStatut } from '../types';

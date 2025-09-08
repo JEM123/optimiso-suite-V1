@@ -1,10 +1,10 @@
 import React, { useState, useMemo } from 'react';
 import { mockData } from '../constants';
 import type { Procedure, EtapeProcedure } from '../types';
-import { Plus, Search, Trash2, Edit, Settings } from 'lucide-react';
-import ProcedureDetailPanel from './ProcedureDetailPanel';
+import { Plus, Search, Trash2, Edit, Workflow } from 'lucide-react';
 import ProcedureFormModal from './ProcedureFormModal';
 import StepFormModal from './StepFormModal';
+import ProcedureFlow from './ProcedureFlow';
 
 const PROC_STATUS_COLORS: Record<Procedure['statut'], string> = {
     'brouillon': 'bg-gray-200 text-gray-800', 'en_cours': 'bg-yellow-100 text-yellow-800',
@@ -47,7 +47,7 @@ const ProceduresPage: React.FC<ProceduresPageProps> = ({ onShowRelations }) => {
             setProcedures(procedures.map(p => p.id === procToSave.id ? updated : p));
             if (selectedProcedure?.id === updated.id) setSelectedProcedure(updated);
         } else {
-            const newProc = { ...procToSave, id: `proc-${Date.now()}`, reference: procToSave.reference || `PROC-${Date.now()}`, etapes: [] } as Procedure;
+            const newProc = { ...procToSave, id: `proc-${Date.now()}`, reference: procToSave.reference || `PROC-${Date.now()}`, etapes: [], liens: [] } as Procedure;
             setProcedures([...procedures, newProc]);
         }
         setProcModalOpen(false);
@@ -60,81 +60,34 @@ const ProceduresPage: React.FC<ProceduresPageProps> = ({ onShowRelations }) => {
         }
     };
     
-    const handleDuplicateProcedure = (procId: string) => {
-        const originalProc = procedures.find(p => p.id === procId);
-        if (!originalProc) return;
-
-        const newProc = {
-            ...originalProc,
-            id: `proc-${Date.now()}`,
-            reference: `${originalProc.reference}-COPY`,
-            nom: `Copie de ${originalProc.nom}`,
-            etapes: originalProc.etapes.map(etape => ({ ...etape, id: `etape-${Date.now()}-${etape.ordre}` })),
-            dateCreation: new Date(),
-            dateModification: new Date(),
-        };
-
-        setProcedures(prev => [...prev, newProc]);
-        setSelectedProcedure(newProc);
-    };
-
-    const handleOpenStepModal = (procId: string, step?: EtapeProcedure) => {
-        setEditingStep({ procId, step: step || {} });
+    const handleOpenStepModal = (etape: EtapeProcedure) => {
+        if (!selectedProcedure) return;
+        setEditingStep({ procId: selectedProcedure.id, step: etape });
         setStepModalOpen(true);
     };
 
     const handleSaveStep = (procId: string, stepToSave: EtapeProcedure) => {
-        const procedure = procedures.find(p => p.id === procId);
-        if (!procedure) return;
+        const procedureToUpdate = procedures.find(p => p.id === procId);
+        if (!procedureToUpdate) return;
 
-        let updatedEtapes;
-        if (stepToSave.id) {
-            updatedEtapes = procedure.etapes.map(e => e.id === stepToSave.id ? { ...e, ...stepToSave } : e);
-        } else {
-            const newStep = { ...stepToSave, id: `etape-${Date.now()}`, ordre: procedure.etapes.length + 1 };
-            updatedEtapes = [...procedure.etapes, newStep];
+        const stepExists = procedureToUpdate.etapes.some(s => s.id === stepToSave.id);
+        const newEtapes = stepExists
+            ? procedureToUpdate.etapes.map(s => s.id === stepToSave.id ? { ...s, ...stepToSave } : s)
+            : [...procedureToUpdate.etapes, { ...stepToSave, id: `etape-${Date.now()}` }];
+        
+        const updatedProcedure = { ...procedureToUpdate, etapes: newEtapes };
+        const newProcedures = procedures.map(p => p.id === procId ? updatedProcedure : p);
+        
+        setProcedures(newProcedures);
+        if (selectedProcedure?.id === procId) {
+            setSelectedProcedure(updatedProcedure);
         }
-
-        const updatedProcedure = { ...procedure, etapes: updatedEtapes };
-        setProcedures(procedures.map(p => p.id === procId ? updatedProcedure : p));
-        if (selectedProcedure?.id === procId) setSelectedProcedure(updatedProcedure);
         setStepModalOpen(false);
-    };
-    
-    const handleDeleteStep = (procId: string, stepId: string) => {
-        const procedure = procedures.find(p => p.id === procId);
-        if(!procedure) return;
-        
-        const updatedEtapes = procedure.etapes.filter(e => e.id !== stepId).map((e, index) => ({...e, ordre: index + 1}));
-        const updatedProcedure = {...procedure, etapes: updatedEtapes};
-
-        setProcedures(procedures.map(p => p.id === procId ? updatedProcedure : p));
-        if (selectedProcedure?.id === procId) setSelectedProcedure(updatedProcedure);
-    };
-
-    const handleReorderStep = (procId: string, stepId: string, direction: 'up' | 'down') => {
-        const procedure = procedures.find(p => p.id === procId);
-        if (!procedure) return;
-
-        const etapes = [...procedure.etapes];
-        const stepIndex = etapes.findIndex(e => e.id === stepId);
-
-        if (direction === 'up' && stepIndex > 0) {
-            [etapes[stepIndex], etapes[stepIndex - 1]] = [etapes[stepIndex - 1], etapes[stepIndex]];
-        } else if (direction === 'down' && stepIndex < etapes.length - 1) {
-            [etapes[stepIndex], etapes[stepIndex + 1]] = [etapes[stepIndex + 1], etapes[stepIndex]];
-        }
-        
-        const updatedEtapes = etapes.map((etape, index) => ({...etape, ordre: index + 1}));
-        const updatedProcedure = {...procedure, etapes: updatedEtapes};
-
-        setProcedures(procedures.map(p => p.id === procId ? updatedProcedure : p));
-        if (selectedProcedure?.id === procId) setSelectedProcedure(updatedProcedure);
     };
 
     return (
         <div className="flex h-[calc(100vh-150px)]">
-            <div className="w-1/3 flex flex-col min-w-[300px] bg-white border-r">
+            <div className="w-1/3 flex flex-col min-w-[350px] bg-white border-r">
                 <div className="p-4 border-b flex items-center justify-between">
                     <h2 className="text-lg font-semibold">Procédures</h2>
                     <button onClick={() => handleOpenProcModal()} className="p-1.5 hover:bg-gray-100 rounded-md"><Plus className="h-5 w-5 text-blue-600"/></button>
@@ -156,25 +109,20 @@ const ProceduresPage: React.FC<ProceduresPageProps> = ({ onShowRelations }) => {
                     ))}
                 </div>
             </div>
-            <div className="flex-1">
+            <div className="flex-1 bg-gray-50 relative">
                 {selectedProcedure ? (
-                    <ProcedureDetailPanel
+                    <ProcedureFlow
+                        key={selectedProcedure.id}
                         procedure={selectedProcedure}
-                        onEditProcedure={handleOpenProcModal}
-                        onDuplicateProcedure={handleDuplicateProcedure}
-                        onDeleteProcedure={handleDeleteProcedure}
-                        onEditStep={handleOpenStepModal}
-                        onAddStep={(procId) => handleOpenStepModal(procId)}
-                        onDeleteStep={handleDeleteStep}
-                        onReorderStep={handleReorderStep}
                         onShowRelations={onShowRelations}
+                        onEditStep={handleOpenStepModal}
                     />
                 ) : (
-                    <div className="flex h-full items-center justify-center bg-gray-50">
+                    <div className="flex h-full items-center justify-center">
                         <div className="text-center">
-                            <Settings className="mx-auto h-12 w-12 text-gray-400" />
+                            <Workflow className="mx-auto h-12 w-12 text-gray-400" />
                             <h3 className="mt-2 text-sm font-medium text-gray-900">Aucune procédure sélectionnée</h3>
-                            <p className="mt-1 text-sm text-gray-500">Sélectionnez une procédure dans la liste pour voir ses détails.</p>
+                            <p className="mt-1 text-sm text-gray-500">Sélectionnez une procédure pour afficher le flux.</p>
                         </div>
                     </div>
                 )}

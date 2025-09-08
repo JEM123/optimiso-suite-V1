@@ -149,8 +149,8 @@ export interface Document extends BaseEntity {
   entiteIds: string[];
   processusIds: string[];
   validationInstanceId?: string;
-  risqueIds?: string[];
-  controleIds?: string[];
+  risqueIds: string[];
+  controleIds: string[];
 }
 
 export interface EtapeProcedure {
@@ -161,6 +161,15 @@ export interface EtapeProcedure {
   entreesIds: string[]; // Liens vers Documents
   sortiesIds: string[]; // Liens vers Documents
   ordre: number;
+  position: { x: number; y: number; };
+  risqueIds?: string[];
+  controleIds?: string[];
+}
+
+export interface ProcedureLien {
+    id: string;
+    source: string; // EtapeProcedure ID
+    target: string; // EtapeProcedure ID
 }
 
 export interface Procedure extends BaseEntity {
@@ -173,6 +182,7 @@ export interface Procedure extends BaseEntity {
   champsLibres?: Record<string, any>;
   actif: boolean;
   etapes: EtapeProcedure[];
+  liens: ProcedureLien[];
   validationInstanceId?: string;
 }
 
@@ -307,8 +317,9 @@ export interface Risque extends BaseEntity {
   documentMaitriseIds: string[];
   procedureMaitriseIds: string[];
   entiteIds: string[];
-  indicateurIds?: string[];
+  indicateurIds: string[];
   validationInstanceId?: string;
+  commentaires?: { user: string; text: string; date: Date; }[];
 }
 
 export interface CategorieRisque extends BaseEntity {
@@ -637,4 +648,18 @@ export interface Mission extends Omit<BaseEntity, 'nom'> {
     champsLibres?: Record<string, any>;
     actif: boolean;
     confidentialite: 'publique' | 'restreinte';
+}
+
+// --- NOTIFICATIONS MODULE TYPES ---
+export type NotificationType = 'validation' | 'mention' | 'alerte' | 'tache' | 'evaluation';
+
+export interface Notification {
+    id: string;
+    type: NotificationType;
+    title: string;
+    description: string;
+    date: Date;
+    userId?: string; // If undefined, it's for everyone
+    targetModule: string;
+    targetId: string;
 }

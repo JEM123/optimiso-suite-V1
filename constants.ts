@@ -1,4 +1,4 @@
-import type { Personne, Processus, Document, Procedure, Controle, Risque, Actualite, CategorieActualite, Indicateur, Tache, Entite, Poste, Role, Competence, OccupationHistory, RACI, CategorieRisque, CategorieControle, ExecutionControle, CategorieDocument, Incident, Amelioration, Actif, ActifCategorie, MaintenanceLog, AccueilPage, CategorieIndicateur, FluxDefinition, ValidationInstance, SyncConnector, SyncLogEntry, NormeLoiCadre, NormeLoiExigence, EvaluationCompetence, PlanFormation, CampagneEvaluation, Mission } from './types';
+import type { Personne, Processus, Document, Procedure, Controle, Risque, Actualite, CategorieActualite, Indicateur, Tache, Entite, Poste, Role, Competence, OccupationHistory, RACI, CategorieRisque, CategorieControle, ExecutionControle, CategorieDocument, Incident, Amelioration, Actif, ActifCategorie, MaintenanceLog, AccueilPage, CategorieIndicateur, FluxDefinition, ValidationInstance, SyncConnector, SyncLogEntry, NormeLoiCadre, NormeLoiExigence, EvaluationCompetence, PlanFormation, CampagneEvaluation, Mission, Notification } from './types';
 import { 
   Users, FileText, Settings, AlertTriangle, CheckCircle, BarChart3, 
   Building2, Briefcase, Target, Shield, TrendingUp, Calendar, 
@@ -79,7 +79,7 @@ export const mockData = {
           portee: 'Direction, actionnaires, auditeurs',
           entrees: 'Pièces comptables, factures', sorties: 'Bilan, Compte de résultat, Annexes',
           responsablePosteId: 'pos-2',
-          processusIds: ['p-l2-fin-01'], procedureIds: ['proced-2'], documentIds: [],
+          processusIds: ['p-l2-fin-01'], procedureIds: ['proced-2'], documentIds: ['doc-2'],
           risqueIds: ['RSK-002'], controleIds: ['ctrl-1'], exigenceIds: [],
           actif: true, confidentialite: 'restreinte',
           dateCreation: new Date(), dateModification: new Date(), auteurId: 'pers-2',
@@ -233,37 +233,81 @@ export const mockData = {
   ] as Entite[],
 
   documents: [
-    { id: 'doc-1', reference: 'DOC-RH-001', nom: 'Politique de recrutement', categorieIds: ['cat-doc-rh'], version: 'v1.2', source: 'Fichier', statut: 'publie', entiteIds: ['ent-5'], processusIds: ['p-l2-rh-01'], dateCreation: new Date('2023-01-10'), dateModification: new Date('2024-05-20'), auteurId: 'pers-4', miseEnAvant: true, validationInstanceId: 'val-1' },
-    { id: 'doc-form-recrut', reference: 'FORM-RH-002', nom: 'Formulaire de demande de recrutement', categorieIds: ['cat-doc-rh'], version: 'v2.0', source: 'Lien', lien: 'https://forms.office.com/r/xyz', statut: 'valide', entiteIds: ['ent-5'], processusIds: ['p-l2-rh-01'], dateCreation: new Date('2023-02-15'), dateModification: new Date(), auteurId: 'pers-4', miseEnAvant: true, autoValidationGED: true },
-    { id: 'doc-2', reference: 'DOC-FIN-001', nom: 'Procédure de clôture comptable', categorieIds: ['cat-doc-fin'], version: 'v3.0', source: 'Fichier', statut: 'en_validation', entiteIds: ['ent-2', 'ent-4'], processusIds: ['p-l2-fin-01'], dateCreation: new Date(), dateModification: new Date(), auteurId: 'pers-2', validationInstanceId: 'val-2' },
-    { id: 'doc-3', reference: 'DOC-FIN-002', nom: 'Rapport Annuel 2023', categorieIds: ['cat-doc-fin'], version: 'v1.0', source: 'Fichier', statut: 'archive', entiteIds: ['ent-2'], processusIds: [], dateCreation: new Date('2024-03-01'), dateModification: new Date('2024-04-01'), auteurId: 'pers-2' },
+    { id: 'doc-1', reference: 'DOC-RH-001', nom: 'Politique de recrutement', categorieIds: ['cat-doc-rh'], version: 'v1.2', source: 'Fichier', statut: 'publie', entiteIds: ['ent-5'], processusIds: ['p-l2-rh-01'], dateCreation: new Date('2023-01-10'), dateModification: new Date('2024-05-20'), auteurId: 'pers-4', miseEnAvant: true, validationInstanceId: 'val-1', risqueIds: ['RSK-001'], controleIds: ['ctrl-2'] },
+    { id: 'doc-form-recrut', reference: 'FORM-RH-002', nom: 'Formulaire de demande de recrutement', categorieIds: ['cat-doc-rh'], version: 'v2.0', source: 'Lien', lien: 'https://forms.office.com/r/xyz', statut: 'valide', entiteIds: ['ent-5'], processusIds: ['p-l2-rh-01'], dateCreation: new Date('2023-02-15'), dateModification: new Date(), auteurId: 'pers-4', miseEnAvant: true, autoValidationGED: true, risqueIds: ['RSK-001'], controleIds: [] },
+    { id: 'doc-2', reference: 'DOC-FIN-001', nom: 'Procédure de clôture comptable', categorieIds: ['cat-doc-fin'], version: 'v3.0', source: 'Fichier', statut: 'en_validation', entiteIds: ['ent-2', 'ent-4'], processusIds: ['p-l2-fin-01'], dateCreation: new Date(), dateModification: new Date(), auteurId: 'pers-2', validationInstanceId: 'val-2', risqueIds: ['RSK-002'], controleIds: ['ctrl-1'] },
+    { id: 'doc-3', reference: 'DOC-FIN-002', nom: 'Rapport Annuel 2023', categorieIds: ['cat-doc-fin'], version: 'v1.0', source: 'Fichier', statut: 'archive', entiteIds: ['ent-2'], processusIds: [], dateCreation: new Date('2024-03-01'), dateModification: new Date('2024-04-01'), auteurId: 'pers-2', risqueIds: [], controleIds: [] },
   ] as Document[],
   
   procedures: [
-    { id: 'proced-1', reference: 'PROC-RH-01', nom: 'Processus de Recrutement', version: '2.1', statut: 'valide', actif: true, dateCreation: new Date(), dateModification: new Date(), auteurId: 'pers-4', acteursPosteIds: ['pos-4'], documentIds: ['doc-form-recrut'], risqueIds: ['RSK-001'], controleIds: ['ctrl-2'], etapes: [ { id: 'etape-1-1', ordre: 1, libelle: 'Expression du besoin', responsablePosteId: 'pos-4', entreesIds: [], sortiesIds: ['doc-form-recrut'] }, { id: 'etape-1-2', ordre: 2, libelle: 'Validation Managériale', responsablePosteId: 'pos-1', entreesIds: ['doc-form-recrut'], sortiesIds: [] }, ]},
-    { id: 'proced-2', reference: 'PROC-FIN-01', nom: 'Clôture Mensuelle', version: '1.5', statut: 'publie', actif: true, dateCreation: new Date(), dateModification: new Date(), auteurId: 'pers-2', acteursPosteIds: ['pos-2', 'pos-3'], documentIds: ['doc-2'], risqueIds: ['RSK-002'], controleIds: ['ctrl-1'], etapes: [ { id: 'etape-2-1', ordre: 1, libelle: 'Rapprochement bancaire', responsablePosteId: 'pos-3', entreesIds: [], sortiesIds: [] } ]},
+    { 
+      id: 'proced-1', 
+      reference: 'PROC-RH-01', 
+      nom: 'Processus de Recrutement', 
+      version: '2.1', 
+      statut: 'valide', 
+      actif: true, 
+      dateCreation: new Date(), 
+      dateModification: new Date(), 
+      auteurId: 'pers-4', 
+      acteursPosteIds: ['pos-4'], 
+      documentIds: ['doc-form-recrut'], 
+      risqueIds: ['RSK-001'], 
+      controleIds: ['ctrl-2'], 
+      etapes: [ 
+        { id: 'etape-1-1', ordre: 1, libelle: 'Expression du besoin', responsablePosteId: 'pos-4', entreesIds: [], sortiesIds: ['doc-form-recrut'], position: { x: 250, y: 50 } }, 
+        { id: 'etape-1-2', ordre: 2, libelle: 'Validation Managériale', responsablePosteId: 'pos-1', entreesIds: ['doc-form-recrut'], sortiesIds: [], position: { x: 250, y: 200 } }, 
+      ],
+      liens: [
+        { id: 'l-1-1-2', source: 'etape-1-1', target: 'etape-1-2' }
+      ]
+    },
+    { 
+      id: 'proced-2', 
+      reference: 'PROC-FIN-01', 
+      nom: 'Clôture Mensuelle', 
+      version: '1.5', 
+      statut: 'publie', 
+      actif: true, 
+      dateCreation: new Date(), 
+      dateModification: new Date(), 
+      auteurId: 'pers-2', 
+      acteursPosteIds: ['pos-2', 'pos-3'], 
+      documentIds: ['doc-2'], 
+      risqueIds: ['RSK-002'], 
+      controleIds: ['ctrl-1'], 
+      etapes: [ 
+        { id: 'etape-2-1', ordre: 1, libelle: 'Rapprochement bancaire', responsablePosteId: 'pos-3', entreesIds: [], sortiesIds: [], position: { x: 250, y: 50 } },
+        { id: 'etape-2-2', ordre: 2, libelle: 'Vérification des factures', responsablePosteId: 'pos-3', entreesIds: [], sortiesIds: [], position: { x: 250, y: 200 } },
+        { id: 'etape-2-3', ordre: 3, libelle: 'Validation par le CFO', responsablePosteId: 'pos-2', entreesIds: [], sortiesIds: [], position: { x: 250, y: 350 }, risqueIds: ['RSK-002'], controleIds: ['ctrl-1'] }
+      ],
+      liens: [
+        { id: 'l-2-1-2', source: 'etape-2-1', target: 'etape-2-2' },
+        { id: 'l-2-2-3', source: 'etape-2-2', target: 'etape-2-3' }
+      ]
+    },
   ] as Procedure[],
 
   processus: [
-    { id: 'p-l1-rh', reference: 'P-RH', nom: 'Gérer les Ressources Humaines', type: 'Support', niveau: 'L1', actif: true, statut: 'valide', dateCreation: new Date(), dateModification: new Date(), auteurId: 'pers-1', proprietaireProcessusId: 'pos-4', entitesConcerneesIds: ['ent-5'], procedureIds: [], indicateurIds: [], risqueIds: [], controleIds: [], documentIds: [] },
-    { id: 'p-l2-rh-01', reference: 'P-RH-01', nom: 'Recrutement et Intégration', type: 'Support', niveau: 'L2', parentId: 'p-l1-rh', actif: true, statut: 'valide', dateCreation: new Date(), dateModification: new Date(), auteurId: 'pers-1', proprietaireProcessusId: 'pos-4', entitesConcerneesIds: ['ent-5'], procedureIds: ['proced-1'], indicateurIds: ['ind-2'], risqueIds: ['RSK-001'], controleIds: ['ctrl-2'], documentIds: ['doc-form-recrut'] },
-    { id: 'p-l1-fin', reference: 'P-FIN', nom: 'Gérer la Finance', type: 'Support', niveau: 'L1', actif: true, statut: 'valide', dateCreation: new Date(), dateModification: new Date(), auteurId: 'pers-1', proprietaireProcessusId: 'pos-2', entitesConcerneesIds: ['ent-2'], procedureIds: [], indicateurIds: [], risqueIds: [], controleIds: [], documentIds: [] },
-    { id: 'p-l2-fin-01', reference: 'P-FIN-01', nom: 'Produire les comptes', type: 'Support', niveau: 'L2', parentId: 'p-l1-fin', actif: true, statut: 'valide', dateCreation: new Date(), dateModification: new Date(), auteurId: 'pers-1', proprietaireProcessusId: 'pos-2', entitesConcerneesIds: ['ent-2', 'ent-4'], procedureIds: ['proced-2'], indicateurIds: ['ind-1'], risqueIds: ['RSK-002'], controleIds: ['ctrl-1'], documentIds: ['doc-2'] },
+    { id: 'p-l1-rh', reference: 'P-RH', nom: 'Gérer les Ressources Humaines', type: 'Support', niveau: 'L1', actif: true, statut: 'valide', dateCreation: new Date(), dateModification: new Date(), auteurId: 'pers-1', proprietaireProcessusId: 'pos-4', entitesConcerneesIds: ['ent-5'], procedureIds: [], indicateurIds: [], risqueIds: [], controleIds: [], documentIds: [], missionIds: ['miss-1'] },
+    { id: 'p-l2-rh-01', reference: 'P-RH-01', nom: 'Recrutement et Intégration', type: 'Support', niveau: 'L2', parentId: 'p-l1-rh', actif: true, statut: 'valide', dateCreation: new Date(), dateModification: new Date(), auteurId: 'pers-1', proprietaireProcessusId: 'pos-4', entitesConcerneesIds: ['ent-5'], procedureIds: ['proced-1'], indicateurIds: ['ind-2'], risqueIds: ['RSK-001'], controleIds: ['ctrl-2'], documentIds: ['doc-form-recrut', 'doc-1'], missionIds: ['miss-1'] },
+    { id: 'p-l1-fin', reference: 'P-FIN', nom: 'Gérer la Finance', type: 'Support', niveau: 'L1', actif: true, statut: 'valide', dateCreation: new Date(), dateModification: new Date(), auteurId: 'pers-1', proprietaireProcessusId: 'pos-2', entitesConcerneesIds: ['ent-2'], procedureIds: [], indicateurIds: [], risqueIds: [], controleIds: [], documentIds: [], missionIds: ['miss-2'] },
+    { id: 'p-l2-fin-01', reference: 'P-FIN-01', nom: 'Produire les comptes', type: 'Support', niveau: 'L2', parentId: 'p-l1-fin', actif: true, statut: 'valide', dateCreation: new Date(), dateModification: new Date(), auteurId: 'pers-1', proprietaireProcessusId: 'pos-2', entitesConcerneesIds: ['ent-2', 'ent-4'], procedureIds: ['proced-2'], indicateurIds: ['ind-1'], risqueIds: ['RSK-002'], controleIds: ['ctrl-1'], documentIds: ['doc-2'], missionIds: ['miss-2'] },
   ] as Processus[],
 
   risques: [
-    { id: 'RSK-001', reference: 'RSK-001', nom: 'Erreur de recrutement', statut: 'valide', dateCreation: new Date(), dateModification: new Date(), auteurId: 'pers-1', processusId: 'p-l2-rh-01', categorieIds: ['cat-rsk-op'], analyseInherente: { probabilite: 3, impact: 4 }, analyseResiduelle: { probabilite: 2, impact: 2 }, controleMaitriseIds: ['ctrl-2'], documentMaitriseIds: [], procedureMaitriseIds: ['proced-1'], entiteIds: ['ent-5'] },
-    { id: 'RSK-002', reference: 'RSK-002', nom: 'Fraude comptable', statut: 'valide', dateCreation: new Date(), dateModification: new Date(), auteurId: 'pers-1', processusId: 'p-l2-fin-01', categorieIds: ['cat-rsk-fin'], analyseInherente: { probabilite: 2, impact: 5 }, analyseResiduelle: { probabilite: 1, impact: 3 }, controleMaitriseIds: ['ctrl-1'], documentMaitriseIds: [], procedureMaitriseIds: ['proced-2'], entiteIds: ['ent-2', 'ent-4'] },
-    { id: 'RSK-003', reference: 'RSK-003', nom: 'Perte de données critiques', statut: 'figé', dateCreation: new Date(), dateModification: new Date(), auteurId: 'pers-1', processusId: 'p-l1-fin', categorieIds: ['cat-rsk-si'], analyseInherente: { probabilite: 2, impact: 5 }, analyseResiduelle: { probabilite: 1, impact: 4 }, controleMaitriseIds: [], documentMaitriseIds: [], procedureMaitriseIds: [], entiteIds: ['ent-6'] },
+    { id: 'RSK-001', reference: 'RSK-001', nom: 'Erreur de recrutement', statut: 'valide', dateCreation: new Date(), dateModification: new Date(), auteurId: 'pers-1', processusId: 'p-l2-rh-01', categorieIds: ['cat-rsk-op'], analyseInherente: { probabilite: 3, impact: 4 }, analyseResiduelle: { probabilite: 2, impact: 2 }, controleMaitriseIds: ['ctrl-2'], documentMaitriseIds: ['doc-1', 'doc-form-recrut'], procedureMaitriseIds: ['proced-1'], entiteIds: ['ent-5'], indicateurIds: ['ind-2'] },
+    { id: 'RSK-002', reference: 'RSK-002', nom: 'Fraude comptable', statut: 'valide', dateCreation: new Date(), dateModification: new Date(), auteurId: 'pers-1', processusId: 'p-l2-fin-01', categorieIds: ['cat-rsk-fin'], analyseInherente: { probabilite: 2, impact: 5 }, analyseResiduelle: { probabilite: 1, impact: 3 }, controleMaitriseIds: ['ctrl-1'], documentMaitriseIds: ['doc-2'], procedureMaitriseIds: ['proced-2'], entiteIds: ['ent-2', 'ent-4'], indicateurIds: ['ind-1'], commentaires: [{ user: 'pers-1', text: 'Bonjour @Marie Martin, pourriez-vous vérifier les derniers chiffres ?', date: new Date() }] },
+    { id: 'RSK-003', reference: 'RSK-003', nom: 'Perte de données critiques', statut: 'figé', dateCreation: new Date(), dateModification: new Date(), auteurId: 'pers-1', processusId: 'p-l1-fin', categorieIds: ['cat-rsk-si'], analyseInherente: { probabilite: 2, impact: 5 }, analyseResiduelle: { probabilite: 1, impact: 4 }, controleMaitriseIds: [], documentMaitriseIds: [], procedureMaitriseIds: [], entiteIds: ['ent-6'], indicateurIds: [] },
   ] as Risque[],
 
   controles: [
-    { id: 'ctrl-1', reference: 'CTRL-FIN-01', nom: 'Revue mensuelle des comptes par le CFO', statut: 'planifié', dateCreation: new Date(), dateModification: new Date(), auteurId: 'pers-1', methodeExecution: 'Validation manuelle des rapports', categorieIds: ['cat-ctrl-det'], typePlanification: 'periodique', frequence: 'mensuelle', dateDebut: new Date('2024-01-01'), executantsIds: ['pers-2'], superviseurId: 'pers-1', champsResultatsDef: [{id: 'res-1', libelle: 'Rapport validé ?', type_reponse: 'booléen', obligatoire: true}], risqueMaitriseIds: ['RSK-002'], procedureIds: ['proced-2'], documentIds: [], indicateurIds: [], actifIds: [] },
-    { id: 'ctrl-2', reference: 'CTRL-RH-01', nom: 'Double validation des offres d\'emploi', statut: 'planifié', dateCreation: new Date(), dateModification: new Date(), auteurId: 'pers-1', methodeExecution: 'Signature électronique par N+1 et RH', categorieIds: ['cat-ctrl-prev'], typePlanification: 'a_la_demande', dateDebut: new Date('2024-01-01'), executantsIds: ['pers-4'], champsResultatsDef: [], risqueMaitriseIds: ['RSK-001'], procedureIds: ['proced-1'], documentIds: [], indicateurIds: [], actifIds: [] },
+    { id: 'ctrl-1', reference: 'CTRL-FIN-01', nom: 'Revue mensuelle des comptes par le CFO', statut: 'planifié', dateCreation: new Date(), dateModification: new Date(), auteurId: 'pers-1', methodeExecution: 'Validation manuelle des rapports', categorieIds: ['cat-ctrl-det'], typePlanification: 'periodique', frequence: 'mensuelle', dateDebut: new Date('2024-01-01'), executantsIds: ['pers-2'], superviseurId: 'pers-1', champsResultatsDef: [{id: 'res-1', libelle: 'Rapport validé ?', type_reponse: 'booléen', obligatoire: true}], risqueMaitriseIds: ['RSK-002'], procedureIds: ['proced-2'], documentIds: ['doc-2'], indicateurIds: ['ind-1'], actifIds: [] },
+    { id: 'ctrl-2', reference: 'CTRL-RH-01', nom: 'Double validation des offres d\'emploi', statut: 'planifié', dateCreation: new Date(), dateModification: new Date(), auteurId: 'pers-1', methodeExecution: 'Signature électronique par N+1 et RH', categorieIds: ['cat-ctrl-prev'], typePlanification: 'a_la_demande', dateDebut: new Date('2024-01-01'), executantsIds: ['pers-4'], champsResultatsDef: [], risqueMaitriseIds: ['RSK-001'], procedureIds: ['proced-1'], documentIds: ['doc-1'], indicateurIds: [], actifIds: [] },
   ] as Controle[],
 
   indicateurs: [
-    { id: 'ind-1', reference: 'IND-FIN-01', nom: 'Délai de clôture comptable', unite: 'jours', objectif: 5, seuilAlerte: 7, sourceDonnee: 'formulaire', frequence: 'mensuel', responsableId: 'pers-2', categorieIds: ['cat-ind-perf'], actif: true, statut: 'valide', dateCreation: new Date(), dateModification: new Date(), auteurId: 'pers-1', mesures: [ {id: 'mes-1', dateMesure: new Date('2024-05-31'), valeur: 6, modeSaisie: 'Manuel'}, {id: 'mes-2', dateMesure: new Date('2024-06-30'), valeur: 5, modeSaisie: 'Manuel'}, {id: 'mes-3', dateMesure: new Date('2024-07-31'), valeur: 5.5, modeSaisie: 'Manuel'} ], processusIds: ['p-l2-fin-01'], risqueIds: [], controleIds: ['ctrl-1'] },
+    { id: 'ind-1', reference: 'IND-FIN-01', nom: 'Délai de clôture comptable', unite: 'jours', objectif: 5, seuilAlerte: 7, sourceDonnee: 'formulaire', frequence: 'mensuel', responsableId: 'pers-2', categorieIds: ['cat-ind-perf'], actif: true, statut: 'valide', dateCreation: new Date(), dateModification: new Date(), auteurId: 'pers-1', mesures: [ {id: 'mes-1', dateMesure: new Date('2024-05-31'), valeur: 6, modeSaisie: 'Manuel'}, {id: 'mes-2', dateMesure: new Date('2024-06-30'), valeur: 5, modeSaisie: 'Manuel'}, {id: 'mes-3', dateMesure: new Date('2024-07-31'), valeur: 5.5, modeSaisie: 'Manuel'} ], processusIds: ['p-l2-fin-01'], risqueIds: ['RSK-002'], controleIds: ['ctrl-1'] },
     { id: 'ind-2', reference: 'IND-RH-01', nom: 'Turnover des nouveaux employés (<1 an)', unite: '%', objectif: 10, seuilAlerte: 15, sourceDonnee: 'API', frequence: 'trimestriel', responsableId: 'pers-4', categorieIds: ['cat-ind-qual'], actif: true, statut: 'valide', dateCreation: new Date(), dateModification: new Date(), auteurId: 'pers-1', mesures: [ {id: 'mes-4', dateMesure: new Date('2024-03-31'), valeur: 12, modeSaisie: 'API'}, {id: 'mes-5', dateMesure: new Date('2024-06-30'), valeur: 11, modeSaisie: 'API'} ], processusIds: ['p-l2-rh-01'], risqueIds: ['RSK-001'], controleIds: [] },
   ] as Indicateur[],
 
@@ -307,6 +351,32 @@ export const mockData = {
       dateCreation: new Date('2024-07-25'),
       dateModification: new Date('2024-07-25'),
       auteurId: 'pers-1'
+    },
+    {
+      id: 'act-4', reference: 'NEWS-04', nom: 'Ancienne procédure de congés (Archivée)',
+      resume: 'Cette actualité concerne l\'ancienne procédure de demande de congés qui n\'est plus en vigueur depuis le 1er Janvier 2024.',
+      contenuRiche: '<p>Cette procédure a été remplacée par le nouveau système intégré. Veuillez vous référer à la documentation RH pour plus d\'informations. Cette actualité est conservée à titre d\'archive.</p>',
+      imageURL: 'https://images.unsplash.com/photo-1563291074-2bf8677ac0e5?q=80&w=1932',
+      categorieId: 'cat-actu-2',
+      datePublication: new Date('2023-12-01'),
+      dateExpiration: new Date('2023-12-31'),
+      statut: 'archive',
+      dateCreation: new Date('2023-11-20'),
+      dateModification: new Date('2023-11-20'),
+      auteurId: 'pers-4'
+    },
+    {
+      id: 'act-5', reference: 'NEWS-05', nom: 'Rappel : Inscriptions Tournoi de Foot (Expiré)',
+      resume: 'Les inscriptions pour le tournoi de football inter-services sont maintenant closes. Merci à tous les participants !',
+      contenuRiche: '<p>Les inscriptions sont closes. Le tirage au sort des poules aura lieu demain. Bonne chance à toutes les équipes !</p>',
+      imageURL: 'https://images.unsplash.com/photo-1551958214-2d5b24472fe9?q=80&w=2070',
+      categorieId: 'cat-actu-1',
+      datePublication: new Date('2024-06-01'),
+      dateExpiration: new Date('2024-06-15'),
+      statut: 'publie',
+      dateCreation: new Date('2024-05-30'),
+      dateModification: new Date('2024-05-30'),
+      auteurId: 'pers-5'
     }
   ] as Actualite[],
   
@@ -317,15 +387,15 @@ export const mockData = {
   ] as Tache[],
   
   incidents: [
-    { id: 'inc-1', reference: 'INC-2024-001', titre: 'Accès impossible au serveur de fichiers', description: 'Depuis 9h ce matin, personne ne peut accéder au lecteur partagé.', categorie: 'SI', priorite: 'Critique', gravite: 'Majeure', statut: 'En cours', dateOuverture: new Date(), declarantId: 'pers-3', assigneAId: 'pers-1', entiteId: 'ent-6', SLA_Cible: 4, echeanceSLA: new Date(new Date().getTime() + 4 * 3600 * 1000), depassementSLA: false, taches: [{id: 'inc-task-1', titre: 'Redémarrer le serveur', responsableId: 'pers-1', statut: 'En cours', dateEcheance: new Date()}] },
+    { id: 'inc-1', reference: 'INC-2024-001', titre: 'Accès impossible au serveur de fichiers', description: 'Depuis 9h ce matin, personne ne peut accéder au lecteur partagé.', categorie: 'SI', priorite: 'Critique', gravite: 'Majeure', statut: 'En cours', dateOuverture: new Date(), declarantId: 'pers-3', assigneAId: 'pers-1', entiteId: 'ent-6', SLA_Cible: 4, echeanceSLA: new Date(new Date().getTime() + 4 * 3600 * 1000), depassementSLA: false, taches: [{id: 'inc-task-1', titre: 'Redémarrer le serveur', responsableId: 'pers-1', statut: 'En cours', dateEcheance: new Date()}], lienRisqueId: 'RSK-003', lienActifId: 'actif-1' },
   ] as Incident[],
   
   ameliorations: [
-    { id: 'amel-1', reference: 'AMEL-2024-001', titre: 'Automatiser le rapport de turnover', description: 'Le rapport de turnover est actuellement manuel et prend 2 jours. Il faut l\'automatiser via une connexion à l\'API RH.', type: 'Opportunité', priorite: 'haute', statut: 'En cours', piloteId: 'pers-5', origine: ['Suggestion'], objectifMesurable: 'Générer le rapport en moins de 10 minutes', echeanceCible: new Date('2024-12-31'), dateCreation: new Date(), dateModification: new Date(), confidentialite: 'publique', actions: [{id: 'act-1', titre: 'Spécifier les besoins avec l\'IT', responsableId: 'pers-5', statut: 'Fait', dateEcheance: new Date('2024-08-15'), efficacite: 'Non évaluée'}] },
+    { id: 'amel-1', reference: 'AMEL-2024-001', titre: 'Automatiser le rapport de turnover', description: 'Le rapport de turnover est actuellement manuel et prend 2 jours. Il faut l\'automatiser via une connexion à l\'API RH.', type: 'Opportunité', priorite: 'haute', statut: 'En cours', piloteId: 'pers-5', origine: ['Suggestion', 'Indicateur'], objectifMesurable: 'Générer le rapport en moins de 10 minutes', echeanceCible: new Date('2024-12-31'), dateCreation: new Date(), dateModification: new Date(), confidentialite: 'publique', actions: [{id: 'act-1', titre: 'Spécifier les besoins avec l\'IT', responsableId: 'pers-5', statut: 'Fait', dateEcheance: new Date('2024-08-15'), efficacite: 'Non évaluée'}], indicateurSuiviId: 'ind-2' },
   ] as Amelioration[],
 
   actifs: [
-    { id: 'actif-1', reference: 'SRV-001', nom: 'Serveur de fichiers principal', type: 'Matériel', categorieId: 'cat-actif-info', proprietaireId: 'pos-1', gestionnaireId: 'pos-5', statutCycleVie: 'En service', confidentialite: 'restreinte', dateCreation: new Date(), dateModification: new Date(), auteurId: 'pers-1', maintenanceLogs: [] },
+    { id: 'actif-1', reference: 'SRV-001', nom: 'Serveur de fichiers principal', type: 'Matériel', categorieId: 'cat-actif-info', proprietaireId: 'pos-1', gestionnaireId: 'pos-5', statutCycleVie: 'En service', confidentialite: 'restreinte', dateCreation: new Date(), dateModification: new Date(), auteurId: 'pers-1', maintenanceLogs: [], lienRisqueIds: ['RSK-003'] },
   ] as Actif[],
   
   // -- CATEGORIES --
@@ -382,5 +452,13 @@ export const mockData = {
     documents: { total: 4, publies: 2, enCours: 1, archives: 1, parType: [{type: 'REG', count: 2}, {type: 'FORM', count: 1}, {type: 'MOD', count: 1}] },
     incidents: { total: 1, nouveau: 1, enCours: 0, slaDepasse: 0, cloture: 0, parCategorie: [{categorie: 'SI', count: 1, color: 'bg-red-500'}]},
     ameliorations: { total: 1, nouveau: 0, enCours: 1, cloture: 0, parOrigine: [{origine: 'Suggestion', count: 1, color: 'bg-purple-500'}]}
-  }
+  },
+
+  notifications: [
+    { id: 'notif-1', type: 'mention', title: 'Nouvelle mention dans un risque', description: 'Jean Dupont vous a mentionné dans le risque RSK-002: "Fraude comptable".', date: new Date(new Date().getTime() - 3600000), userId: 'pers-2', targetModule: 'risques', targetId: 'RSK-002' },
+    { id: 'notif-2', type: 'tache', title: 'Nouvelle tâche assignée', description: 'La tâche "Exécuter le contrôle mensuel des comptes" vous a été assignée.', date: new Date(new Date().getTime() - 2 * 3600000), userId: 'pers-2', targetModule: 'todo', targetId: 'task-2' },
+    { id: 'notif-3', type: 'alerte', title: 'Incident critique déclaré', description: 'Un incident critique "Accès impossible au serveur de fichiers" a été déclaré.', date: new Date(new Date().getTime() - 5 * 3600000), targetModule: 'incidents', targetId: 'inc-1' },
+    { id: 'notif-4', type: 'evaluation', title: 'Évaluation de compétence requise', description: 'Vous devez évaluer Pierre Durand sur la compétence "Analyse Financière".', date: new Date(new Date().getTime() - 24 * 3600000), userId: 'pers-2', targetModule: 'competences', targetId: 'eval-6' },
+    { id: 'notif-5', type: 'validation', title: 'Demande de validation', description: 'Une nouvelle version du document "Procédure de clôture comptable" attend votre approbation.', date: new Date(new Date().getTime() - 2 * 24 * 3600000), userId: 'pers-1', targetModule: 'documents', targetId: 'doc-2' },
+  ] as Notification[],
 };

@@ -1,5 +1,3 @@
-
-
 import React, { useState, useMemo, useEffect } from 'react';
 import { mockData } from '../constants';
 import type { Poste, Entite, Personne, Competence, Role, RACI, OccupationHistory } from '../types';
@@ -50,6 +48,10 @@ const newPostTemplate = (parentId?: string, entiteId?: string): Partial<Poste> =
     auteurId: 'pers-1'
 });
 
+interface PostesPageProps {
+    onShowRelations: (entity: any, entityType: string) => void;
+}
+
 // --- SUB-COMPONENTS ---
 
 const PosteNode: React.FC<{ node: Poste & { children: any[] }; onSelect: (p: Poste) => void; selectedId?: string; }> = ({ node, onSelect, selectedId }) => {
@@ -77,7 +79,7 @@ const PosteNode: React.FC<{ node: Poste & { children: any[] }; onSelect: (p: Pos
 
 // --- MAIN PAGE COMPONENT ---
 
-export const PostesPage: React.FC = () => {
+export const PostesPage: React.FC<PostesPageProps> = ({ onShowRelations }) => {
     const [view, setView] = useState<'list' | 'organigram'>('list');
     const [selectedPoste, setSelectedPoste] = useState<Poste | null>(null);
     const [postes, setPostes] = useState<Poste[]>(mockData.postes);
@@ -157,6 +159,7 @@ export const PostesPage: React.FC = () => {
                                                 <td className="px-4 py-2 text-sm text-gray-500">{poste.occupantsIds.length} / {poste.effectifCible}</td>
                                                 <td className="px-4 py-2 text-sm"><span className={`px-2 py-0.5 text-xs rounded-full capitalize ${POST_STATUS_COLORS[poste.statut]}`}>{poste.statut.replace(/_/g, ' ')}</span></td>
                                                 <td className="px-4 py-2"><div className="flex items-center space-x-2">
+                                                    <button onClick={(e) => { e.stopPropagation(); onShowRelations(poste, 'postes') }} title="Voir les relations" className="p-1 hover:bg-gray-200 rounded"><LinkIcon className="h-4 w-4 text-gray-500"/></button>
                                                     <button onClick={(e) => { e.stopPropagation(); handleOpenModal(poste); }} className="p-1 hover:bg-gray-200 rounded"><Edit className="h-4 w-4 text-blue-600"/></button>
                                                     <button onClick={(e) => { e.stopPropagation(); handleDeletePoste(poste.id); }} className="p-1 hover:bg-gray-200 rounded"><Trash2 className="h-4 w-4 text-red-600"/></button>
                                                 </div></td>
@@ -169,7 +172,7 @@ export const PostesPage: React.FC = () => {
                     )}
                 </div>
             </div>
-            {selectedPoste && <PosteDetailPanel poste={selectedPoste} onClose={() => setSelectedPoste(null)} onEdit={handleOpenModal} />}
+            {selectedPoste && <PosteDetailPanel poste={selectedPoste} onClose={() => setSelectedPoste(null)} onEdit={handleOpenModal} onShowRelations={onShowRelations} />}
             <PostFormModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} onSave={handleSavePoste} poste={editingPoste} />
         </div>
     );

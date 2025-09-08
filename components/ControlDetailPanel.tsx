@@ -1,14 +1,13 @@
-
-
 import React, { useState } from 'react';
 import type { Controle, ExecutionControle } from '../types';
 import { mockData } from '../constants';
-import { X, Edit, Info, Clock, BookOpen, History, FileText, Settings, AlertTriangle, Check, XCircle, Loader } from 'lucide-react';
+import { X, Edit, Info, Clock, BookOpen, History, FileText, Settings, AlertTriangle, Check, XCircle, Loader, Link as LinkIcon } from 'lucide-react';
 
 interface ControlDetailPanelProps {
     control: Controle;
     onClose: () => void;
     onEdit: (c: Controle) => void;
+    onShowRelations: (entity: any, entityType: string) => void;
 }
 
 const DetailItem: React.FC<{ label: string; value: React.ReactNode }> = ({ label, value }) => (
@@ -18,14 +17,14 @@ const DetailItem: React.FC<{ label: string; value: React.ReactNode }> = ({ label
     </div>
 );
 
-const MasteryItem: React.FC<{ item: any, icon: React.ElementType }> = ({ item, icon: Icon }) => (
-    <div className="flex items-center space-x-3 p-2 bg-white border rounded-md hover:bg-gray-50 cursor-pointer">
+const MasteryItem: React.FC<{ item: any, icon: React.ElementType, onClick: () => void }> = ({ item, icon: Icon, onClick }) => (
+    <button onClick={onClick} className="w-full flex items-center space-x-3 p-2 bg-white border rounded-md hover:bg-gray-50 cursor-pointer text-left">
         <Icon className="h-5 w-5 text-gray-500 flex-shrink-0" />
-        <div className="flex-1">
-            <p className="text-sm font-medium text-gray-800">{item.nom}</p>
+        <div className="flex-1 min-w-0">
+            <p className="text-sm font-medium text-gray-800 truncate">{item.nom}</p>
             <p className="text-xs text-gray-500">{item.reference}</p>
         </div>
-    </div>
+    </button>
 );
 
 const ExecutionStatusIcon: React.FC<{ status: ExecutionControle['statut'] }> = ({ status }) => {
@@ -39,7 +38,7 @@ const ExecutionStatusIcon: React.FC<{ status: ExecutionControle['statut'] }> = (
 };
 
 
-const ControlDetailPanel: React.FC<ControlDetailPanelProps> = ({ control, onClose, onEdit }) => {
+const ControlDetailPanel: React.FC<ControlDetailPanelProps> = ({ control, onClose, onEdit, onShowRelations }) => {
     const [activeTab, setActiveTab] = useState('details');
     
     const { personnes, risques, documents, procedures, executionsControles } = mockData;
@@ -58,6 +57,7 @@ const ControlDetailPanel: React.FC<ControlDetailPanelProps> = ({ control, onClos
                     <p className="text-sm text-gray-500">{control.reference}</p>
                 </div>
                 <div className="flex space-x-1">
+                    <button onClick={() => onShowRelations(control, 'controles')} className="p-2 text-gray-500 hover:text-gray-800 hover:bg-gray-200 rounded-md"><LinkIcon className="h-4 w-4"/></button>
                     <button onClick={() => onEdit(control)} className="p-2 text-gray-500 hover:text-gray-800 hover:bg-gray-200 rounded-md"><Edit className="h-4 w-4"/></button>
                     <button onClick={onClose} className="p-2 text-gray-500 hover:text-gray-800 hover:bg-gray-200 rounded-md"><X className="h-5 w-5"/></button>
                 </div>
@@ -102,15 +102,15 @@ const ControlDetailPanel: React.FC<ControlDetailPanelProps> = ({ control, onClos
                      <div className="space-y-4">
                         <div>
                             <h4 className="font-semibold text-gray-800 mb-2 pb-2 border-b">Risques Maîtrisés ({linkedRisks.length})</h4>
-                            <div className="space-y-2">{linkedRisks.map(r => <MasteryItem key={r.id} item={r} icon={AlertTriangle} />)}</div>
+                            <div className="space-y-2">{linkedRisks.map(r => <MasteryItem key={r.id} item={r} icon={AlertTriangle} onClick={() => onShowRelations(r, 'risques')} />)}</div>
                         </div>
                          <div>
                             <h4 className="font-semibold text-gray-800 mb-2 pb-2 border-b">Documents Liés ({linkedDocuments.length})</h4>
-                            <div className="space-y-2">{linkedDocuments.map(d => <MasteryItem key={d.id} item={d} icon={FileText} />)}</div>
+                            <div className="space-y-2">{linkedDocuments.map(d => <MasteryItem key={d.id} item={d} icon={FileText} onClick={() => onShowRelations(d, 'documents')} />)}</div>
                         </div>
                          <div>
                             <h4 className="font-semibold text-gray-800 mb-2 pb-2 border-b">Procédures Liées ({linkedProcedures.length})</h4>
-                            <div className="space-y-2">{linkedProcedures.map(p => <MasteryItem key={p.id} item={p} icon={Settings} />)}</div>
+                            <div className="space-y-2">{linkedProcedures.map(p => <MasteryItem key={p.id} item={p} icon={Settings} onClick={() => onShowRelations(p, 'procedures')} />)}</div>
                         </div>
                     </div>
                 )}

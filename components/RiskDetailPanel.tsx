@@ -1,5 +1,3 @@
-
-
 import React, { useState } from 'react';
 import type { Risque } from '../types';
 import { mockData } from '../constants';
@@ -44,14 +42,14 @@ const EvaluationView: React.FC<{ title: string; evaluation: Risque['analyseInher
     );
 };
 
-const MasteryItem: React.FC<{ item: any, icon: React.ElementType }> = ({ item, icon: Icon }) => (
-    <div className="flex items-center space-x-3 p-2 bg-white border rounded-md hover:bg-gray-50">
+const MasteryItem: React.FC<{ item: any, icon: React.ElementType, onClick: () => void }> = ({ item, icon: Icon, onClick }) => (
+    <button onClick={onClick} className="w-full flex items-center space-x-3 p-2 bg-white border rounded-md hover:bg-gray-50 text-left">
         <Icon className="h-5 w-5 text-gray-500 flex-shrink-0" />
-        <div className="flex-1">
-            <p className="text-sm font-medium text-gray-800">{item.nom}</p>
+        <div className="flex-1 min-w-0">
+            <p className="text-sm font-medium text-gray-800 truncate">{item.nom}</p>
             <p className="text-xs text-gray-500">{item.reference}</p>
         </div>
-    </div>
+    </button>
 );
 
 const RiskDetailPanel: React.FC<RiskDetailPanelProps> = ({ risque, onClose, onEdit, onShowRelations }) => {
@@ -120,19 +118,19 @@ const RiskDetailPanel: React.FC<RiskDetailPanelProps> = ({ risque, onClose, onEd
                     <div className="space-y-4">
                         <div>
                             <h4 className="font-semibold text-gray-800 mb-2 pb-2 border-b">Contrôles ({controles.length})</h4>
-                            <div className="space-y-2">{controles.map(c => <MasteryItem key={c.id} item={c} icon={CheckCircle} />)}</div>
+                            <div className="space-y-2">{controles.map(c => <MasteryItem key={c.id} item={c} icon={CheckCircle} onClick={() => onShowRelations(c, 'controles')} />)}</div>
                         </div>
                          <div>
                             <h4 className="font-semibold text-gray-800 mb-2 pb-2 border-b">Documents ({documents.length})</h4>
-                            <div className="space-y-2">{documents.map(d => <MasteryItem key={d.id} item={d} icon={FileText} />)}</div>
+                            <div className="space-y-2">{documents.map(d => <MasteryItem key={d.id} item={d} icon={FileText} onClick={() => onShowRelations(d, 'documents')} />)}</div>
                         </div>
                          <div>
                             <h4 className="font-semibold text-gray-800 mb-2 pb-2 border-b">Procédures ({procedures.length})</h4>
-                            <div className="space-y-2">{procedures.map(p => <MasteryItem key={p.id} item={p} icon={Settings} />)}</div>
+                            <div className="space-y-2">{procedures.map(p => <MasteryItem key={p.id} item={p} icon={Settings} onClick={() => onShowRelations(p, 'procedures')} />)}</div>
                         </div>
                         <div>
                             <h4 className="font-semibold text-gray-800 mb-2 pb-2 border-b">Indicateurs ({indicateurs.length})</h4>
-                            <div className="space-y-2">{indicateurs.map(i => <MasteryItem key={i.id} item={i} icon={BarChart3} />)}</div>
+                            <div className="space-y-2">{indicateurs.map(i => <MasteryItem key={i.id} item={i} icon={BarChart3} onClick={() => onShowRelations(i, 'indicateurs')} />)}</div>
                         </div>
                     </div>
                 )}

@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState, useReducer, useMemo, useCallback } from 'react';
 import { mockData } from '../constants';
-import type { Personne, Risque, Role, Document, Actualite, NormeLoiCadre, NormeLoiExigence, Competence, CampagneEvaluation, EvaluationCompetence, PlanFormation, Mission, Processus } from '../types';
+import type { Personne, Risque, Role, Document, Actualite, NormeLoiCadre, NormeLoiExigence, Competence, CampagneEvaluation, EvaluationCompetence, PlanFormation, Mission, Processus, Notification } from '../types';
 
 // --- STATE & CONTEXT TYPES ---
 
@@ -8,11 +8,17 @@ interface IAppState {
     activeModule: string;
     sidebarOpen: boolean;
     user: { id: string, nom: string; profil: string; avatar: string; };
+    notifications: Notification[];
+    readNotificationIds: string[];
+    notifiedTarget: { moduleId: string, itemId: string } | null;
 }
 
 interface IAppContext extends IAppState {
     setActiveModule: (id: string) => void;
     setSidebarOpen: (open: boolean) => void;
+    handleNotificationClick: (notification: Notification) => void;
+    markAllNotificationsAsRead: () => void;
+    clearNotifiedTarget: () => void;
 }
 
 interface IDataState {
@@ -223,169 +229,78 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     const [sidebarOpen, setSidebarOpen] = useState(true);
     // Let's assume the user is Marie Martin for the evaluations feature
     const [user] = useState({ id: 'pers-2', nom: 'Marie Martin', profil: 'Manager', avatar: 'MM' });
+    const [readNotificationIds, setReadNotificationIds] = useState<string[]>([]);
+    const [notifiedTarget, setNotifiedTarget] = useState<{ moduleId: string, itemId: string } | null>(null);
+
 
     // Data State Management
     const [data, dispatch] = useReducer(dataReducer, mockData);
     const [loading, setLoading] = useState(false);
 
+    // Notification Actions
+    const handleNotificationClick = useCallback((notification: Notification) => {
+        setReadNotificationIds(prev => [...new Set([...prev, notification.id])]);
+        setActiveModule(notification.targetModule);
+        setNotifiedTarget({ moduleId: notification.targetModule, itemId: notification.targetId });
+    }, []);
+
+    const markAllNotificationsAsRead = useCallback(() => {
+        setReadNotificationIds(data.notifications.map((n: Notification) => n.id));
+    }, [data.notifications]);
+    
+    const clearNotifiedTarget = useCallback(() => {
+        setNotifiedTarget(null);
+    }, []);
+
+    // Simulated Async Action Creator
+    const createAsyncAction = <T,>(type: DataAction['type']) => {
+        return useCallback(async (payload: T) => {
+            setLoading(true);
+            await new Promise(resolve => setTimeout(resolve, 300)); // Simulate network delay
+            dispatch({ type, payload } as any);
+            setLoading(false);
+        }, []);
+    };
+    
     // Memoized actions to prevent re-renders
     const actions = useMemo(() => ({
-        saveRisk: async (payload: Risque) => {
-            setLoading(true);
-            await new Promise(resolve => setTimeout(resolve, 300));
-            dispatch({ type: 'SAVE_RISK', payload });
-            setLoading(false);
-        },
-        deleteRisk: async (payload: string) => {
-            setLoading(true);
-            await new Promise(resolve => setTimeout(resolve, 300));
-            dispatch({ type: 'DELETE_RISK', payload });
-            setLoading(false);
-        },
-        savePerson: async (payload: Personne) => {
-            setLoading(true);
-            await new Promise(resolve => setTimeout(resolve, 300));
-            dispatch({ type: 'SAVE_PERSON', payload });
-            setLoading(false);
-        },
-        deletePerson: async (payload: string) => {
-            setLoading(true);
-            await new Promise(resolve => setTimeout(resolve, 300));
-            dispatch({ type: 'DELETE_PERSON', payload });
-            setLoading(false);
-        },
-        saveRole: async (payload: Role) => {
-            setLoading(true);
-            await new Promise(resolve => setTimeout(resolve, 300));
-            dispatch({ type: 'SAVE_ROLE', payload });
-            setLoading(false);
-        },
-        deleteRole: async (payload: string) => {
-            setLoading(true);
-            await new Promise(resolve => setTimeout(resolve, 300));
-            dispatch({ type: 'DELETE_ROLE', payload });
-            setLoading(false);
-        },
-        saveDocument: async (payload: Document) => {
-            setLoading(true);
-            await new Promise(resolve => setTimeout(resolve, 300));
-            dispatch({ type: 'SAVE_DOCUMENT', payload });
-            setLoading(false);
-        },
-        deleteDocument: async (payload: string) => {
-            setLoading(true);
-            await new Promise(resolve => setTimeout(resolve, 300));
-            dispatch({ type: 'DELETE_DOCUMENT', payload });
-            setLoading(false);
-        },
-        saveActualite: async (payload: Actualite) => {
-            setLoading(true);
-            await new Promise(resolve => setTimeout(resolve, 300));
-            dispatch({ type: 'SAVE_ACTUALITE', payload });
-            setLoading(false);
-        },
-        deleteActualite: async (payload: string) => {
-            setLoading(true);
-            await new Promise(resolve => setTimeout(resolve, 300));
-            dispatch({ type: 'DELETE_ACTUALITE', payload });
-            setLoading(false);
-        },
-        saveNormeLoiCadre: async (payload: NormeLoiCadre) => {
-            setLoading(true);
-            await new Promise(resolve => setTimeout(resolve, 300));
-            dispatch({ type: 'SAVE_NORME_LOI_CADRE', payload });
-            setLoading(false);
-        },
-        deleteNormeLoiCadre: async (payload: string) => {
-            setLoading(true);
-            await new Promise(resolve => setTimeout(resolve, 300));
-            dispatch({ type: 'DELETE_NORME_LOI_CADRE', payload });
-            setLoading(false);
-        },
-        saveNormeLoiExigence: async (payload: NormeLoiExigence) => {
-            setLoading(true);
-            await new Promise(resolve => setTimeout(resolve, 300));
-            dispatch({ type: 'SAVE_NORME_LOI_EXIGENCE', payload });
-            setLoading(false);
-        },
-        deleteNormeLoiExigence: async (payload: string) => {
-            setLoading(true);
-            await new Promise(resolve => setTimeout(resolve, 300));
-            dispatch({ type: 'DELETE_NORME_LOI_EXIGENCE', payload });
-            setLoading(false);
-        },
-        saveCompetence: async (payload: Competence) => {
-            setLoading(true);
-            await new Promise(resolve => setTimeout(resolve, 300));
-            dispatch({ type: 'SAVE_COMPETENCE', payload });
-            setLoading(false);
-        },
-        deleteCompetence: async (payload: string) => {
-            setLoading(true);
-            await new Promise(resolve => setTimeout(resolve, 300));
-            dispatch({ type: 'DELETE_COMPETENCE', payload });
-            setLoading(false);
-        },
-        saveCampagneEvaluation: async (payload: CampagneEvaluation) => {
-            setLoading(true);
-            await new Promise(resolve => setTimeout(resolve, 300));
-            dispatch({ type: 'SAVE_CAMPAGNE_EVALUATION', payload });
-            setLoading(false);
-        },
-        deleteCampagneEvaluation: async (payload: string) => {
-            setLoading(true);
-            await new Promise(resolve => setTimeout(resolve, 300));
-            dispatch({ type: 'DELETE_CAMPAGNE_EVALUATION', payload });
-            setLoading(false);
-        },
-        saveEvaluationCompetence: async (payload: EvaluationCompetence) => {
-            setLoading(true);
-            await new Promise(resolve => setTimeout(resolve, 300));
-            dispatch({ type: 'SAVE_EVALUATION_COMPETENCE', payload });
-            setLoading(false);
-        },
-        savePlanFormation: async (payload: PlanFormation) => {
-            setLoading(true);
-            await new Promise(resolve => setTimeout(resolve, 300));
-            dispatch({ type: 'SAVE_PLAN_FORMATION', payload });
-            setLoading(false);
-        },
-        deletePlanFormation: async (payload: string) => {
-            setLoading(true);
-            await new Promise(resolve => setTimeout(resolve, 300));
-            dispatch({ type: 'DELETE_PLAN_FORMATION', payload });
-            setLoading(false);
-        },
-        saveMission: async (payload: Mission) => {
-            setLoading(true);
-            await new Promise(resolve => setTimeout(resolve, 300));
-            dispatch({ type: 'SAVE_MISSION', payload });
-            setLoading(false);
-        },
-        deleteMission: async (payload: string) => {
-            setLoading(true);
-            await new Promise(resolve => setTimeout(resolve, 300));
-            dispatch({ type: 'DELETE_MISSION', payload });
-            setLoading(false);
-        },
-        saveProcessus: async (payload: Processus) => {
-            setLoading(true);
-            await new Promise(resolve => setTimeout(resolve, 300));
-            dispatch({ type: 'SAVE_PROCESSUS', payload });
-            setLoading(false);
-        },
-        deleteProcessus: async (payload: string) => {
-            setLoading(true);
-            await new Promise(resolve => setTimeout(resolve, 300));
-            dispatch({ type: 'DELETE_PROCESSUS', payload });
-            setLoading(false);
-        },
-    }), []);
+        saveRisk: createAsyncAction<Risque>('SAVE_RISK'),
+        deleteRisk: createAsyncAction<string>('DELETE_RISK'),
+        savePerson: createAsyncAction<Personne>('SAVE_PERSON'),
+        deletePerson: createAsyncAction<string>('DELETE_PERSON'),
+        saveRole: createAsyncAction<Role>('SAVE_ROLE'),
+        deleteRole: createAsyncAction<string>('DELETE_ROLE'),
+        saveDocument: createAsyncAction<Document>('SAVE_DOCUMENT'),
+        deleteDocument: createAsyncAction<string>('DELETE_DOCUMENT'),
+        saveActualite: createAsyncAction<Actualite>('SAVE_ACTUALITE'),
+        deleteActualite: createAsyncAction<string>('DELETE_ACTUALITE'),
+        saveNormeLoiCadre: createAsyncAction<NormeLoiCadre>('SAVE_NORME_LOI_CADRE'),
+        deleteNormeLoiCadre: createAsyncAction<string>('DELETE_NORME_LOI_CADRE'),
+        saveNormeLoiExigence: createAsyncAction<NormeLoiExigence>('SAVE_NORME_LOI_EXIGENCE'),
+        deleteNormeLoiExigence: createAsyncAction<string>('DELETE_NORME_LOI_EXIGENCE'),
+        saveCompetence: createAsyncAction<Competence>('SAVE_COMPETENCE'),
+        deleteCompetence: createAsyncAction<string>('DELETE_COMPETENCE'),
+        saveCampagneEvaluation: createAsyncAction<CampagneEvaluation>('SAVE_CAMPAGNE_EVALUATION'),
+        deleteCampagneEvaluation: createAsyncAction<string>('DELETE_CAMPAGNE_EVALUATION'),
+        saveEvaluationCompetence: createAsyncAction<EvaluationCompetence>('SAVE_EVALUATION_COMPETENCE'),
+        savePlanFormation: createAsyncAction<PlanFormation>('SAVE_PLAN_FORMATION'),
+        deletePlanFormation: createAsyncAction<string>('DELETE_PLAN_FORMATION'),
+        saveMission: createAsyncAction<Mission>('SAVE_MISSION'),
+        deleteMission: createAsyncAction<string>('DELETE_MISSION'),
+        saveProcessus: createAsyncAction<Processus>('SAVE_PROCESSUS'),
+        deleteProcessus: createAsyncAction<string>('DELETE_PROCESSUS'),
+    }), [createAsyncAction]);
 
 
     const appContextValue = useMemo(() => ({
-        activeModule, setActiveModule, sidebarOpen, setSidebarOpen, user
-    }), [activeModule, sidebarOpen, user]);
+        activeModule, setActiveModule, sidebarOpen, setSidebarOpen, user,
+        notifications: data.notifications as Notification[],
+        readNotificationIds,
+        handleNotificationClick,
+        markAllNotificationsAsRead,
+        notifiedTarget,
+        clearNotifiedTarget
+    }), [activeModule, sidebarOpen, user, data.notifications, readNotificationIds, handleNotificationClick, markAllNotificationsAsRead, notifiedTarget, clearNotifiedTarget]);
     
     const dataContextValue = useMemo(() => ({
         data, loading, actions

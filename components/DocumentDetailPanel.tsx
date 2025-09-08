@@ -1,5 +1,3 @@
-
-
 import React, { useState } from 'react';
 import type { Document } from '../types';
 import { mockData } from '../constants';
@@ -44,6 +42,7 @@ const DocumentDetailPanel: React.FC<DocumentDetailPanelProps> = ({ document, onC
                     <p className="text-sm text-gray-500">{document.reference}</p>
                 </div>
                 <div className="flex space-x-1">
+                    <button onClick={() => onShowRelations(document, 'documents')} className="p-2 text-gray-500 hover:text-gray-800 hover:bg-gray-200 rounded-md"><LinkIcon className="h-4 w-4"/></button>
                     <button onClick={() => onEdit(document)} className="p-2 text-gray-500 hover:text-gray-800 hover:bg-gray-200 rounded-md"><Edit className="h-4 w-4"/></button>
                     <button onClick={onClose} className="p-2 text-gray-500 hover:text-gray-800 hover:bg-gray-200 rounded-md"><X className="h-5 w-5"/></button>
                 </div>

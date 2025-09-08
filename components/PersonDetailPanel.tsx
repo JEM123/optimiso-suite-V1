@@ -1,7 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import type { Personne, Competence } from '../types';
 import { mockData } from '../constants';
-import { X, Edit, Info, Briefcase, Building, KeyRound, History, TrendingUp } from 'lucide-react';
+import { X, Edit, Info, Briefcase, Building, KeyRound, History, TrendingUp, Link as LinkIcon } from 'lucide-react';
 import CompetenceRadarChart from './CompetenceRadarChart';
 
 interface PersonDetailPanelProps {
@@ -9,6 +9,7 @@ interface PersonDetailPanelProps {
     onClose: () => void;
     onEdit: (p: Personne) => void;
     onNavigate: (moduleId: string) => void;
+    onShowRelations: (entity: any, entityType: string) => void;
 }
 
 const DetailItem: React.FC<{ label: string; value: React.ReactNode }> = ({ label, value }) => (
@@ -29,7 +30,7 @@ const RelationItem: React.FC<{ item: any; icon: React.ElementType, onClick: () =
 );
 
 
-const PersonDetailPanel: React.FC<PersonDetailPanelProps> = ({ person, onClose, onEdit, onNavigate }) => {
+const PersonDetailPanel: React.FC<PersonDetailPanelProps> = ({ person, onClose, onEdit, onNavigate, onShowRelations }) => {
     const [activeTab, setActiveTab] = useState('info');
     
     const { postes: allPostes, entites, roles, competences: allCompetences, evaluationsCompetences } = mockData;
@@ -64,6 +65,7 @@ const PersonDetailPanel: React.FC<PersonDetailPanelProps> = ({ person, onClose, 
                     <p className="text-sm text-gray-500">{person.email}</p>
                 </div>
                 <div className="flex space-x-1">
+                    <button onClick={() => onShowRelations(person, 'personnes')} className="p-2 text-gray-500 hover:text-gray-800 hover:bg-gray-200 rounded-md"><LinkIcon className="h-4 w-4"/></button>
                     <button onClick={() => onEdit(person)} className="p-2 text-gray-500 hover:text-gray-800 hover:bg-gray-200 rounded-md"><Edit className="h-4 w-4"/></button>
                     <button onClick={onClose} className="p-2 text-gray-500 hover:text-gray-800 hover:bg-gray-200 rounded-md"><X className="h-5 w-5"/></button>
                 </div>
@@ -99,11 +101,11 @@ const PersonDetailPanel: React.FC<PersonDetailPanelProps> = ({ person, onClose, 
                      <div className="space-y-4">
                         <div>
                             <h4 className="font-medium text-gray-700 mb-2">Postes Occupés ({postes.length})</h4>
-                            <div className="space-y-2">{postes.map(p => <RelationItem key={p.id} item={p} icon={Briefcase} onClick={() => onNavigate('postes')} />)}</div>
+                            <div className="space-y-2">{postes.map(p => <RelationItem key={p.id} item={p} icon={Briefcase} onClick={() => onShowRelations(p, 'postes')} />)}</div>
                         </div>
                          <div>
                             <h4 className="font-medium text-gray-700 mb-2">Entités de Rattachement ({person.entiteIds.length})</h4>
-                            <div className="space-y-2">{entites.filter(e => person.entiteIds.includes(e.id)).map(e => <RelationItem key={e.id} item={e} icon={Building} onClick={() => onNavigate('entites')} />)}</div>
+                            <div className="space-y-2">{entites.filter(e => person.entiteIds.includes(e.id)).map(e => <RelationItem key={e.id} item={e} icon={Building} onClick={() => onShowRelations(e, 'entites')} />)}</div>
                         </div>
                     </div>
                 )}
@@ -144,7 +146,7 @@ const PersonDetailPanel: React.FC<PersonDetailPanelProps> = ({ person, onClose, 
                  {activeTab === 'access' && (
                     <div className="space-y-2">
                          <h4 className="font-medium text-gray-700 mb-2">Rôles ({person.roleIds.length})</h4>
-                         {roles.filter(r => person.roleIds.includes(r.id)).map(r => <RelationItem key={r.id} item={r} icon={KeyRound} onClick={() => onNavigate('roles')} />)}
+                         {roles.filter(r => person.roleIds.includes(r.id)).map(r => <RelationItem key={r.id} item={r} icon={KeyRound} onClick={() => onShowRelations(r, 'roles')} />)}
                     </div>
                 )}
                 {activeTab === 'history' && (

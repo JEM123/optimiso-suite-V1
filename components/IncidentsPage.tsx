@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { mockData } from '../constants';
 import type { Incident, IncidentStatut, IncidentTask, IncidentCategorie, IncidentPriorite } from '../types';
 import { Plus, List, LayoutGrid, LayoutDashboard } from 'lucide-react';
@@ -7,9 +7,11 @@ import IncidentDetailPanel from './IncidentDetailPanel';
 import IncidentFormModal from './IncidentFormModal';
 import IncidentList from './IncidentList';
 import IncidentsDashboard from './IncidentsDashboard';
+import { useAppContext } from '../context/AppContext';
 
 interface IncidentsPageProps {
     onShowRelations: (entity: any, entityType: string) => void;
+    notifiedItemId: string | null;
 }
 
 const newIncidentTemplate = (): Partial<Incident> => {
@@ -23,13 +25,24 @@ const newIncidentTemplate = (): Partial<Incident> => {
     };
 };
 
-const IncidentsPage: React.FC<IncidentsPageProps> = ({ onShowRelations }) => {
+const IncidentsPage: React.FC<IncidentsPageProps> = ({ onShowRelations, notifiedItemId }) => {
+    const { clearNotifiedTarget } = useAppContext();
     const [incidents, setIncidents] = useState<Incident[]>(mockData.incidents);
-    const [view, setView] = useState<'kanban' | 'list' | 'dashboard'>('dashboard');
+    const [view, setView] = useState<'dashboard' | 'kanban' | 'list'>('dashboard');
     const [selectedIncident, setSelectedIncident] = useState<Incident | null>(null);
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editingIncident, setEditingIncident] = useState<Partial<Incident> | null>(null);
     const [filters, setFilters] = useState<{ category: string, priority: string }>({ category: 'all', priority: 'all' });
+
+    useEffect(() => {
+        if (notifiedItemId) {
+            const incidentToSelect = incidents.find(i => i.id === notifiedItemId);
+            if (incidentToSelect) {
+                setSelectedIncident(incidentToSelect);
+            }
+            clearNotifiedTarget();
+        }
+    }, [notifiedItemId, incidents, clearNotifiedTarget]);
 
     const filteredIncidents = useMemo(() => {
         return incidents.filter(i => 

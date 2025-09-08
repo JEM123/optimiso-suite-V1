@@ -1,5 +1,5 @@
-import React, { useState, useMemo } from 'react';
-import { useDataContext } from '../context/AppContext';
+import React, { useState, useMemo, useEffect } from 'react';
+import { useDataContext, useAppContext } from '../context/AppContext';
 import type { Competence } from '../types';
 import { Plus, Search, TrendingUp, Edit, Trash2, List, LayoutGrid, Calendar, Target } from 'lucide-react';
 import CompetenceDetailPanel from './CompetenceDetailPanel';
@@ -17,8 +17,13 @@ const STATUT_COLORS: Record<Competence['statut'], string> = {
 
 type CompetenceView = 'catalogue' | 'matrix' | 'campagnes' | 'mes-evaluations';
 
-const CompetencesPage: React.FC = () => {
+interface CompetencesPageProps {
+    notifiedItemId: string | null;
+}
+
+const CompetencesPage: React.FC<CompetencesPageProps> = ({ notifiedItemId }) => {
     const { data, actions } = useDataContext();
+    const { clearNotifiedTarget } = useAppContext();
     const { competences } = data as { competences: Competence[] };
     
     const [selectedCompetence, setSelectedCompetence] = useState<Competence | null>(null);
@@ -28,6 +33,15 @@ const CompetencesPage: React.FC = () => {
     const [filters, setFilters] = useState<{ domaine: string }>({ domaine: 'all' });
     const [view, setView] = useState<CompetenceView>('catalogue');
     
+    useEffect(() => {
+        if (notifiedItemId) {
+            // Notifications for this module are for evaluations to be done
+            setView('mes-evaluations');
+            // We could also pre-select the evaluation if the view supported it.
+            clearNotifiedTarget();
+        }
+    }, [notifiedItemId, clearNotifiedTarget]);
+
     const domaines = useMemo(() => [...new Set(competences.map(c => c.domaine))], [competences]);
 
     const filteredCompetences = useMemo(() => {

@@ -63,6 +63,18 @@ const StepFormModal: React.FC<StepFormModalProps> = ({ isOpen, onClose, onSave, 
                             {mockData.documents.map(d => <option key={d.id} value={d.id}>{d.nom}</option>)}
                         </select>
                     </div>
+                    <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Risques liés</label>
+                        <select multiple value={formData.risqueIds || []} onChange={(e) => handleMultiSelectChange('risqueIds', Array.from(e.target.selectedOptions, option => option.value))} className={`${formInputClasses} h-24`}>
+                            {mockData.risques.map(r => <option key={r.id} value={r.id}>{r.reference} - {r.nom}</option>)}
+                        </select>
+                    </div>
+                    <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Contrôles de maîtrise</label>
+                        <select multiple value={formData.controleIds || []} onChange={(e) => handleMultiSelectChange('controleIds', Array.from(e.target.selectedOptions, option => option.value))} className={`${formInputClasses} h-24`}>
+                            {mockData.controles.map(c => <option key={c.id} value={c.id}>{c.reference} - {c.nom}</option>)}
+                        </select>
+                    </div>
                 </div>
                 <div className="flex justify-end space-x-2 pt-4 border-t mt-4">
                     <button type="button" onClick={onClose} className="px-4 py-2 bg-white text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50 font-medium">Annuler</button>

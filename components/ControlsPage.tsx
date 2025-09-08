@@ -1,11 +1,11 @@
 import React, { useState, useMemo } from 'react';
 import { mockData } from '../constants';
 import type { Controle, ExecutionControle } from '../types';
-import { Plus, Search, List, LayoutDashboard, Edit, Trash2, PlayCircle } from 'lucide-react';
+import { Plus, Search, List, LayoutDashboard, Edit, Trash2, PlayCircle, Link as LinkIcon } from 'lucide-react';
 import ControlFormModal from './ControlFormModal';
 import ExecutionModal from './ExecutionModal';
 import ControlsDashboard from './ControlsDashboard';
-import ControlDetailPanel from './ControlDetailPanel'; // Import the new detail panel
+import ControlDetailPanel from './ControlDetailPanel';
 
 // --- UTILITY FUNCTIONS & CONSTANTS ---
 const CONTROL_STATUS_COLORS: Record<Controle['statut'], string> = {
@@ -42,8 +42,12 @@ const getAutomationStatus = (control: Controle): {text: string, color: string} =
     return { text: 'Prêt', color: 'bg-green-500' };
 };
 
+interface ControlsPageProps {
+    onShowRelations: (entity: any, entityType: string) => void;
+}
+
 // --- MAIN PAGE COMPONENT ---
-const ControlsPage: React.FC = () => {
+const ControlsPage: React.FC<ControlsPageProps> = ({ onShowRelations }) => {
     const [view, setView] = useState<'list' | 'dashboard'>('dashboard');
     const [controls, setControls] = useState<Controle[]>(mockData.controles);
     const [executions, setExecutions] = useState<ExecutionControle[]>(mockData.executionsControles);
@@ -142,6 +146,7 @@ const ControlsPage: React.FC = () => {
                                             <td className="px-4 py-2 text-sm"><span className={`px-2 py-1 text-white text-xs rounded-full ${autoStatus.color}`}>{autoStatus.text}</span></td>
                                             <td className="px-4 py-2 text-sm"><span className={`px-2 py-0.5 text-xs font-medium rounded-full capitalize ${CONTROL_STATUS_COLORS[control.statut]}`}>{control.statut}</span></td>
                                             <td className="px-4 py-2"><div className="flex items-center space-x-2">
+                                                <button onClick={(e) => { e.stopPropagation(); onShowRelations(control, 'controles'); }} title="Voir les relations" className="p-1 hover:bg-gray-200 rounded"><LinkIcon className="h-4 w-4 text-gray-500"/></button>
                                                 <button onClick={(e) => { e.stopPropagation(); handleOpenExecModal(control)}} title="Exécuter" className="p-1 hover:bg-gray-200 rounded"><PlayCircle className="h-4 w-4 text-green-600"/></button>
                                                 <button onClick={(e) => { e.stopPropagation(); handleOpenFormModal(control)}} className="p-1 hover:bg-gray-200 rounded"><Edit className="h-4 w-4 text-blue-600"/></button>
                                                 <button onClick={(e) => { e.stopPropagation(); handleDeleteControl(control.id)}} className="p-1 hover:bg-gray-200 rounded"><Trash2 className="h-4 w-4 text-red-600"/></button>
@@ -155,7 +160,7 @@ const ControlsPage: React.FC = () => {
                 </div>
             </div>
             
-            {selectedControl && <ControlDetailPanel control={selectedControl} onClose={() => setSelectedControl(null)} onEdit={handleOpenFormModal} />}
+            {selectedControl && <ControlDetailPanel control={selectedControl} onClose={() => setSelectedControl(null)} onEdit={handleOpenFormModal} onShowRelations={onShowRelations} />}
             <ControlFormModal isOpen={isFormModalOpen} onClose={() => setFormModalOpen(false)} onSave={handleSaveControl} control={editingControl} />
             {executingExecution && <ExecutionModal isOpen={isExecModalOpen} onClose={() => setExecModalOpen(false)} onSave={handleSaveExecution} execution={executingExecution} />}
         </div>
