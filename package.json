@@ -9,10 +9,10 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "react-dom": "^19.1.1",
     "react": "^19.1.1",
-    "lucide-react": "0.400.0",
-    "reactflow": "11.11.4",
-    "react-dom": "^19.1.1"
+    "lucide-react": "^0.542.0",
+    "reactflow": "11.11.4"
   },
   "devDependencies": {
     "@types/node": "^22.14.0",
