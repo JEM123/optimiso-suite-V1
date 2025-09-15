@@ -83,7 +83,7 @@ export interface CampagneEvaluation extends BaseEntity {
     periodeFin: Date;
     personnesCiblesIds: string[];
     postesCiblesIds: string[];
-    entitesCiblesIds: string[];
+    entitesCiblesIds?: string[];
     competencesCiblesIds: string[];
     methodes: ('Manager' | 'Auto-évaluation' | '360')[];
 }
@@ -156,25 +156,29 @@ export interface Document extends BaseEntity {
 export interface EtapeProcedure {
   id: string;
   libelle: string;
-  responsablePosteId: string; // Lien vers Poste
+  responsablePosteId?: string;
   description?: string;
-  entreesIds: string[]; // Liens vers Documents
-  sortiesIds: string[]; // Liens vers Documents
+  entreesIds?: string[];
+  sortiesIds?: string[];
   ordre: number;
   position: { x: number; y: number; };
+  type: 'start' | 'end' | 'step' | 'decision';
   risqueIds?: string[];
   controleIds?: string[];
 }
 
 export interface ProcedureLien {
     id: string;
-    source: string; // EtapeProcedure ID
-    target: string; // EtapeProcedure ID
+    source: string;
+    target: string;
+    sourceHandle?: string | null;
+    targetHandle?: string | null;
+    label?: string;
 }
 
 export interface Procedure extends BaseEntity {
   version: string;
-  acteursPosteIds: string[]; // Liens vers Postes
+  acteursPosteIds: string[];
   documentIds: string[];
   risqueIds: string[];
   controleIds: string[];

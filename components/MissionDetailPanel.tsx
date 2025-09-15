@@ -82,7 +82,7 @@ const MissionDetailPanel: React.FC<MissionDetailPanelProps> = ({ mission, onClos
                 </div>}
 
                 {activeTab === 'liens' && <div className="space-y-4">
-                    <div><h4 className="font-semibold text-gray-800 mb-2">Interfaces (SIPOC)</h4><div className="grid grid-cols-2 gap-4"><DetailItem label="Entrées" value={mission.entrees} /><DetailItem label="Sorties" value={mission.sorties} /></div></div>
+                    <div><h4 className="font-semibold text-gray-800 mb-2">Interfaces (SIPOC)</h4><div className="grid grid-cols-2 gap-4 text-sm"><DetailItem label="Entrées" value={mission.entrees} /><DetailItem label="Sorties" value={mission.sorties} /></div></div>
                     <div><h4 className="font-semibold text-gray-800 mb-2">Processus ({linkedProcessus.length})</h4><div className="space-y-2">{linkedProcessus.map((item: any) => <RelationItem key={item.id} item={item} icon={Target} />)}</div></div>
                     <div><h4 className="font-semibold text-gray-800 mb-2">Procédures ({linkedProcedures.length})</h4><div className="space-y-2">{linkedProcedures.map((item: any) => <RelationItem key={item.id} item={item} icon={Settings} />)}</div></div>
                     <div><h4 className="font-semibold text-gray-800 mb-2">Documents ({linkedDocuments.length})</h4><div className="space-y-2">{linkedDocuments.map((item: any) => <RelationItem key={item.id} item={item} icon={FileText} />)}</div></div>

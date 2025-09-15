@@ -21,6 +21,7 @@ import CompetencesPage from './CompetencesPage';
 import MissionsPage from './MissionsPage';
 import ProcessusPage from './ProcessusPage';
 import NewsPage from './NewsPage';
+import PageHeader from './PageHeader'; // Importation générique pour les placeholders
 
 // --- PROPS INTERFACES ---
 
@@ -35,13 +36,18 @@ interface ModulePageProps {
 // --- MODULE-SPECIFIC VIEW COMPONENTS (Defined outside main component) ---
 
 const GenericModulePlaceholder: React.FC<{ name: string; icon: React.ElementType }> = ({ name, icon: Icon }) => (
-    <div className="bg-white rounded-lg shadow-sm border p-8 text-center">
-        <div className="flex items-center justify-center w-16 h-16 bg-gray-100 rounded-full mx-auto mb-4"><Icon className="h-8 w-8 text-gray-400" /></div>
-        <h2 className="text-xl font-semibold text-gray-900 mb-2">Module {name}</h2>
-        <p className="text-gray-600 mb-6">Ce module est en cours de développement.</p>
-        <button className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 font-medium">Commencer la configuration</button>
+    <div className="h-full flex flex-col">
+        <PageHeader title={name} icon={Icon} description={`Le module ${name} est en cours de développement.`} />
+        <div className="flex-grow p-6 bg-gray-50 flex items-center justify-center">
+            <div className="text-center">
+                <Icon className="h-16 w-16 text-gray-300 mx-auto mb-4" />
+                <h2 className="text-xl font-semibold text-gray-700">Bientôt disponible</h2>
+                <p className="text-gray-500 mt-2">Cette fonctionnalité sera bientôt prête pour vous.</p>
+            </div>
+        </div>
     </div>
 );
+
 
 // --- MAIN PAGE COMPONENT ---
 
@@ -78,7 +84,7 @@ const ModulePage: React.FC<ModulePageProps> = ({ moduleId, onShowRelations, onSh
     // The specific page components now handle their own headers.
     // This component is now just a router.
     return (
-        <div className="h-full">
+        <div className="h-full bg-gray-50">
             {renderModuleContent()}
         </div>
     );

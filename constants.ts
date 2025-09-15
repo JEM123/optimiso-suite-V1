@@ -210,7 +210,6 @@ export const mockData = {
   raci: [
       { id: 'raci-1', posteId: 'pos-2', objetId: 'p-l2-fin-01', objetType: 'processus', role: 'A' },
       { id: 'raci-2', posteId: 'pos-3', objetId: 'p-l2-fin-01', objetType: 'processus', role: 'R' },
-      { id: 'raci-3', posteId: 'pos-4', objetId: 'p-l2-rh-01', objetType: 'processus', role: 'A' },
       { id: 'raci-4', posteId: 'pos-1', objetId: 'ctrl-1', objetType: 'controle', role: 'C' },
       { id: 'raci-5', posteId: 'pos-2', objetId: 'ctrl-1', objetType: 'controle', role: 'A' },
   ] as RACI[],
@@ -255,11 +254,13 @@ export const mockData = {
       risqueIds: ['RSK-001'], 
       controleIds: ['ctrl-2'], 
       etapes: [ 
-        { id: 'etape-1-1', ordre: 1, libelle: 'Expression du besoin', responsablePosteId: 'pos-4', entreesIds: [], sortiesIds: ['doc-form-recrut'], position: { x: 250, y: 50 } }, 
-        { id: 'etape-1-2', ordre: 2, libelle: 'Validation Managériale', responsablePosteId: 'pos-1', entreesIds: ['doc-form-recrut'], sortiesIds: [], position: { x: 250, y: 200 } }, 
+        { id: 'etape-1-1', type: 'start', ordre: 1, libelle: 'Expression du besoin', responsablePosteId: 'pos-4', entreesIds: [], sortiesIds: ['doc-form-recrut'], position: { x: 250, y: 50 } }, 
+        { id: 'etape-1-2', type: 'step', ordre: 2, libelle: 'Validation Managériale', responsablePosteId: 'pos-1', entreesIds: ['doc-form-recrut'], sortiesIds: [], position: { x: 250, y: 200 } }, 
+        { id: 'etape-1-3', type: 'end', ordre: 3, libelle: 'Besoin validé', position: { x: 250, y: 350 } }
       ],
       liens: [
-        { id: 'l-1-1-2', source: 'etape-1-1', target: 'etape-1-2' }
+        { id: 'l-1-1-2', source: 'etape-1-1', target: 'etape-1-2' },
+        { id: 'l-1-2-3', source: 'etape-1-2', target: 'etape-1-3' }
       ]
     },
     { 
@@ -277,13 +278,20 @@ export const mockData = {
       risqueIds: ['RSK-002'], 
       controleIds: ['ctrl-1'], 
       etapes: [ 
-        { id: 'etape-2-1', ordre: 1, libelle: 'Rapprochement bancaire', responsablePosteId: 'pos-3', entreesIds: [], sortiesIds: [], position: { x: 250, y: 50 } },
-        { id: 'etape-2-2', ordre: 2, libelle: 'Vérification des factures', responsablePosteId: 'pos-3', entreesIds: [], sortiesIds: [], position: { x: 250, y: 200 } },
-        { id: 'etape-2-3', ordre: 3, libelle: 'Validation par le CFO', responsablePosteId: 'pos-2', entreesIds: [], sortiesIds: [], position: { x: 250, y: 350 }, risqueIds: ['RSK-002'], controleIds: ['ctrl-1'] }
+        { id: 'p2-start', type: 'start', ordre: 1, libelle: 'Rapprochement bancaire', responsablePosteId: 'pos-3', position: { x: 350, y: 25 } },
+        { id: 'p2-step1', type: 'step', ordre: 2, libelle: 'Vérification des factures', responsablePosteId: 'pos-3', position: { x: 350, y: 150 } },
+        { id: 'p2-decision', type: 'decision', ordre: 3, libelle: 'Écarts détectés ?', position: { x: 350, y: 275 } },
+        { id: 'p2-step-yes', type: 'step', ordre: 4, libelle: 'Analyser et corriger', responsablePosteId: 'pos-3', position: { x: 150, y: 400 } },
+        { id: 'p2-step-no', type: 'step', ordre: 5, libelle: 'Validation par le CFO', responsablePosteId: 'pos-2', position: { x: 550, y: 400 }, risqueIds: ['RSK-002'], controleIds: ['ctrl-1'] },
+        { id: 'p2-end', type: 'end', ordre: 6, libelle: 'Clôture mensuelle OK', position: { x: 350, y: 525 } }
       ],
       liens: [
-        { id: 'l-2-1-2', source: 'etape-2-1', target: 'etape-2-2' },
-        { id: 'l-2-2-3', source: 'etape-2-2', target: 'etape-2-3' }
+        { id: 'l-p2-start-s1', source: 'p2-start', target: 'p2-step1' },
+        { id: 'l-p2-s1-d1', source: 'p2-step1', target: 'p2-decision' },
+        { id: 'l-p2-d1-yes', source: 'p2-decision', sourceHandle: 'yes', target: 'p2-step-yes', label: 'Oui' },
+        { id: 'l-p2-d1-no', source: 'p2-decision', sourceHandle: 'no', target: 'p2-step-no', label: 'Non' },
+        { id: 'l-p2-yes-end', source: 'p2-step-yes', target: 'p2-end' },
+        { id: 'l-p2-no-end', source: 'p2-step-no', target: 'p2-end' }
       ]
     },
   ] as Procedure[],
