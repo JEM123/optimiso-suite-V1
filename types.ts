@@ -61,6 +61,7 @@ export interface Competence extends BaseEntity {
   liensControlesIds?: string[];
   liensNormesIds?: string[];
   entitesConcerneesIds?: string[];
+  champsLibres?: Record<string, any>;
   actif: boolean;
 }
 
@@ -129,6 +130,7 @@ export interface Personne extends BaseEntity {
   entiteIds: string[]; // Direct entity attachments
   roleIds: string[];
   synchroniseAzureAD: boolean;
+  champsLibres?: Record<string, any>;
 }
 
 export interface CategorieDocument extends BaseEntity {
@@ -666,4 +668,26 @@ export interface Notification {
     userId?: string; // If undefined, it's for everyone
     targetModule: string;
     targetId: string;
+}
+
+// --- SETTINGS MODULE TYPES ---
+export type CustomFieldType = 'text' | 'number' | 'date' | 'textarea' | 'select';
+
+export interface CustomFieldDef {
+    id: string;
+    name: string;
+    type: CustomFieldType;
+    options?: string[]; // For 'select' type
+    required: boolean;
+}
+
+export interface ReferenceFormat {
+    prefix: string;
+    digits: number;
+}
+
+export interface ISettings {
+    modules: Record<string, { visible: boolean }>;
+    references: Record<string, ReferenceFormat>;
+    customFields: Record<string, CustomFieldDef[]>;
 }

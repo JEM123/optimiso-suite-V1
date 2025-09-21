@@ -65,8 +65,8 @@ const FluxFormModal: React.FC<FluxFormModalProps> = ({ isOpen, onClose, onSave, 
     return (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
             <form onSubmit={handleSubmit} className="bg-white rounded-lg max-w-4xl w-full flex flex-col shadow-2xl animate-fade-in-up max-h-[90vh]">
-                <div className="p-4 border-b flex justify-between items-center"><h2 className="text-xl font-semibold">{formData.id ? 'Modifier le Flux' : 'Nouveau Flux'}</h2><button type="button" onClick={onClose}><X/></button></div>
-                <div className="flex-grow p-4 overflow-y-auto">
+                 <div className="p-4 border-b flex justify-between items-center"><h2 className="text-xl font-semibold">{formData.id ? 'Modifier le Flux' : 'Nouveau Flux'}</h2><button type="button" onClick={onClose}><X/></button></div>
+                 <div className="flex-grow p-4 overflow-y-auto">
                      <nav className="flex space-x-4 border-b mb-4">
                         <button type="button" onClick={() => setActiveTab('general')} className={`py-2 px-1 text-sm font-medium ${activeTab === 'general' ? 'border-b-2 border-blue-600' : ''}`}>Général</button>
                         <button type="button" onClick={() => setActiveTab('etapes')} className={`py-2 px-1 text-sm font-medium ${activeTab === 'etapes' ? 'border-b-2 border-blue-600' : ''}`}>Étapes</button>
@@ -91,7 +91,7 @@ const FluxFormModal: React.FC<FluxFormModalProps> = ({ isOpen, onClose, onSave, 
                     </div>}
                 </div>
                 <div className="p-4 border-t flex justify-end space-x-2 bg-gray-50">
-                    <button type="button" onClick={onClose} className="px-4 py-2 bg-white border border-gray-300 rounded-lg">Annuler</button>
+                    <button type="button" onClick={onClose} className="px-4 py-2 bg-white text-gray-700 border border-gray-300 rounded-lg">Annuler</button>
                     <button type="submit" className="px-4 py-2 bg-blue-600 text-white rounded-lg">Sauvegarder</button>
                 </div>
             </form>

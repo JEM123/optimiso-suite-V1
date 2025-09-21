@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import type { Processus } from '../types';
-import { useDataContext } from '../context/AppContext';
+import { useDataContext, useAppContext } from '../context/AppContext';
 import { X, Edit, Info, Users, BookOpen, Link as LinkIcon, Briefcase, FileText, Settings, CheckCircle, BarChart3, AlertTriangle, GitMerge, ChevronUp, ChevronDown, Workflow } from 'lucide-react';
 
 interface ProcessusDetailPanelProps {
@@ -19,10 +19,14 @@ const DetailItem: React.FC<{ label: string; value: React.ReactNode }> = ({ label
 
 const ProcessusDetailPanel: React.FC<ProcessusDetailPanelProps> = ({ processus, onClose, onEdit, onShowRelations }) => {
     const { data } = useDataContext();
+    const { settings } = useAppContext();
     const parent = (data.processus as Processus[]).find(p => p.id === processus.parentId);
     const children = (data.processus as Processus[]).filter(p => p.parentId === processus.id);
     const proprietaire = (data.postes as any[]).find((p: any) => p.id === processus.proprietaireProcessusId);
     
+    const customFieldDefs = settings.customFields.processus || [];
+    const hasCustomFields = customFieldDefs.length > 0 && processus.champsLibres && Object.keys(processus.champsLibres).some(key => processus.champsLibres[key]);
+
     return (
         <div className="w-full max-w-lg bg-white border-l shadow-lg flex flex-col h-full absolute right-0 top-0 md:relative animate-slide-in-right">
             <div className="p-4 border-b flex items-center justify-between bg-gray-50">
@@ -61,6 +65,19 @@ const ProcessusDetailPanel: React.FC<ProcessusDetailPanelProps> = ({ processus, 
                         <DetailItem label="Clients" value={processus.clients} />
                     </div>
                 </div>
+
+                {hasCustomFields && (
+                    <div>
+                        <h4 className="font-semibold text-gray-800 mb-2">Champs Libres</h4>
+                        <div className="space-y-3 mt-2 bg-white p-3 border rounded-md">
+                            {customFieldDefs.map(field => {
+                                const value = processus.champsLibres?.[field.name];
+                                if (!value) return null;
+                                return <DetailItem key={field.id} label={field.name} value={String(value)} />;
+                            })}
+                        </div>
+                    </div>
+                )}
             </div>
         </div>
     );

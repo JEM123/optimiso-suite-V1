@@ -1,12 +1,47 @@
+
 import React, { useState, useMemo, useEffect } from 'react';
 import type { Risque } from '../types';
-import { Plus, Search, Trash2, Edit, X, Info, ShieldCheck, TrendingUp, Link as LinkIcon, List, LayoutGrid, Map, Lock, Unlock, Filter, Download, AlertTriangle } from 'lucide-react';
+import { Plus, Search, Trash2, Edit, X, Info, ShieldCheck, TrendingUp, Link as LinkIcon, List, LayoutGrid, Map as MapIcon, Lock, Unlock, Filter, Download, AlertTriangle, Building2, FileSpreadsheet } from 'lucide-react';
 import RiskDetailPanel from './RiskDetailPanel';
-import RiskMap from './RiskMap';
+import RiskMatrix from './RiskMap';
 import PageHeader from './PageHeader';
 import { useDataContext, useAppContext } from '../context/AppContext';
 
 // --- UTILITY FUNCTIONS & CONSTANTS ---
+const exportToCsv = (filename: string, rows: object[]) => {
+    if (!rows || rows.length === 0) {
+        alert("Aucune donnée à exporter.");
+        return;
+    }
+    const separator = ';';
+    const keys = Object.keys(rows[0]);
+    const csvContent =
+        keys.join(separator) +
+        '\n' +
+        rows.map(row => {
+            return keys.map(k => {
+                let cell = (row as any)[k] === null || (row as any)[k] === undefined ? '' : (row as any)[k];
+                cell = String(cell).replace(/"/g, '""');
+                if (cell.search(/("|,|\n)/g) >= 0) {
+                    cell = `"${cell}"`;
+                }
+                return cell;
+            }).join(separator);
+        }).join('\n');
+
+    const blob = new Blob([`\uFEFF${csvContent}`], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    if (link.download !== undefined) {
+        const url = URL.createObjectURL(blob);
+        link.setAttribute('href', url);
+        link.setAttribute('download', filename);
+        link.style.visibility = 'hidden';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    }
+};
+
 const RISK_STATUS_COLORS: Record<Risque['statut'], string> = {
     'brouillon': 'bg-gray-200 text-gray-800', 'valide': 'bg-blue-100 text-blue-800', 'figé': 'bg-indigo-100 text-indigo-800', 'archive': 'bg-red-100 text-red-800', 'en_cours': 'bg-yellow-100 text-yellow-800', 'à_créer': 'bg-cyan-100 text-cyan-800', 'en_recrutement': 'bg-yellow-100 text-yellow-800', 'gelé': 'bg-purple-100 text-purple-800', 'planifié': 'bg-blue-100 text-blue-800', 'terminé': 'bg-green-100 text-green-800', 'non-conforme': 'bg-red-200 text-red-900', 'clôturé': 'bg-gray-300 text-gray-800', 'a_faire': 'bg-yellow-100 text-yellow-800', 'en_retard': 'bg-red-200 text-red-900', 'en_validation': 'bg-yellow-100 text-yellow-800', 'publie': 'bg-green-100 text-green-800', 'rejete': 'bg-red-100 text-red-800',
 };
@@ -24,6 +59,81 @@ interface RisksPageProps {
     onShowRelations: (entity: any, entityType: string) => void;
     notifiedItemId: string | null;
 }
+
+// --- SUB-COMPONENTS ---
+
+const RiskCartography: React.FC<{ 
+    risks: Risque[], 
+    analysisType: keyof Pick<Risque, 'analyseInherente' | 'analyseResiduelle' | 'analyseFuture'> 
+}> = ({ risks, analysisType }) => {
+    const { data } = useDataContext();
+    const allEntities = data.entites as any[];
+
+    const risksByEntity = useMemo(() => {
+        const byEntity = new Map<string, { critical: number, high: number, medium: number, low: number, risks: Risque[] }>();
+        
+        allEntities.forEach(entity => {
+            byEntity.set(entity.id, { critical: 0, high: 0, medium: 0, low: 0, risks: [] });
+        });
+
+        risks.forEach(risk => {
+            const evalData = risk[analysisType];
+            if (!evalData) return;
+            const level = evalData.probabilite * evalData.impact;
+            // Use a set to prevent double counting if a risk is linked to an entity and its parent
+            const uniqueEntityIds = new Set(risk.entiteIds);
+            uniqueEntityIds.forEach(entiteId => {
+                if (byEntity.has(entiteId)) {
+                    const current = byEntity.get(entiteId)!;
+                    current.risks.push(risk);
+                    if (level >= 16) current.critical++;
+                    else if (level >= 10) current.high++;
+                    else if (level >= 5) current.medium++;
+                    else current.low++;
+                }
+            });
+        });
+        return byEntity;
+    }, [risks, analysisType, allEntities]);
+    
+    return (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {allEntities.map(entity => {
+                const entityRisks = risksByEntity.get(entity.id);
+                if (!entityRisks || entityRisks.risks.length === 0) return null;
+
+                return (
+                    <div key={entity.id} className="bg-white p-4 rounded-lg shadow-sm border">
+                        <h3 className="font-semibold text-gray-800 flex items-center gap-2">
+                            <Building2 className="h-5 w-5 text-blue-600" />
+                            {entity.nom}
+                        </h3>
+                        <p className="text-xs text-gray-500 mb-4">Total des risques : {entityRisks.risks.length}</p>
+                        <div className="grid grid-cols-2 gap-3 text-center">
+                            <div className="p-2 rounded bg-red-100 text-red-800">
+                                <div className="text-2xl font-bold">{entityRisks.critical}</div>
+                                <div className="text-xs font-medium">Critiques</div>
+                            </div>
+                            <div className="p-2 rounded bg-orange-100 text-orange-800">
+                                <div className="text-2xl font-bold">{entityRisks.high}</div>
+                                <div className="text-xs font-medium">Élevés</div>
+                            </div>
+                            <div className="p-2 rounded bg-yellow-100 text-yellow-800">
+                                <div className="text-2xl font-bold">{entityRisks.medium}</div>
+                                <div className="text-xs font-medium">Moyens</div>
+                            </div>
+                             <div className="p-2 rounded bg-green-100 text-green-800">
+                                <div className="text-2xl font-bold">{entityRisks.low}</div>
+                                <div className="text-xs font-medium">Faibles</div>
+                            </div>
+                        </div>
+                    </div>
+                )
+            })}
+        </div>
+    );
+};
+
 
 // --- MAIN PAGE COMPONENT ---
 const RisksPage: React.FC<RisksPageProps> = ({ onShowRelations, notifiedItemId }) => {
@@ -60,6 +170,7 @@ const RisksPage: React.FC<RisksPageProps> = ({ onShowRelations, notifiedItemId }
     }, [risques, searchTerm, filters]);
 
     const handleOpenModal = (risk?: Risque) => { 
+        // FIX: `newRiskTemplate` is a factory function, not a constructor. The `new` keyword should be removed.
         setEditingRisk(risk || newRiskTemplate(processus, 'pers-1')); 
         setIsModalOpen(true); 
     };
@@ -86,9 +197,28 @@ const RisksPage: React.FC<RisksPageProps> = ({ onShowRelations, notifiedItemId }
         setSelectedRisk(risk);
         if(view !== 'list') setView('list');
     }
+    
+    const handleExportCsv = () => {
+        const dataToExport = filteredRisks.map(risk => {
+            const proc = processus.find(p => p.id === risk.processusId);
+            return {
+                Reference: risk.reference,
+                Nom: risk.nom,
+                Processus: proc?.nom || '',
+                'Probabilite Inhérente': risk.analyseInherente.probabilite,
+                'Impact Inhérent': risk.analyseInherente.impact,
+                'Niveau Inhérent': risk.analyseInherente.probabilite * risk.analyseInherente.impact,
+                'Probabilite Résiduelle': risk.analyseResiduelle.probabilite,
+                'Impact Résiduel': risk.analyseResiduelle.impact,
+                'Niveau Résiduel': risk.analyseResiduelle.probabilite * risk.analyseResiduelle.impact,
+                Statut: risk.statut,
+            };
+        });
+        exportToCsv('export_risques.csv', dataToExport);
+    };
 
     const pageActions = [
-        { label: "Exporter", icon: Download, onClick: () => alert("Exporting..."), variant: 'secondary' as const },
+        { label: "Exporter CSV", icon: FileSpreadsheet, onClick: handleExportCsv, variant: 'secondary' as const },
         { label: "Nouveau Risque", icon: Plus, onClick: () => handleOpenModal(), variant: 'primary' as const }
     ];
 
@@ -107,7 +237,7 @@ const RisksPage: React.FC<RisksPageProps> = ({ onShowRelations, notifiedItemId }
                             <div className="flex bg-gray-100 rounded-lg p-1">
                                 <button onClick={() => setView('list')} className={`px-3 py-1.5 rounded-md text-sm font-medium flex items-center gap-1.5 ${view === 'list' ? 'bg-white text-blue-600 shadow-sm' : 'text-gray-600'}`}><List className="h-4 w-4"/>Liste</button>
                                 <button onClick={() => setView('matrix')} className={`px-3 py-1.5 rounded-md text-sm font-medium flex items-center gap-1.5 ${view === 'matrix' ? 'bg-white text-blue-600 shadow-sm' : 'text-gray-600'}`}><LayoutGrid className="h-4 w-4"/>Matrice</button>
-                                <button onClick={() => setView('map')} className={`px-3 py-1.5 rounded-md text-sm font-medium flex items-center gap-1.5 ${view === 'map' ? 'bg-white text-blue-600 shadow-sm' : 'text-gray-600'}`}><Map className="h-4 w-4"/>Cartographie</button>
+                                <button onClick={() => setView('map')} className={`px-3 py-1.5 rounded-md text-sm font-medium flex items-center gap-1.5 ${view === 'map' ? 'bg-white text-blue-600 shadow-sm' : 'text-gray-600'}`}><MapIcon className="h-4 w-4"/>Cartographie</button>
                             </div>
                             {(view === 'matrix' || view === 'map') && (
                                 <select value={analysisType} onChange={e => setAnalysisType(e.target.value as any)} className="border rounded-lg py-1.5 px-2 text-sm bg-white">
@@ -149,10 +279,10 @@ const RisksPage: React.FC<RisksPageProps> = ({ onShowRelations, notifiedItemId }
                             </div>
                         )}
                         {view === 'matrix' && (
-                             <div className="text-center p-8">Vue Matrice en construction.</div>
+                             <RiskMatrix risks={filteredRisks} analysisType={analysisType} onSelectRisk={handleSelectRisk} />
                         )}
                         {view === 'map' && (
-                           <RiskMap risks={filteredRisks} analysisType={analysisType} onSelectRisk={handleSelectRisk} />
+                           <RiskCartography risks={filteredRisks} analysisType={analysisType} />
                         )}
                     </div>
                 </div>

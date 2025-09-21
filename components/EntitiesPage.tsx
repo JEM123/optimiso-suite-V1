@@ -1,13 +1,46 @@
 
-
-
-
 import React, { useState, useMemo } from 'react';
 import { mockData } from '../constants';
-import type { Entite, Personne, Poste, Risque } from '../types';
+import type { Entite, Personne, Poste, Risque, CustomFieldDef } from '../types';
 import { Users, Briefcase, Link as LinkIcon, Edit, Plus, ChevronDown, ChevronRight, Building, Layers, Component, Shield, List, Workflow, Search, Filter, Trash2, ArrowUp, ArrowDown, History, Download, FileSpreadsheet, Image } from 'lucide-react';
+import { useAppContext } from '../context/AppContext';
+import { EntiteFormModal } from './EntiteFormModal';
 
 // --- UTILITY FUNCTIONS & CONSTANTS ---
+const exportToCsv = (filename: string, rows: object[]) => {
+    if (!rows || rows.length === 0) {
+        alert("Aucune donnée à exporter.");
+        return;
+    }
+    const separator = ';';
+    const keys = Object.keys(rows[0]);
+    const csvContent =
+        keys.join(separator) +
+        '\n' +
+        rows.map(row => {
+            return keys.map(k => {
+                let cell = (row as any)[k] === null || (row as any)[k] === undefined ? '' : (row as any)[k];
+                cell = String(cell).replace(/"/g, '""');
+                if (cell.search(/("|,|\n)/g) >= 0) {
+                    cell = `"${cell}"`;
+                }
+                return cell;
+            }).join(separator);
+        }).join('\n');
+
+    const blob = new Blob([`\uFEFF${csvContent}`], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    if (link.download !== undefined) {
+        const url = URL.createObjectURL(blob);
+        link.setAttribute('href', url);
+        link.setAttribute('download', filename);
+        link.style.visibility = 'hidden';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    }
+};
+
 
 const buildTree = (entities: Entite[], parentId?: string): (Entite & { children: any[] })[] => {
   return entities
@@ -72,11 +105,15 @@ const OrgNode: React.FC<{ node: Entite & { children: any[] }; onSelect: (entity:
 
 const EntityDetailPanel: React.FC<{ entity: Entite; onClose: () => void; onEdit: (e: Entite) => void; onAddSub: (e: Entite) => void; onReorder: (childId: string, direction: 'up' | 'down') => void; allEntities: Entite[] }> = ({ entity, onClose, onEdit, onAddSub, onReorder, allEntities }) => {
     const [activeTab, setActiveTab] = useState('details');
+    const { settings } = useAppContext();
     const { personnes, postes, risques } = mockData;
     
     const responsable = personnes.find(p => p.id === entity.responsableId);
     const parent = allEntities.find(p => p.id === entity.parentId);
     const children = allEntities.filter(c => c.parentId === entity.id).sort((a,b) => a.ordre - b.ordre);
+
+    const customFieldDefs = settings.customFields.entites || [];
+    const hasCustomFields = customFieldDefs.length > 0 && entity.champsLibres && Object.keys(entity.champsLibres).some(key => entity.champsLibres[key]);
 
     const attachments = useMemo(() => ({
         personnes: personnes.filter(p => p.entiteIds.includes(entity.id)),
@@ -85,7 +122,7 @@ const EntityDetailPanel: React.FC<{ entity: Entite; onClose: () => void; onEdit:
     }), [entity.id, personnes, postes, risques]);
     
     const DetailItem = ({ label, value }: { label: string; value: React.ReactNode }) => (
-        <div><p className="text-sm font-semibold text-gray-700">{label}</p><p className="text-sm text-gray-900 mt-1">{value || '-'}</p></div>
+        <div><p className="text-sm font-semibold text-gray-700">{label}</p><div className="text-sm text-gray-900 mt-1">{value || '-'}</div></div>
     );
     
     return (
@@ -114,6 +151,19 @@ const EntityDetailPanel: React.FC<{ entity: Entite; onClose: () => void; onEdit:
                     <DetailItem label="Email de contact" value={entity.emailContact} />
                     <DetailItem label="Téléphone" value={entity.telephoneContact} />
                     <DetailItem label="Adresse" value={entity.siteAdresse} />
+
+                    {hasCustomFields && (
+                        <div className="pt-4 mt-4 border-t">
+                             <h4 className="text-base font-semibold text-gray-800 mb-3">Informations complémentaires</h4>
+                             <div className="space-y-3">
+                                {customFieldDefs.map(field => {
+                                    const value = entity.champsLibres?.[field.name];
+                                    if (!value) return null;
+                                    return <DetailItem key={field.id} label={field.name} value={String(value)} />;
+                                })}
+                            </div>
+                        </div>
+                    )}
                 </div>}
                  {activeTab === 'hierarchy' && <div className="space-y-4">
                      <DetailItem label="Parent" value={parent ? `${parent.nom} (${parent.code})` : 'Aucun (racine)'} />
@@ -158,6 +208,8 @@ export const EntitiesPage: React.FC = () => {
     const [entities, setEntities] = useState<Entite[]>(mockData.entites as Entite[]);
     const [searchTerm, setSearchTerm] = useState('');
     const [filters, setFilters] = useState<{ type: string, statut: string }>({ type: 'all', statut: 'all' });
+    const [isModalOpen, setIsModalOpen] = useState(false);
+    const [editingEntity, setEditingEntity] = useState<Partial<Entite> | null>(null);
 
     const entityTree = useMemo(() => buildTree(entities), [entities]);
     
@@ -172,6 +224,47 @@ export const EntitiesPage: React.FC = () => {
     const handleReorderChild = (childId: string, direction: 'up' | 'down') => {
         // This is a mock implementation. A real app would have a more robust state management.
         console.log(`Reordering ${childId} ${direction}`);
+    };
+    
+    const handleOpenModal = (entity?: Partial<Entite>) => {
+        setEditingEntity(entity || {});
+        setIsModalOpen(true);
+    };
+
+    const handleAddSub = (parentEntity: Entite) => {
+        handleOpenModal({ parentId: parentEntity.id });
+    };
+
+    const handleSaveEntity = (entityToSave: Entite) => {
+        if (entityToSave.id) {
+            const updatedEntity = { ...entities.find(e => e.id === entityToSave.id), ...entityToSave, dateModification: new Date() } as Entite;
+            setEntities(entities.map(e => e.id === entityToSave.id ? updatedEntity : e));
+            if(selectedEntity?.id === updatedEntity.id) setSelectedEntity(updatedEntity);
+        } else {
+            const newEntity = { ...entityToSave, id: `ent-${Date.now()}`, reference: entityToSave.code || `E${Date.now()}` } as Entite;
+            setEntities([...entities, newEntity]);
+        }
+        setIsModalOpen(false);
+    };
+
+    const handleExportCsv = () => {
+        const dataToExport = filteredEntities.map(entity => {
+            const responsable = mockData.personnes.find(p => p.id === entity.responsableId);
+            return {
+                Reference: entity.reference,
+                Nom: entity.nom,
+                Code: entity.code,
+                Type: entity.type,
+                Responsable: responsable ? `${responsable.prenom} ${responsable.nom}` : '',
+                Statut: entity.statut.replace(/_/g, ' '),
+                Confidentialite: entity.confidentialite,
+            };
+        });
+        exportToCsv('export_entites.csv', dataToExport);
+    };
+    
+    const handleExportPng = () => {
+        alert("La fonctionnalité d'export PNG est en cours de développement.");
     };
 
     return (
@@ -189,12 +282,14 @@ export const EntitiesPage: React.FC = () => {
                         </div>
                     </div>
                      <div className="flex items-center gap-2">
-                        <button className="flex items-center space-x-2 bg-green-600 text-white px-3 py-1.5 rounded-lg hover:bg-green-700 text-sm"><Plus className="h-4 w-4" /><span>Ajouter une entité</span></button>
+                        <button onClick={() => handleOpenModal()} className="flex items-center space-x-2 bg-green-600 text-white px-3 py-1.5 rounded-lg hover:bg-green-700 text-sm"><Plus className="h-4 w-4" /><span>Ajouter une entité</span></button>
                         <div className="relative group">
                             <button className="flex items-center space-x-2 bg-white border border-gray-300 px-3 py-1.5 rounded-lg hover:bg-gray-50 text-sm"><Download className="h-4 w-4" /><span>Exporter</span></button>
-                            <div className="absolute right-0 top-full mt-1 w-48 bg-white border rounded-lg shadow-lg opacity-0 group-hover:opacity-100 invisible group-hover:visible transition-opacity z-10">
-                                <a href="#" className="flex items-center gap-2 px-3 py-2 hover:bg-gray-100 text-sm"><FileSpreadsheet className="h-4 w-4 text-green-600"/>Exporter la liste (CSV)</a>
-                                <a href="#" className="flex items-center gap-2 px-3 py-2 hover:bg-gray-100 text-sm"><Image className="h-4 w-4 text-blue-600"/>Exporter l'arbre (PNG)</a>
+                            <div className="absolute right-0 top-full mt-1 w-52 bg-white border rounded-lg shadow-lg opacity-0 group-hover:opacity-100 invisible group-hover:visible transition-opacity z-10">
+                                <button onClick={handleExportCsv} className="w-full text-left flex items-center gap-2 px-3 py-2 hover:bg-gray-100 text-sm"><FileSpreadsheet className="h-4 w-4 text-green-600"/>Exporter la liste (CSV)</button>
+                                {view === 'organigram' && 
+                                    <button onClick={handleExportPng} className="w-full text-left flex items-center gap-2 px-3 py-2 hover:bg-gray-100 text-sm"><Image className="h-4 w-4 text-blue-600"/>Exporter l'arbre (PNG)</button>
+                                }
                             </div>
                         </div>
                     </div>
@@ -209,7 +304,7 @@ export const EntitiesPage: React.FC = () => {
                 <div className="flex-1 overflow-auto p-4">
                     {view === 'organigram' && entityTree.map((rootNode) => (
                         <div key={rootNode.id} className="relative before:absolute before:top-0 before:left-4 before:w-px before:h-full before:bg-gray-200">
-                           <OrgNode node={rootNode} onSelect={setSelectedEntity} selectedId={selectedEntity?.id} onEdit={() => {}} onAddSub={() => {}} />
+                           <OrgNode node={rootNode} onSelect={setSelectedEntity} selectedId={selectedEntity?.id} onEdit={handleOpenModal} onAddSub={handleAddSub} />
                         </div>
                     ))}
                     {view === 'list' && (
@@ -229,7 +324,7 @@ export const EntitiesPage: React.FC = () => {
                                                 <td className="px-4 py-2 text-sm text-gray-500">{responsable ? `${responsable.prenom} ${responsable.nom}` : '-'}</td>
                                                 <td className="px-4 py-2 text-sm"><span className={`px-2 py-0.5 text-xs rounded-full capitalize ${ENTITY_STATUS_COLORS[entity.statut]}`}>{entity.statut.replace(/_/g, ' ')}</span></td>
                                                 <td className="px-4 py-2"><div className="flex items-center space-x-2">
-                                                    <button onClick={(e) => { e.stopPropagation(); /* edit action */ }} className="p-1 hover:bg-gray-200 rounded"><Edit className="h-4 w-4 text-blue-600"/></button>
+                                                    <button onClick={(e) => { e.stopPropagation(); handleOpenModal(entity); }} className="p-1 hover:bg-gray-200 rounded"><Edit className="h-4 w-4 text-blue-600"/></button>
                                                     <button onClick={(e) => { e.stopPropagation(); /* delete action */ }} className="p-1 hover:bg-gray-200 rounded"><Trash2 className="h-4 w-4 text-red-600"/></button>
                                                 </div></td>
                                             </tr>
@@ -245,12 +340,18 @@ export const EntitiesPage: React.FC = () => {
                 <EntityDetailPanel
                     entity={selectedEntity}
                     onClose={() => setSelectedEntity(null)}
-                    onEdit={() => {}}
-                    onAddSub={() => {}}
+                    onEdit={handleOpenModal}
+                    onAddSub={handleAddSub}
                     onReorder={handleReorderChild}
                     allEntities={entities}
                 />
             )}
+             <EntiteFormModal
+                isOpen={isModalOpen}
+                onClose={() => setIsModalOpen(false)}
+                onSave={handleSaveEntity}
+                entite={editingEntity}
+            />
         </div>
     );
 };

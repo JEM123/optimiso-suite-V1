@@ -1,13 +1,48 @@
+
 import React, { useState, useMemo } from 'react';
 import { mockData } from '../constants';
 import type { Controle, ExecutionControle } from '../types';
-import { Plus, Search, List, LayoutDashboard, Edit, Trash2, PlayCircle, Link as LinkIcon } from 'lucide-react';
+import { Plus, Search, List, LayoutDashboard, Edit, Trash2, PlayCircle, Link as LinkIcon, Download, FileSpreadsheet } from 'lucide-react';
 import ControlFormModal from './ControlFormModal';
 import ExecutionModal from './ExecutionModal';
 import ControlsDashboard from './ControlsDashboard';
 import ControlDetailPanel from './ControlDetailPanel';
 
 // --- UTILITY FUNCTIONS & CONSTANTS ---
+const exportToCsv = (filename: string, rows: object[]) => {
+    if (!rows || rows.length === 0) {
+        alert("Aucune donnée à exporter.");
+        return;
+    }
+    const separator = ';';
+    const keys = Object.keys(rows[0]);
+    const csvContent =
+        keys.join(separator) +
+        '\n' +
+        rows.map(row => {
+            return keys.map(k => {
+                let cell = (row as any)[k] === null || (row as any)[k] === undefined ? '' : (row as any)[k];
+                cell = String(cell).replace(/"/g, '""');
+                if (cell.search(/("|,|\n)/g) >= 0) {
+                    cell = `"${cell}"`;
+                }
+                return cell;
+            }).join(separator);
+        }).join('\n');
+
+    const blob = new Blob([`\uFEFF${csvContent}`], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    if (link.download !== undefined) {
+        const url = URL.createObjectURL(blob);
+        link.setAttribute('href', url);
+        link.setAttribute('download', filename);
+        link.style.visibility = 'hidden';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    }
+};
+
 const CONTROL_STATUS_COLORS: Record<Controle['statut'], string> = {
     'brouillon': 'bg-gray-200 text-gray-800',
     'planifié': 'bg-blue-100 text-blue-800',
@@ -107,6 +142,17 @@ const ControlsPage: React.FC<ControlsPageProps> = ({ onShowRelations }) => {
         setExecModalOpen(false);
     };
 
+    const handleExportCsv = () => {
+        const dataToExport = filteredControls.map(control => ({
+            Reference: control.reference,
+            Nom: control.nom,
+            TypePlanification: control.typePlanification.replace(/_/g, ' '),
+            Frequence: control.frequence || 'N/A',
+            Statut: control.statut,
+        }));
+        exportToCsv('export_controles.csv', dataToExport);
+    };
+
     return (
         <div className="flex h-[calc(100vh-150px)]">
             <div className="flex-1 flex flex-col min-w-0">
@@ -119,6 +165,12 @@ const ControlsPage: React.FC<ControlsPageProps> = ({ onShowRelations }) => {
                     </div>
                     <div className="flex items-center gap-2">
                         <button onClick={() => handleOpenFormModal()} className="flex items-center space-x-2 bg-blue-600 text-white px-3 py-1.5 rounded-lg hover:bg-blue-700 text-sm"><Plus className="h-4 w-4" /><span>Nouveau Contrôle</span></button>
+                        <div className="relative group">
+                            <button className="flex items-center space-x-2 bg-white border border-gray-300 px-3 py-1.5 rounded-lg hover:bg-gray-50 text-sm"><Download className="h-4 w-4" /><span>Exporter</span></button>
+                            <div className="absolute right-0 top-full mt-1 w-52 bg-white border rounded-lg shadow-lg opacity-0 group-hover:opacity-100 invisible group-hover:visible transition-opacity z-10">
+                                <button onClick={handleExportCsv} className="w-full text-left flex items-center gap-2 px-3 py-2 hover:bg-gray-100 text-sm"><FileSpreadsheet className="h-4 w-4 text-green-600"/>Exporter la liste (CSV)</button>
+                            </div>
+                        </div>
                     </div>
                 </div>
 

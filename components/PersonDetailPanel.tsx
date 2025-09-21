@@ -95,6 +95,17 @@ const PersonDetailPanel: React.FC<PersonDetailPanelProps> = ({ person, onClose, 
                         <DetailItem label="Statut" value={<span className="capitalize">{person.statut}</span>} />
                         <DetailItem label="Synchronisé Azure AD" value={person.synchroniseAzureAD ? 'Oui' : 'Non'} />
                         <DetailItem label="Description" value={person.description} />
+                        
+                        {person.champsLibres && Object.keys(person.champsLibres).length > 0 && (
+                            <div className="pt-4 mt-4 border-t">
+                                <h4 className="text-base font-semibold text-gray-800 mb-3">Informations complémentaires</h4>
+                                <div className="space-y-3">
+                                    {Object.entries(person.champsLibres).map(([key, value]) => (
+                                        <DetailItem key={key} label={key} value={String(value)} />
+                                    ))}
+                                </div>
+                            </div>
+                        )}
                     </div>
                 )}
                 {activeTab === 'affectations' && (

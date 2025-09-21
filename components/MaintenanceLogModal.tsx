@@ -14,7 +14,7 @@ const formInputClasses = "block w-full text-sm text-gray-800 bg-white border bor
 
 const MaintenanceLogModal: React.FC<MaintenanceLogModalProps> = ({ isOpen, onClose, onSave, actifId }) => {
     const [formData, setFormData] = useState<Partial<MaintenanceLog>>({ date: new Date() });
-
+    
     if (!isOpen) return null;
     
     const actif = mockData.actifs.find(a => a.id === actifId);

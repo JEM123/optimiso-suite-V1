@@ -3,7 +3,8 @@ import { useDataContext } from '../context/AppContext';
 import type { Mission } from '../types';
 import { Plus, Search, Briefcase, Edit, Trash2 } from 'lucide-react';
 import MissionDetailPanel from './MissionDetailPanel';
-import MissionFormModal from './MissionFormModal';
+// FIX: Module '"file:///components/MissionFormModal"' has no default export. Changed to named import.
+import { MissionFormModal } from './MissionFormModal';
 
 const STATUT_COLORS: Record<Mission['statut'], string> = {
     'brouillon': 'bg-gray-200 text-gray-800',

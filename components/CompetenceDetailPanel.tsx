@@ -1,6 +1,5 @@
-
 import React, { useState } from 'react';
-import { useDataContext } from '../context/AppContext';
+import { useDataContext, useAppContext } from '../context/AppContext';
 import type { Competence, EvaluationCompetence, PlanFormation, Personne } from '../types';
 import { X, Edit, Trash2, Info, Briefcase, UserCheck, BookOpen, Star, BarChart2, Plus } from 'lucide-react';
 import PlanFormationFormModal from './PlanFormationFormModal';
@@ -27,10 +26,14 @@ const PLAN_STATUT_COLORS: Record<PlanFormation['statut'], string> = {
 const CompetenceDetailPanel: React.FC<CompetenceDetailPanelProps> = ({ competence, onClose, onEdit, onDelete }) => {
     const [activeTab, setActiveTab] = useState('details');
     const { data, actions } = useDataContext();
+    const { settings } = useAppContext();
     const { postes, evaluationsCompetences, personnes, plansFormation } = data as { postes: any[], evaluationsCompetences: EvaluationCompetence[], personnes: Personne[], plansFormation: PlanFormation[] };
 
     const [isPlanModalOpen, setPlanModalOpen] = useState(false);
     const [editingPlan, setEditingPlan] = useState<Partial<PlanFormation> | null>(null);
+
+    const customFieldDefs = settings.customFields.competences || [];
+    const hasCustomFields = customFieldDefs.length > 0 && competence.champsLibres && Object.keys(competence.champsLibres).some(key => competence.champsLibres[key]);
 
     // Logic for Évaluations tab
     const evaluations = evaluationsCompetences
@@ -112,6 +115,18 @@ const CompetenceDetailPanel: React.FC<CompetenceDetailPanelProps> = ({ competenc
                                 ))}
                             </div>
                         </div>
+                        {hasCustomFields && (
+                            <div>
+                                <p className="text-sm font-semibold text-gray-700 mb-2">Champs Personnalisés</p>
+                                <div className="space-y-3 mt-2 bg-white p-3 border rounded-md">
+                                    {customFieldDefs.map(field => {
+                                        const value = competence.champsLibres?.[field.name];
+                                        if (!value) return null;
+                                        return <DetailItem key={field.id} label={field.name} value={String(value)} />;
+                                    })}
+                                </div>
+                            </div>
+                        )}
                     </div>
                 )}
                 {activeTab === 'postes' && (

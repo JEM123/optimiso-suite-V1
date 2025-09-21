@@ -1,9 +1,44 @@
+
 import React, { useState, useMemo } from 'react';
 import type { Personne } from '../types';
-import { Plus, Search, Trash2, Edit, Users, Link as LinkIcon } from 'lucide-react';
+import { Plus, Search, Trash2, Edit, Users, Link as LinkIcon, Download, FileSpreadsheet } from 'lucide-react';
 import PersonDetailPanel from './PersonDetailPanel';
 import PersonFormModal from './PersonFormModal';
 import { useDataContext } from '../context/AppContext';
+
+const exportToCsv = (filename: string, rows: object[]) => {
+    if (!rows || rows.length === 0) {
+        alert("Aucune donnée à exporter.");
+        return;
+    }
+    const separator = ';';
+    const keys = Object.keys(rows[0]);
+    const csvContent =
+        keys.join(separator) +
+        '\n' +
+        rows.map(row => {
+            return keys.map(k => {
+                let cell = (row as any)[k] === null || (row as any)[k] === undefined ? '' : (row as any)[k];
+                cell = String(cell).replace(/"/g, '""');
+                if (cell.search(/("|,|\n)/g) >= 0) {
+                    cell = `"${cell}"`;
+                }
+                return cell;
+            }).join(separator);
+        }).join('\n');
+
+    const blob = new Blob([`\uFEFF${csvContent}`], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    if (link.download !== undefined) {
+        const url = URL.createObjectURL(blob);
+        link.setAttribute('href', url);
+        link.setAttribute('download', filename);
+        link.style.visibility = 'hidden';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    }
+};
 
 const PERSON_STATUS_COLORS: Record<Personne['statut'], string> = {
     'brouillon': 'bg-gray-200 text-gray-800', 'en_cours': 'bg-yellow-100 text-yellow-800',
@@ -57,6 +92,18 @@ const PeoplePage: React.FC<PeoplePageProps> = ({ onShowRelations, setActiveModul
             if (selectedPerson?.id === id) setSelectedPerson(null);
         }
     };
+    
+    const handleExportCsv = () => {
+        const dataToExport = filteredPeople.map(person => ({
+            Reference: person.reference,
+            Prenom: person.prenom,
+            Nom: person.nom,
+            Email: person.email,
+            Profil: person.profil,
+            Statut: person.statut,
+        }));
+        exportToCsv('export_personnes.csv', dataToExport);
+    };
 
     return (
         <div className="flex h-[calc(100vh-150px)]">
@@ -68,6 +115,12 @@ const PeoplePage: React.FC<PeoplePageProps> = ({ onShowRelations, setActiveModul
                     </div>
                     <div className="flex items-center gap-2">
                         <button onClick={() => handleOpenModal()} className="flex items-center space-x-2 bg-blue-600 text-white px-3 py-1.5 rounded-lg hover:bg-blue-700 text-sm font-medium"><Plus className="h-4 w-4" /><span>Ajouter</span></button>
+                         <div className="relative group">
+                            <button className="flex items-center space-x-2 bg-white border border-gray-300 px-3 py-1.5 rounded-lg hover:bg-gray-50 text-sm"><Download className="h-4 w-4" /><span>Exporter</span></button>
+                            <div className="absolute right-0 top-full mt-1 w-52 bg-white border rounded-lg shadow-lg opacity-0 group-hover:opacity-100 invisible group-hover:visible transition-opacity z-10">
+                                <button onClick={handleExportCsv} className="w-full text-left flex items-center gap-2 px-3 py-2 hover:bg-gray-100 text-sm"><FileSpreadsheet className="h-4 w-4 text-green-600"/>Exporter la liste (CSV)</button>
+                            </div>
+                        </div>
                     </div>
                 </div>
                 <div className="p-2 border-b bg-white flex flex-wrap items-center gap-2">

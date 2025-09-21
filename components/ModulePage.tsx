@@ -21,6 +21,7 @@ import CompetencesPage from './CompetencesPage';
 import MissionsPage from './MissionsPage';
 import ProcessusPage from './ProcessusPage';
 import NewsPage from './NewsPage';
+import SettingsModule from './SettingsModule';
 import PageHeader from './PageHeader'; // Importation générique pour les placeholders
 
 // --- PROPS INTERFACES ---
@@ -76,6 +77,7 @@ const ModulePage: React.FC<ModulePageProps> = ({ moduleId, onShowRelations, onSh
             case 'normes-lois': return <NormesLoisPage />;
             case 'competences': return <CompetencesPage notifiedItemId={notifiedItemId} />;
             case 'actualites': return <NewsPage />;
+            case 'settings': return <SettingsModule />;
             default:
                 return module ? <GenericModulePlaceholder name={module.nom} icon={module.icon} /> : <p>Module non trouvé</p>;
         }

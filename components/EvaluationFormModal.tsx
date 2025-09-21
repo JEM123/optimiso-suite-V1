@@ -15,11 +15,16 @@ const formInputClasses = "block w-full text-sm text-gray-800 bg-white border bor
 const EvaluationFormModal: React.FC<EvaluationFormModalProps> = ({ isOpen, onClose, onSave, evaluation }) => {
     const { data } = useDataContext();
     const { personnes, competences, postes } = data as { personnes: Personne[], competences: Competence[], postes: Poste[] };
-    
     const [formData, setFormData] = useState<Partial<EvaluationCompetence>>(evaluation);
 
-    const competence = competences.find(c => c.id === evaluation.competenceId);
-    const personne = personnes.find(p => p.id === evaluation.personneId);
+    useEffect(() => {
+        if (isOpen) {
+            setFormData(evaluation);
+        }
+    }, [evaluation, isOpen]);
+
+    const competence = useMemo(() => competences.find(c => c.id === evaluation.competenceId), [competences, evaluation.competenceId]);
+    const personne = useMemo(() => personnes.find(p => p.id === evaluation.personneId), [personnes, evaluation.personneId]);
     
     const posteRequisInfo = useMemo(() => {
         if (!competence || !personne) return null;
@@ -29,12 +34,6 @@ const EvaluationFormModal: React.FC<EvaluationFormModalProps> = ({ isOpen, onClo
         return competence.postesRequis.find(pr => pr.posteId === poste.id);
     }, [competence, personne, postes]);
 
-
-    useEffect(() => {
-        if (isOpen) {
-            setFormData(evaluation);
-        }
-    }, [evaluation, isOpen]);
 
     if (!isOpen || !competence || !personne) return null;
 

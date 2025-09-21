@@ -1,12 +1,47 @@
+
 import React, { useState, useMemo, useEffect } from 'react';
 import { useDataContext, useAppContext } from '../context/AppContext';
 import type { Competence } from '../types';
-import { Plus, Search, TrendingUp, Edit, Trash2, List, LayoutGrid, Calendar, Target } from 'lucide-react';
+import { Plus, Search, TrendingUp, Edit, Trash2, List, LayoutGrid, Calendar, Target, Download, FileSpreadsheet } from 'lucide-react';
 import CompetenceDetailPanel from './CompetenceDetailPanel';
 import CompetenceFormModal from './CompetenceFormModal';
 import CompetenceMatrix from './CompetenceMatrix';
 import CampagnesView from './CampagnesView';
 import MesEvaluationsView from './MesEvaluationsView';
+
+const exportToCsv = (filename: string, rows: object[]) => {
+    if (!rows || rows.length === 0) {
+        alert("Aucune donnée à exporter.");
+        return;
+    }
+    const separator = ';';
+    const keys = Object.keys(rows[0]);
+    const csvContent =
+        keys.join(separator) +
+        '\n' +
+        rows.map(row => {
+            return keys.map(k => {
+                let cell = (row as any)[k] === null || (row as any)[k] === undefined ? '' : (row as any)[k];
+                cell = String(cell).replace(/"/g, '""');
+                if (cell.search(/("|,|\n)/g) >= 0) {
+                    cell = `"${cell}"`;
+                }
+                return cell;
+            }).join(separator);
+        }).join('\n');
+
+    const blob = new Blob([`\uFEFF${csvContent}`], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    if (link.download !== undefined) {
+        const url = URL.createObjectURL(blob);
+        link.setAttribute('href', url);
+        link.setAttribute('download', filename);
+        link.style.visibility = 'hidden';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    }
+};
 
 const STATUT_COLORS: Record<Competence['statut'], string> = {
     'brouillon': 'bg-gray-200 text-gray-800',
@@ -67,6 +102,17 @@ const CompetencesPage: React.FC<CompetencesPageProps> = ({ notifiedItemId }) => 
             if (selectedCompetence?.id === id) setSelectedCompetence(null);
         }
     };
+    
+    const handleExportCsv = () => {
+        const dataToExport = filteredCompetences.map(c => ({
+            Reference: c.reference,
+            Nom: c.nom,
+            Domaine: c.domaine,
+            SousDomaine: c.sousDomaine,
+            Statut: c.statut,
+        }));
+        exportToCsv('export_competences.csv', dataToExport);
+    };
 
     const renderContent = () => {
         switch(view) {
@@ -119,7 +165,15 @@ const CompetencesPage: React.FC<CompetencesPageProps> = ({ notifiedItemId }) => 
                         </div>
                     </div>
                      <div className="flex items-center gap-2">
-                        {view === 'catalogue' && <button onClick={() => handleOpenModal()} className="flex items-center space-x-2 bg-blue-600 text-white px-3 py-1.5 rounded-lg hover:bg-blue-700 text-sm font-medium"><Plus className="h-4 w-4" /><span>Nouvelle Compétence</span></button>}
+                        {view === 'catalogue' && <>
+                            <button onClick={() => handleOpenModal()} className="flex items-center space-x-2 bg-blue-600 text-white px-3 py-1.5 rounded-lg hover:bg-blue-700 text-sm font-medium"><Plus className="h-4 w-4" /><span>Nouvelle Compétence</span></button>
+                            <div className="relative group">
+                                <button className="flex items-center space-x-2 bg-white border border-gray-300 px-3 py-1.5 rounded-lg hover:bg-gray-50 text-sm"><Download className="h-4 w-4" /><span>Exporter</span></button>
+                                <div className="absolute right-0 top-full mt-1 w-52 bg-white border rounded-lg shadow-lg opacity-0 group-hover:opacity-100 invisible group-hover:visible transition-opacity z-10">
+                                    <button onClick={handleExportCsv} className="w-full text-left flex items-center gap-2 px-3 py-2 hover:bg-gray-100 text-sm"><FileSpreadsheet className="h-4 w-4 text-green-600"/>Exporter la liste (CSV)</button>
+                                </div>
+                            </div>
+                        </>}
                     </div>
                 </div>
                 {(view === 'catalogue' || view === 'matrix') && (

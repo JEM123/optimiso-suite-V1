@@ -1,6 +1,30 @@
 import React, { createContext, useContext, useState, useReducer, useMemo, useCallback } from 'react';
-import { mockData } from '../constants';
-import type { Personne, Risque, Role, Document, Actualite, NormeLoiCadre, NormeLoiExigence, Competence, CampagneEvaluation, EvaluationCompetence, PlanFormation, Mission, Processus, Notification } from '../types';
+import { mockData, modules as appModules } from '../constants';
+import type { Personne, Risque, Role, Document, Actualite, NormeLoiCadre, NormeLoiExigence, Competence, CampagneEvaluation, EvaluationCompetence, PlanFormation, Mission, Processus, Notification, ISettings } from '../types';
+
+// --- INITIAL SETTINGS STATE ---
+const initialSettings: ISettings = {
+    modules: appModules.reduce((acc, mod) => {
+        acc[mod.id] = { visible: true };
+        return acc;
+    }, {} as Record<string, { visible: boolean }>),
+    references: {
+        personnes: { prefix: 'PER-', digits: 4 },
+        documents: { prefix: 'DOC-', digits: 5 },
+        risques: { prefix: 'RSK-', digits: 3 },
+    },
+    customFields: {
+        personnes: [
+            { id: 'cf-pers-1', name: 'Date d\'entrée', type: 'date', required: false },
+            { id: 'cf-pers-2', name: 'Numéro de matricule', type: 'text', required: false },
+        ],
+        risques: [],
+        postes: [],
+        processus: [],
+        competences: [],
+        entites: [],
+    },
+};
 
 // --- STATE & CONTEXT TYPES ---
 
@@ -11,6 +35,7 @@ interface IAppState {
     notifications: Notification[];
     readNotificationIds: string[];
     notifiedTarget: { moduleId: string, itemId: string } | null;
+    settings: ISettings;
 }
 
 interface IAppContext extends IAppState {
@@ -19,6 +44,7 @@ interface IAppContext extends IAppState {
     handleNotificationClick: (notification: Notification) => void;
     markAllNotificationsAsRead: () => void;
     clearNotifiedTarget: () => void;
+    setSettings: (settings: ISettings) => void;
 }
 
 interface IDataState {
@@ -231,6 +257,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     const [user] = useState({ id: 'pers-2', nom: 'Marie Martin', profil: 'Manager', avatar: 'MM' });
     const [readNotificationIds, setReadNotificationIds] = useState<string[]>([]);
     const [notifiedTarget, setNotifiedTarget] = useState<{ moduleId: string, itemId: string } | null>(null);
+    const [settings, setSettings] = useState<ISettings>(initialSettings);
 
 
     // Data State Management
@@ -245,51 +272,48 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }, []);
 
     const markAllNotificationsAsRead = useCallback(() => {
-        setReadNotificationIds(data.notifications.map((n: Notification) => n.id));
+        setReadNotificationIds((data.notifications as Notification[]).map((n: Notification) => n.id));
     }, [data.notifications]);
     
     const clearNotifiedTarget = useCallback(() => {
         setNotifiedTarget(null);
     }, []);
 
-    // Simulated Async Action Creator
-    const createAsyncAction = <T,>(type: DataAction['type']) => {
-        return useCallback(async (payload: T) => {
-            setLoading(true);
-            await new Promise(resolve => setTimeout(resolve, 300)); // Simulate network delay
-            dispatch({ type, payload } as any);
-            setLoading(false);
-        }, []);
-    };
-    
-    // Memoized actions to prevent re-renders
+    // Memoized async action creators
+    const createAndDispatch = useCallback(async (action: DataAction) => {
+        setLoading(true);
+        await new Promise(resolve => setTimeout(resolve, 300)); // Simulate network delay
+        dispatch(action);
+        setLoading(false);
+    }, []);
+
     const actions = useMemo(() => ({
-        saveRisk: createAsyncAction<Risque>('SAVE_RISK'),
-        deleteRisk: createAsyncAction<string>('DELETE_RISK'),
-        savePerson: createAsyncAction<Personne>('SAVE_PERSON'),
-        deletePerson: createAsyncAction<string>('DELETE_PERSON'),
-        saveRole: createAsyncAction<Role>('SAVE_ROLE'),
-        deleteRole: createAsyncAction<string>('DELETE_ROLE'),
-        saveDocument: createAsyncAction<Document>('SAVE_DOCUMENT'),
-        deleteDocument: createAsyncAction<string>('DELETE_DOCUMENT'),
-        saveActualite: createAsyncAction<Actualite>('SAVE_ACTUALITE'),
-        deleteActualite: createAsyncAction<string>('DELETE_ACTUALITE'),
-        saveNormeLoiCadre: createAsyncAction<NormeLoiCadre>('SAVE_NORME_LOI_CADRE'),
-        deleteNormeLoiCadre: createAsyncAction<string>('DELETE_NORME_LOI_CADRE'),
-        saveNormeLoiExigence: createAsyncAction<NormeLoiExigence>('SAVE_NORME_LOI_EXIGENCE'),
-        deleteNormeLoiExigence: createAsyncAction<string>('DELETE_NORME_LOI_EXIGENCE'),
-        saveCompetence: createAsyncAction<Competence>('SAVE_COMPETENCE'),
-        deleteCompetence: createAsyncAction<string>('DELETE_COMPETENCE'),
-        saveCampagneEvaluation: createAsyncAction<CampagneEvaluation>('SAVE_CAMPAGNE_EVALUATION'),
-        deleteCampagneEvaluation: createAsyncAction<string>('DELETE_CAMPAGNE_EVALUATION'),
-        saveEvaluationCompetence: createAsyncAction<EvaluationCompetence>('SAVE_EVALUATION_COMPETENCE'),
-        savePlanFormation: createAsyncAction<PlanFormation>('SAVE_PLAN_FORMATION'),
-        deletePlanFormation: createAsyncAction<string>('DELETE_PLAN_FORMATION'),
-        saveMission: createAsyncAction<Mission>('SAVE_MISSION'),
-        deleteMission: createAsyncAction<string>('DELETE_MISSION'),
-        saveProcessus: createAsyncAction<Processus>('SAVE_PROCESSUS'),
-        deleteProcessus: createAsyncAction<string>('DELETE_PROCESSUS'),
-    }), [createAsyncAction]);
+        saveRisk: (payload: Risque) => createAndDispatch({ type: 'SAVE_RISK', payload }),
+        deleteRisk: (payload: string) => createAndDispatch({ type: 'DELETE_RISK', payload }),
+        savePerson: (payload: Personne) => createAndDispatch({ type: 'SAVE_PERSON', payload }),
+        deletePerson: (payload: string) => createAndDispatch({ type: 'DELETE_PERSON', payload }),
+        saveRole: (payload: Role) => createAndDispatch({ type: 'SAVE_ROLE', payload }),
+        deleteRole: (payload: string) => createAndDispatch({ type: 'DELETE_ROLE', payload }),
+        saveDocument: (payload: Document) => createAndDispatch({ type: 'SAVE_DOCUMENT', payload }),
+        deleteDocument: (payload: string) => createAndDispatch({ type: 'DELETE_DOCUMENT', payload }),
+        saveActualite: (payload: Actualite) => createAndDispatch({ type: 'SAVE_ACTUALITE', payload }),
+        deleteActualite: (payload: string) => createAndDispatch({ type: 'DELETE_ACTUALITE', payload }),
+        saveNormeLoiCadre: (payload: NormeLoiCadre) => createAndDispatch({ type: 'SAVE_NORME_LOI_CADRE', payload }),
+        deleteNormeLoiCadre: (payload: string) => createAndDispatch({ type: 'DELETE_NORME_LOI_CADRE', payload }),
+        saveNormeLoiExigence: (payload: NormeLoiExigence) => createAndDispatch({ type: 'SAVE_NORME_LOI_EXIGENCE', payload }),
+        deleteNormeLoiExigence: (payload: string) => createAndDispatch({ type: 'DELETE_NORME_LOI_EXIGENCE', payload }),
+        saveCompetence: (payload: Competence) => createAndDispatch({ type: 'SAVE_COMPETENCE', payload }),
+        deleteCompetence: (payload: string) => createAndDispatch({ type: 'DELETE_COMPETENCE', payload }),
+        saveCampagneEvaluation: (payload: CampagneEvaluation) => createAndDispatch({ type: 'SAVE_CAMPAGNE_EVALUATION', payload }),
+        deleteCampagneEvaluation: (payload: string) => createAndDispatch({ type: 'DELETE_CAMPAGNE_EVALUATION', payload }),
+        saveEvaluationCompetence: (payload: EvaluationCompetence) => createAndDispatch({ type: 'SAVE_EVALUATION_COMPETENCE', payload }),
+        savePlanFormation: (payload: PlanFormation) => createAndDispatch({ type: 'SAVE_PLAN_FORMATION', payload }),
+        deletePlanFormation: (payload: string) => createAndDispatch({ type: 'DELETE_PLAN_FORMATION', payload }),
+        saveMission: (payload: Mission) => createAndDispatch({ type: 'SAVE_MISSION', payload }),
+        deleteMission: (payload: string) => createAndDispatch({ type: 'DELETE_MISSION', payload }),
+        saveProcessus: (payload: Processus) => createAndDispatch({ type: 'SAVE_PROCESSUS', payload }),
+        deleteProcessus: (payload: string) => createAndDispatch({ type: 'DELETE_PROCESSUS', payload }),
+    }), [createAndDispatch]);
 
 
     const appContextValue = useMemo(() => ({
@@ -299,8 +323,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         handleNotificationClick,
         markAllNotificationsAsRead,
         notifiedTarget,
-        clearNotifiedTarget
-    }), [activeModule, sidebarOpen, user, data.notifications, readNotificationIds, handleNotificationClick, markAllNotificationsAsRead, notifiedTarget, clearNotifiedTarget]);
+        clearNotifiedTarget,
+        settings,
+        setSettings
+    }), [activeModule, sidebarOpen, user, data.notifications, readNotificationIds, handleNotificationClick, markAllNotificationsAsRead, notifiedTarget, clearNotifiedTarget, settings]);
     
     const dataContextValue = useMemo(() => ({
         data, loading, actions

@@ -13,6 +13,8 @@ interface NewsFormModalProps {
 const formInputClasses = "block w-full text-sm text-gray-800 bg-white border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-300 focus:border-transparent transition-colors";
 
 const NewsFormModal: React.FC<NewsFormModalProps> = ({ isOpen, onClose, onSave, actualite }) => {
+    if (!isOpen) return null;
+
     const { data } = useDataContext();
     const [formData, setFormData] = useState<Partial<Actualite>>(actualite || {});
 
@@ -25,8 +27,6 @@ const NewsFormModal: React.FC<NewsFormModalProps> = ({ isOpen, onClose, onSave, 
             });
         }
     }, [actualite, isOpen]);
-
-    if (!isOpen) return null;
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
         const { name, value } = e.target;

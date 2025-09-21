@@ -15,12 +15,13 @@ const formInputClasses = "block w-full text-sm text-gray-800 bg-white border bor
 const ExecutionModal: React.FC<ExecutionModalProps> = ({ isOpen, onClose, onSave, execution }) => {
     const [results, setResults] = useState<Record<string, any>>(execution.resultatsSaisis || {});
     const [status, setStatus] = useState<'terminé' | 'non-conforme'>('terminé');
-    const control = mockData.controles.find(c => c.id === execution.controleId);
 
     useEffect(() => {
         setResults(execution.resultatsSaisis || {});
     }, [execution]);
 
+    const control = mockData.controles.find(c => c.id === execution.controleId);
+    
     if (!isOpen || !control) return null;
 
     const handleResultChange = (fieldId: string, value: any, type: string) => {

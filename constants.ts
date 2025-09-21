@@ -13,7 +13,7 @@ export const modules = [
   { id: 'postes', nom: 'Postes', icon: Briefcase },
   { id: 'entites', nom: 'Entités', icon: Building2 },
   { id: 'documents', nom: 'Documents', icon: FileText },
-  { id: 'procedures', nom: 'Procédures', icon: Settings },
+  { id: 'procedures', nom: 'Procédures', icon: Workflow },
   { id: 'processus', nom: 'Processus', icon: Target },
   { id: 'missions', nom: 'Missions', icon: Briefcase },
   { id: 'risques', nom: 'Risques', icon: AlertTriangle },
@@ -27,6 +27,7 @@ export const modules = [
   { id: 'todo', nom: 'ToDo Manager', icon: Calendar },
   { id: 'actualites', nom: 'Actualités', icon: Bell },
   { id: 'sync-flux', nom: 'Flux & Synchro', icon: Workflow },
+  { id: 'settings', nom: 'Paramètres', icon: Settings },
 ];
 
 const allPermissions = modules.reduce((acc, module) => {
@@ -203,7 +204,7 @@ export const mockData = {
   occupationHistory: [
       { id: 'occ-1', posteId: 'pos-1', personneId: 'pers-1', dateDebut: new Date('2022-01-01') },
       { id: 'occ-2', posteId: 'pos-3', personneId: 'pers-3', dateDebut: new Date('2023-06-01') },
-      { id: 'occ-3', posteId: 'pos-4', personneId: 'pers-4', dateDebut: new Date('2024-03-01') },
+      { id: 'occ-4', posteId: 'pos-4', personneId: 'pers-4', dateDebut: new Date('2024-03-01') },
       { id: 'occ-4', posteId: 'pos-4', personneId: 'pers-5', dateDebut: new Date('2024-03-15') },
   ] as OccupationHistory[],
 

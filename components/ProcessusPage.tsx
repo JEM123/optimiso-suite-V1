@@ -3,7 +3,8 @@ import { useDataContext } from '../context/AppContext';
 import type { Processus } from '../types';
 import { Target, Plus, ChevronDown, Edit, Trash2, Workflow, Link as LinkIcon } from 'lucide-react';
 import ProcessusDetailPanel from './ProcessusDetailPanel';
-import ProcessusFormModal from './ProcessusFormModal';
+// FIX: Changed to named import to resolve "no default export" error.
+import { ProcessusFormModal } from './ProcessusFormModal';
 
 const buildTree = (items: Processus[], parentId?: string): (Processus & { children: any[] })[] => {
   return items

@@ -18,7 +18,7 @@ const StepFormModal: React.FC<StepFormModalProps> = ({ isOpen, onClose, onSave, 
     useEffect(() => {
         if (isOpen) setFormData(context.step || {});
     }, [context, isOpen]);
-
+    
     if (!isOpen) return null;
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {

@@ -58,7 +58,7 @@ const RoleFormModal: React.FC<RoleFormModalProps> = ({ isOpen, onClose, onSave, 
             setActiveTab('general');
         }
     }, [role, isOpen]);
-
+    
     if (!isOpen) return null;
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {

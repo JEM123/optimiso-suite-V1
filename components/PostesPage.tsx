@@ -1,11 +1,47 @@
+
 import React, { useState, useMemo, useEffect } from 'react';
 import { mockData } from '../constants';
 import type { Poste, Entite, Personne, Competence, Role, RACI, OccupationHistory } from '../types';
-import { Users, Edit, Plus, ChevronDown, List, Workflow, Search, Trash2, Briefcase, Info, BookOpen, UserCheck, Link as LinkIcon, Download, X, History, Building } from 'lucide-react';
+import { Users, Edit, Plus, ChevronDown, List, Workflow, Search, Trash2, Briefcase, Info, BookOpen, UserCheck, Link as LinkIcon, Download, X, History, Building, FileSpreadsheet, Image } from 'lucide-react';
 import PosteDetailPanel from './PosteDetailPanel';
-import PostFormModal from './PosteFormModal';
+// FIX: Module '"./PosteFormModal"' has no default export. Changed to named import.
+import { PosteFormModal } from './PosteFormModal';
 
 // --- UTILITY FUNCTIONS & CONSTANTS ---
+
+const exportToCsv = (filename: string, rows: object[]) => {
+    if (!rows || rows.length === 0) {
+        alert("Aucune donnée à exporter.");
+        return;
+    }
+    const separator = ';';
+    const keys = Object.keys(rows[0]);
+    const csvContent =
+        keys.join(separator) +
+        '\n' +
+        rows.map(row => {
+            return keys.map(k => {
+                let cell = (row as any)[k] === null || (row as any)[k] === undefined ? '' : (row as any)[k];
+                cell = String(cell).replace(/"/g, '""');
+                if (cell.search(/("|,|\n)/g) >= 0) {
+                    cell = `"${cell}"`;
+                }
+                return cell;
+            }).join(separator);
+        }).join('\n');
+
+    const blob = new Blob([`\uFEFF${csvContent}`], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    if (link.download !== undefined) {
+        const url = URL.createObjectURL(blob);
+        link.setAttribute('href', url);
+        link.setAttribute('download', filename);
+        link.style.visibility = 'hidden';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    }
+};
 
 const buildPosteTree = (postes: Poste[], parentId?: string): (Poste & { children: any[] })[] => {
   return postes
@@ -117,6 +153,26 @@ export const PostesPage: React.FC<PostesPageProps> = ({ onShowRelations }) => {
         setPostes(postes.filter(p => p.id !== id));
         if(selectedPoste?.id === id) setSelectedPoste(null);
     };
+    
+    const handleExportCsv = () => {
+        const dataToExport = filteredPostes.map(poste => {
+            const entite = mockData.entites.find(e => e.id === poste.entiteId);
+            const occupants = mockData.personnes.filter(p => poste.occupantsIds.includes(p.id));
+            return {
+                Intitule: poste.intitule,
+                Reference: poste.reference,
+                Entite: entite?.nom || '',
+                Occupants: occupants.map(o => `${o.prenom} ${o.nom}`).join(', '),
+                Effectif_Cible: poste.effectifCible,
+                Statut: poste.statut.replace(/_/g, ' '),
+            };
+        });
+        exportToCsv('export_postes.csv', dataToExport);
+    };
+    
+    const handleExportPng = () => {
+        alert("La fonctionnalité d'export PNG est en cours de développement.");
+    };
 
     return (
         <div className="flex flex-col md:flex-row bg-gray-50 h-[calc(100vh-150px)] rounded-lg border relative overflow-hidden">
@@ -134,6 +190,15 @@ export const PostesPage: React.FC<PostesPageProps> = ({ onShowRelations }) => {
                     </div>
                      <div className="flex items-center gap-2">
                         <button onClick={() => handleOpenModal()} className="flex items-center space-x-2 bg-blue-600 text-white px-3 py-1.5 rounded-lg hover:bg-blue-700 text-sm font-medium"><Plus className="h-4 w-4" /><span>Ajouter un poste</span></button>
+                        <div className="relative group">
+                            <button className="flex items-center space-x-2 bg-white border border-gray-300 px-3 py-1.5 rounded-lg hover:bg-gray-50 text-sm"><Download className="h-4 w-4" /><span>Exporter</span></button>
+                            <div className="absolute right-0 top-full mt-1 w-52 bg-white border rounded-lg shadow-lg opacity-0 group-hover:opacity-100 invisible group-hover:visible transition-opacity z-10">
+                                <button onClick={handleExportCsv} className="w-full text-left flex items-center gap-2 px-3 py-2 hover:bg-gray-100 text-sm"><FileSpreadsheet className="h-4 w-4 text-green-600"/>Exporter la liste (CSV)</button>
+                                {view === 'organigram' && 
+                                    <button onClick={handleExportPng} className="w-full text-left flex items-center gap-2 px-3 py-2 hover:bg-gray-100 text-sm"><Image className="h-4 w-4 text-blue-600"/>Exporter l'arbre (PNG)</button>
+                                }
+                            </div>
+                        </div>
                     </div>
                 </div>
                  {view === 'list' && (
@@ -173,7 +238,7 @@ export const PostesPage: React.FC<PostesPageProps> = ({ onShowRelations }) => {
                 </div>
             </div>
             {selectedPoste && <PosteDetailPanel poste={selectedPoste} onClose={() => setSelectedPoste(null)} onEdit={handleOpenModal} onShowRelations={onShowRelations} />}
-            <PostFormModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} onSave={handleSavePoste} poste={editingPoste} />
+            <PosteFormModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} onSave={handleSavePoste} poste={editingPoste} />
         </div>
     );
 };

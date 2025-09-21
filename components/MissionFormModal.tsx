@@ -22,7 +22,7 @@ const MultiSelect: React.FC<{ items: any[], selectedIds: string[], onChange: (id
     </div>
 );
 
-const MissionFormModal: React.FC<MissionFormModalProps> = ({ isOpen, onClose, onSave, mission }) => {
+export const MissionFormModal: React.FC<MissionFormModalProps> = ({ isOpen, onClose, onSave, mission }) => {
     const { data } = useDataContext();
     const { entites, postes, indicateurs, processus, procedures, documents, risques, controles } = data;
     const [formData, setFormData] = useState<Partial<Mission>>(mission || {});
@@ -40,6 +40,10 @@ const MissionFormModal: React.FC<MissionFormModalProps> = ({ isOpen, onClose, on
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
         const { name, value } = e.target;
         setFormData(prev => ({ ...prev, [name]: value }));
+    };
+    
+    const handleMultiSelectChange = (name: keyof Mission, selectedIds: string[]) => {
+        setFormData(prev => ({ ...prev, [name]: selectedIds as any }));
     };
 
     const handleSubmit = (e: React.FormEvent) => {
@@ -61,8 +65,8 @@ const MissionFormModal: React.FC<MissionFormModalProps> = ({ isOpen, onClose, on
                 </div>
                 <div className="flex-grow p-4 overflow-y-auto">
                     <nav className="flex space-x-4 border-b mb-4">
-                        <button type="button" onClick={() => setActiveTab('general')} className={`py-2 px-1 text-sm font-medium ${activeTab === 'general' ? 'border-b-2 border-blue-600' : ''}`}>Général</button>
-                        <button type="button" onClick={() => setActiveTab('liens')} className={`py-2 px-1 text-sm font-medium ${activeTab === 'liens' ? 'border-b-2 border-blue-600' : ''}`}>Liens & Interfaces</button>
+                        <button type="button" onClick={() => setActiveTab('general')} className={`py-2 px-1 text-sm font-medium ${activeTab === 'general' ? 'border-b-2 border-blue-600 text-blue-600' : 'text-gray-500'}`}>Général</button>
+                        <button type="button" onClick={() => setActiveTab('liens')} className={`py-2 px-1 text-sm font-medium ${activeTab === 'liens' ? 'border-b-2 border-blue-600 text-blue-600' : 'text-gray-500'}`}>Liens & Interfaces</button>
                     </nav>
 
                     {activeTab === 'general' && <div className="space-y-4">
@@ -81,28 +85,25 @@ const MissionFormModal: React.FC<MissionFormModalProps> = ({ isOpen, onClose, on
                     
                     {activeTab === 'liens' && <div className="space-y-4">
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <div><label className="block text-sm font-semibold mb-1">Entrées (Inputs)</label><input type="text" name="entrees" value={formData.entrees || ''} onChange={handleChange} className={formInputClasses} /></div>
-                            <div><label className="block text-sm font-semibold mb-1">Sorties (Outputs)</label><input type="text" name="sorties" value={formData.sorties || ''} onChange={handleChange} className={formInputClasses} /></div>
+                            <div><label className="block text-sm font-semibold text-gray-700 mb-1">Entrées (Inputs)</label><textarea name="entrees" value={formData.entrees || ''} onChange={handleChange} rows={2} className={formInputClasses}></textarea></div>
+                            <div><label className="block text-sm font-semibold text-gray-700 mb-1">Sorties (Outputs)</label><textarea name="sorties" value={formData.sorties || ''} onChange={handleChange} rows={2} className={formInputClasses}></textarea></div>
                         </div>
                         <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">
-                            {/* FIX: Cast data context properties to any[] to match the expected prop type for MultiSelect. */}
-                            <MultiSelect items={indicateurs as any[]} selectedIds={formData.kpiIds || []} onChange={(ids) => setFormData(p => ({...p, kpiIds: ids}))} label="KPIs"/>
-                            <MultiSelect items={processus as any[]} selectedIds={formData.processusIds || []} onChange={(ids) => setFormData(p => ({...p, processusIds: ids}))} label="Processus"/>
-                            <MultiSelect items={procedures as any[]} selectedIds={formData.procedureIds || []} onChange={(ids) => setFormData(p => ({...p, procedureIds: ids}))} label="Procédures"/>
-                            <MultiSelect items={documents as any[]} selectedIds={formData.documentIds || []} onChange={(ids) => setFormData(p => ({...p, documentIds: ids}))} label="Documents"/>
-                            <MultiSelect items={risques as any[]} selectedIds={formData.risqueIds || []} onChange={(ids) => setFormData(p => ({...p, risqueIds: ids}))} label="Risques"/>
-                            <MultiSelect items={controles as any[]} selectedIds={formData.controleIds || []} onChange={(ids) => setFormData(p => ({...p, controleIds: ids}))} label="Contrôles"/>
+                            <MultiSelect items={data.processus as any[]} selectedIds={formData.processusIds || []} onChange={(ids) => handleMultiSelectChange('processusIds' as any, ids)} label="Processus"/>
+                            <MultiSelect items={data.procedures as any[]} selectedIds={formData.procedureIds || []} onChange={(ids) => handleMultiSelectChange('procedureIds' as any, ids)} label="Procédures"/>
+                            <MultiSelect items={data.documents as any[]} selectedIds={formData.documentIds || []} onChange={(ids) => handleMultiSelectChange('documentIds' as any, ids)} label="Documents"/>
+                            <MultiSelect items={data.risques as any[]} selectedIds={formData.risqueIds || []} onChange={(ids) => handleMultiSelectChange('risqueIds' as any, ids)} label="Risques"/>
+                            <MultiSelect items={data.controles as any[]} selectedIds={formData.controleIds || []} onChange={(ids) => handleMultiSelectChange('controleIds' as any, ids)} label="Contrôles"/>
+                            <MultiSelect items={data.indicateurs as any[]} selectedIds={formData.kpiIds || []} onChange={(ids) => handleMultiSelectChange('kpiIds' as any, ids)} label="KPIs"/>
                         </div>
                     </div>}
 
                 </div>
                 <div className="p-4 border-t flex justify-end space-x-2 bg-gray-50">
-                    <button type="button" onClick={onClose} className="px-4 py-2 bg-white text-gray-700 border border-gray-300 rounded-lg">Annuler</button>
-                    <button type="submit" className="px-4 py-2 bg-blue-600 text-white rounded-lg">Sauvegarder</button>
+                    <button type="button" onClick={onClose} className="px-4 py-2 bg-white text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50">Annuler</button>
+                    <button type="submit" className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">Sauvegarder</button>
                 </div>
             </form>
         </div>
     );
 };
-
-export default MissionFormModal;

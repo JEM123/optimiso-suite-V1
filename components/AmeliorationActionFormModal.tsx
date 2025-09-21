@@ -20,7 +20,7 @@ const AmeliorationActionFormModal: React.FC<AmeliorationActionFormModalProps> = 
             setFormData(action || { statut: 'À faire', efficacite: 'Non évaluée' });
         }
     }, [action, isOpen]);
-
+    
     if (!isOpen) return null;
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {

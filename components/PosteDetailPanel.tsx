@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import type { Poste } from '../types';
 import { mockData } from '../constants';
 import { Users, Edit, Briefcase, Info, BookOpen, UserCheck, Link as LinkIcon, X } from 'lucide-react';
+import { useAppContext } from '../context/AppContext';
 
 const POST_STATUS_COLORS: Record<Poste['statut'], string> = {
     'brouillon': 'bg-gray-100 text-gray-800',
@@ -32,6 +33,7 @@ interface PosteDetailPanelProps {
 
 const PosteDetailPanel: React.FC<PosteDetailPanelProps> = ({ poste, onClose, onEdit, onShowRelations }) => {
     const [activeTab, setActiveTab] = useState('details');
+    const { settings } = useAppContext();
     const { entites, personnes, competences, roles, raci, occupationHistory, processus, controles } = mockData;
     
     const entite = entites.find(e => e.id === poste.entiteId);
@@ -40,6 +42,10 @@ const PosteDetailPanel: React.FC<PosteDetailPanelProps> = ({ poste, onClose, onE
     const requiredRoles = roles.filter(r => poste.habilitationsRoleIds?.includes(r.id));
     const raciLinks = raci.filter(r => r.posteId === poste.id);
     const history = occupationHistory.filter(h => h.posteId === poste.id);
+
+    const customFieldDefs = settings.customFields.postes || [];
+    const hasCustomFields = customFieldDefs.length > 0 && poste.champsLibres && Object.keys(poste.champsLibres).some(key => poste.champsLibres[key]);
+
 
     const DetailItem = ({ label, value }: { label: string; value: React.ReactNode }) => (
         <div><p className="text-sm font-semibold text-gray-700">{label}</p><p className="text-sm text-gray-900 mt-1">{value || '-'}</p></div>
@@ -70,18 +76,18 @@ const PosteDetailPanel: React.FC<PosteDetailPanelProps> = ({ poste, onClose, onE
                     <DetailItem label="Entité de rattachement" value={entite?.nom} />
                     <DetailItem label="Statut" value={<span className={`px-2 py-0.5 text-xs rounded-full capitalize ${POST_STATUS_COLORS[poste.statut]}`}>{poste.statut.replace(/_/g, ' ')}</span>} />
                     
-                    <div className="pt-2">
-                        <SectionTitle>Champs Libres</SectionTitle>
-                        {poste.champsLibres && Object.keys(poste.champsLibres).length > 0 ? (
+                    {hasCustomFields && (
+                        <div className="pt-2">
+                            <SectionTitle>Informations Complémentaires</SectionTitle>
                             <div className="space-y-3 mt-2">
-                                {Object.entries(poste.champsLibres).map(([key, value]) => (
-                                    <DetailItem key={key} label={key} value={String(value)} />
-                                ))}
+                                {customFieldDefs.map(field => {
+                                    const value = poste.champsLibres?.[field.name];
+                                    if (!value) return null;
+                                    return <DetailItem key={field.id} label={field.name} value={String(value)} />;
+                                })}
                             </div>
-                        ) : (
-                            <p className="text-sm text-gray-500 italic mt-2">Aucun champ libre défini.</p>
-                        )}
-                    </div>
+                        </div>
+                    )}
                 </div>}
                 {activeTab === 'mission' && <div className="space-y-4">
                     <div><SectionTitle>Mission</SectionTitle><p className="text-sm text-gray-700 whitespace-pre-wrap">{poste.mission || 'Non définie'}</p></div>

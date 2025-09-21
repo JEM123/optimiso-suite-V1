@@ -53,7 +53,6 @@ const NormeLoiExigenceFormModal: React.FC<NormeLoiExigenceFormModalProps> = ({ i
         setShowProofWarning(needsProof && !hasProof);
     }, [formData.statutConformite, formData.processusLiesIds, formData.controlesLiesIds, formData.documentsPreuvesIds]);
 
-
     if (!isOpen) return null;
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {

@@ -50,8 +50,8 @@ const AmeliorationFormModal: React.FC<AmeliorationFormModalProps> = ({ isOpen, o
                 </div>
                 <div className="flex-grow p-4 overflow-y-auto">
                     <nav className="flex space-x-4 border-b mb-4">
-                        <button type="button" onClick={() => setActiveTab('general')} className={`py-2 px-1 text-sm font-medium ${activeTab === 'general' ? 'border-b-2 border-blue-600 text-blue-600' : 'text-gray-500'}`}>Général</button>
-                        <button type="button" onClick={() => setActiveTab('links')} className={`py-2 px-1 text-sm font-medium ${activeTab === 'links' ? 'border-b-2 border-blue-600 text-blue-600' : 'text-gray-500'}`}>Origine & Liens</button>
+                        <button type="button" onClick={() => setActiveTab('general')} className={`py-2 px-1 text-sm font-medium ${activeTab === 'general' ? 'border-b-2 border-blue-600' : ''}`}>Général</button>
+                        <button type="button" onClick={() => setActiveTab('links')} className={`py-2 px-1 text-sm font-medium ${activeTab === 'links' ? 'border-b-2 border-blue-600' : ''}`}>Origine & Liens</button>
                     </nav>
                     
                     {activeTab === 'general' && <div className="space-y-4">
@@ -86,7 +86,7 @@ const AmeliorationFormModal: React.FC<AmeliorationFormModalProps> = ({ isOpen, o
                     </div>}
 
                 </div>
-                <div className="flex justify-end space-x-2 pt-4 border-t mt-4">
+                <div className="p-4 border-t flex justify-end space-x-2 bg-gray-50">
                     <button type="button" onClick={onClose} className="px-4 py-2 bg-white text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50">Annuler</button>
                     <button type="submit" className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">Sauvegarder</button>
                 </div>

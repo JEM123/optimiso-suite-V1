@@ -1,7 +1,7 @@
-
 import React from 'react';
 import { modules } from '../constants';
 import { Menu } from 'lucide-react';
+import { useAppContext } from '../context/AppContext';
 
 interface User {
   nom: string;
@@ -18,6 +18,10 @@ interface SidebarProps {
 }
 
 const Sidebar: React.FC<SidebarProps> = ({ activeModule, setActiveModule, sidebarOpen, setSidebarOpen, user }) => {
+  const { settings } = useAppContext();
+
+  const visibleModules = modules.filter(m => settings.modules[m.id]?.visible !== false);
+
   return (
     <div className={`${sidebarOpen ? 'w-64' : 'w-16'} bg-gray-900 text-white transition-all duration-300 flex flex-col`}>
       <div className="p-4 border-b border-gray-800">
@@ -41,7 +45,7 @@ const Sidebar: React.FC<SidebarProps> = ({ activeModule, setActiveModule, sideba
       </div>
 
       <nav className="flex-1 p-2 space-y-1 overflow-y-auto">
-        {modules.map((module) => {
+        {visibleModules.map((module) => {
           const Icon = module.icon;
           return (
             <button
