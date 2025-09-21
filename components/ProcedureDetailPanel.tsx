@@ -26,8 +26,8 @@ const ProcedureStepDetailPanel: React.FC<ProcedureStepDetailPanelProps> = ({ eta
     const [activeTab, setActiveTab] = useState('details');
 
     const responsable = mockData.postes.find(p => p.id === etape.responsablePosteId);
-    const entrees = mockData.documents.filter(d => etape.entreesIds.includes(d.id));
-    const sorties = mockData.documents.filter(d => etape.sortiesIds.includes(d.id));
+    const entrees = mockData.documents.filter(d => (etape.entreesIds ?? []).includes(d.id));
+    const sorties = mockData.documents.filter(d => (etape.sortiesIds ?? []).includes(d.id));
     const risques = mockData.risques.filter(r => etape.risqueIds?.includes(r.id));
     const controles = mockData.controles.filter(c => etape.controleIds?.includes(c.id));
 
