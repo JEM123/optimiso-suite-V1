@@ -1,4 +1,5 @@
 
+
 import React from 'react';
 import type { Incident } from '../types';
 import { mockData } from '../constants';

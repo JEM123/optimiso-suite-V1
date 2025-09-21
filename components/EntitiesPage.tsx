@@ -1,4 +1,5 @@
 
+
 import React, { useState, useMemo } from 'react';
 import { mockData } from '../constants';
 import type { Entite, Personne, Poste, Risque, CustomFieldDef } from '../types';

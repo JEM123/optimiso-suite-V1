@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import type { Procedure, EtapeProcedure } from '../types';
 import { mockData } from '../constants';
@@ -23,6 +24,25 @@ const RelationItem: React.FC<{ item: any; icon: React.ElementType, onClick: () =
 
 const FormInputClasses = "block w-full text-sm text-gray-800 bg-white border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-300 focus:border-transparent transition-colors";
 
+const MultiSelect: React.FC<{ items: any[], selectedIds: string[], onChange: (ids: string[]) => void, label: string }> = ({ items, selectedIds, onChange, label }) => {
+    const handleSelect = (id: string) => {
+        const newSelectedIds = selectedIds.includes(id) ? selectedIds.filter(i => i !== id) : [...selectedIds, id];
+        onChange(newSelectedIds);
+    }
+    return (
+        <div>
+            <label className="font-semibold text-gray-700 mb-1 text-sm flex items-center gap-2">{label}</label>
+            <div className="max-h-24 overflow-y-auto border rounded-md p-2 space-y-1 bg-white">
+                {items.map(item => (
+                    <label key={item.id} className="flex items-center space-x-2 p-1 rounded hover:bg-gray-50">
+                        <input type="checkbox" checked={selectedIds.includes(item.id)} onChange={() => handleSelect(item.id)} className="rounded" />
+                        <span className="text-sm">{item.nom} ({item.reference})</span>
+                    </label>
+                ))}
+            </div>
+        </div>
+    );
+}
 
 const ProcedureStepDetailPanel: React.FC<ProcedureStepDetailPanelProps> = ({ etape, procedure, onClose, onShowRelations, onSave }) => {
     const [isEditing, setIsEditing] = useState(false);
@@ -97,14 +117,34 @@ const ProcedureStepDetailPanel: React.FC<ProcedureStepDetailPanelProps> = ({ eta
                         <p className="text-sm text-gray-700 p-3 bg-white border rounded-md whitespace-pre-wrap">{formData.description || 'Aucune description.'}</p>
                     )}
                 </div>
-                <div>
-                    <h4 className="font-semibold text-gray-800 mb-2 flex items-center gap-2"><AlertTriangle className="h-4 w-4" />Risques liés ({risques.length})</h4>
-                    <div className="space-y-2">{risques.map(risk => <RelationItem key={risk.id} item={risk} icon={AlertTriangle} onClick={() => onShowRelations(risk, 'risques')} />)}</div>
-                </div>
-                <div>
-                    <h4 className="font-semibold text-gray-800 mb-2 flex items-center gap-2"><CheckCircle className="h-4 w-4" />Contrôles ({controles.length})</h4>
-                    <div className="space-y-2">{controles.map(ctrl => <RelationItem key={ctrl.id} item={ctrl} icon={CheckCircle} onClick={() => onShowRelations(ctrl, 'controles')} />)}</div>
-                </div>
+                
+                {isEditing ? (
+                    <>
+                        <MultiSelect 
+                            items={mockData.risques} 
+                            selectedIds={formData.risqueIds || []} 
+                            onChange={(ids) => handleMultiSelectChange('risqueIds', ids)}
+                            label="Risques liés"
+                        />
+                        <MultiSelect 
+                            items={mockData.controles} 
+                            selectedIds={formData.controleIds || []} 
+                            onChange={(ids) => handleMultiSelectChange('controleIds', ids)}
+                            label="Contrôles de maîtrise"
+                        />
+                    </>
+                ) : (
+                    <>
+                        <div>
+                            <h4 className="font-semibold text-gray-800 mb-2 flex items-center gap-2"><AlertTriangle className="h-4 w-4" />Risques liés ({risques.length})</h4>
+                            <div className="space-y-2">{risques.map(risk => <RelationItem key={risk.id} item={risk} icon={AlertTriangle} onClick={() => onShowRelations(risk, 'risques')} />)}</div>
+                        </div>
+                        <div>
+                            <h4 className="font-semibold text-gray-800 mb-2 flex items-center gap-2"><CheckCircle className="h-4 w-4" />Contrôles ({controles.length})</h4>
+                            <div className="space-y-2">{controles.map(ctrl => <RelationItem key={ctrl.id} item={ctrl} icon={CheckCircle} onClick={() => onShowRelations(ctrl, 'controles')} />)}</div>
+                        </div>
+                    </>
+                )}
             </div>
             {isEditing && (
                  <div className="p-2 border-t bg-gray-100 flex justify-end gap-2">

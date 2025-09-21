@@ -1,8 +1,8 @@
-import React, { useState, useMemo, useCallback, useEffect } from 'react';
+import React, { useState, useMemo, useCallback, useEffect, useRef } from 'react';
 import { useDataContext } from '../context/AppContext';
 import type { Procedure, EtapeProcedure, ProcedureLien } from '../types';
 import { Plus, Search, Trash2, Edit, Workflow, ChevronLeft, Menu } from 'lucide-react';
-import { ReactFlowProvider, useNodesState, useEdgesState, useReactFlow, applyNodeChanges, applyEdgeChanges, type OnNodesChange, type OnEdgesChange, type OnConnect, type Node, type Edge, type Connection } from 'reactflow';
+import { ReactFlowProvider, useNodesState, useEdgesState, useReactFlow, applyNodeChanges, type OnNodesChange, type OnEdgesChange, type OnConnect, type Node, type Edge, type Connection, type NodePositionChange } from 'reactflow';
 import ProcedureFormModal from './ProcedureFormModal';
 import ProcedureFlow from './ProcedureFlow';
 import PageHeader from './PageHeader';
@@ -52,6 +52,8 @@ const ProceduresPageContent: React.FC<ProceduresPageProps> = ({ onShowRelations 
     const [editingProcedure, setEditingProcedure] = useState<Partial<Procedure> | null>(null);
     const [isSidebarOpen, setIsSidebarOpen] = useState(true);
     
+    // FIX: The `useRef` hook with a generic type requires an initial value.
+    const prevProcIdRef = useRef<string | null>(null);
     const { screenToFlowPosition, fitView } = useReactFlow();
 
     const [nodes, setNodes, onNodesChange] = useNodesState([]);
@@ -68,13 +70,41 @@ const ProceduresPageContent: React.FC<ProceduresPageProps> = ({ onShowRelations 
         if (selectedProcedure) {
             setNodes(selectedProcedure.etapes.map(etape => ({ id: etape.id, type: etape.type, position: etape.position, data: { ...etape } })));
             setEdges(selectedProcedure.liens.map(lien => ({ id: lien.id, source: lien.source, target: lien.target, sourceHandle: lien.sourceHandle, targetHandle: lien.targetHandle, type: 'smoothstep', animated: true, label: lien.label })));
-            setSelectedStepId(null);
-            setTimeout(() => fitView({ padding: 0.2 }), 100);
+            
+            if (prevProcIdRef.current !== selectedProcedure.id) {
+                setSelectedStepId(null);
+                setTimeout(() => fitView({ padding: 0.2 }), 100);
+            }
         } else {
             setNodes([]);
             setEdges([]);
         }
+        prevProcIdRef.current = selectedProcedure?.id || null;
     }, [selectedProcedure, setNodes, setEdges, fitView]);
+
+    const handleNodesChange: OnNodesChange = useCallback((changes) => {
+        onNodesChange(changes);
+
+        if (!selectedProcedureId) return;
+
+        const positionChanges = changes.filter(
+            (change): change is NodePositionChange & { position: { x: number, y: number } } => 
+                change.type === 'position' && !!change.position
+        );
+
+        if (positionChanges.length > 0) {
+            updateProcedureState(selectedProcedureId, (proc) => {
+                const updatedEtapes = proc.etapes.map(etape => {
+                    const change = positionChanges.find(c => c.id === etape.id);
+                    if (change) {
+                        return { ...etape, position: change.position };
+                    }
+                    return etape;
+                });
+                return { ...proc, etapes: updatedEtapes };
+            });
+        }
+    }, [onNodesChange, selectedProcedureId, updateProcedureState]);
 
     const onConnect = useCallback((params: Connection) => {
         if (!selectedProcedureId) return;
@@ -166,7 +196,7 @@ const ProceduresPageContent: React.FC<ProceduresPageProps> = ({ onShowRelations 
             <div className="flex-1 flex min-w-0">
                 <div className="flex-1 relative">
                     {selectedProcedure ? (
-                        <ProcedureFlow nodes={nodes} edges={edges} onNodesChange={onNodesChange} onEdgesChange={onEdgesChange} onConnect={onConnect} onNodeClick={(evt, node) => setSelectedStepId(node.id)} onPaneClick={() => setSelectedStepId(null)} onDrop={onDrop} />
+                        <ProcedureFlow nodes={nodes} edges={edges} onNodesChange={handleNodesChange} onEdgesChange={onEdgesChange} onConnect={onConnect} onNodeClick={(evt, node) => setSelectedStepId(node.id)} onPaneClick={() => setSelectedStepId(null)} onDrop={onDrop} />
                     ) : (
                         <div className="flex h-full items-center justify-center text-center p-4 bg-gray-50">
                             <div>

@@ -44,13 +44,13 @@ const ProcedureFormModal: React.FC<ProcedureFormModalProps> = ({ isOpen, onClose
                 </div>
                 <div className="space-y-4 max-h-[70vh] overflow-y-auto pr-2">
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div><label className="block text-sm font-medium text-gray-700 mb-1">Titre</label><input type="text" name="nom" value={formData.nom} onChange={handleChange} className={formInputClasses} required /></div>
-                        <div><label className="block text-sm font-medium text-gray-700 mb-1">Référence</label><input type="text" name="reference" value={formData.reference} onChange={handleChange} className={formInputClasses} /></div>
+                        <div><label className="block text-sm font-medium text-gray-700 mb-1">Titre</label><input type="text" name="nom" value={formData.nom || ''} onChange={handleChange} className={formInputClasses} required /></div>
+                        <div><label className="block text-sm font-medium text-gray-700 mb-1">Référence</label><input type="text" name="reference" value={formData.reference || ''} onChange={handleChange} className={formInputClasses} /></div>
                     </div>
-                    <div><label className="block text-sm font-medium text-gray-700 mb-1">Description</label><textarea name="description" value={formData.description} onChange={handleChange} rows={3} className={formInputClasses}></textarea></div>
+                    <div><label className="block text-sm font-medium text-gray-700 mb-1">Description</label><textarea name="description" value={formData.description || ''} onChange={handleChange} rows={3} className={formInputClasses}></textarea></div>
                     <div>
                         <label className="block text-sm font-medium text-gray-700 mb-1">Acteurs (Postes)</label>
-                        <select multiple value={formData.acteursPosteIds} onChange={(e) => handleMultiSelectChange('acteursPosteIds', Array.from(e.target.selectedOptions, option => option.value))} className={`${formInputClasses} h-24`}>
+                        <select multiple value={formData.acteursPosteIds || []} onChange={(e) => handleMultiSelectChange('acteursPosteIds', Array.from(e.target.selectedOptions, option => option.value))} className={`${formInputClasses} h-24`}>
                             {mockData.postes.map(p => <option key={p.id} value={p.id}>{p.intitule}</option>)}
                         </select>
                     </div>
