@@ -1,6 +1,6 @@
 import React from 'react';
 import { modules } from '../constants';
-import type { Document } from '../types';
+import type { Document, Procedure } from '../types';
 import EntitiesPage from './EntitiesPage';
 import PostesPage from './PostesPage';
 import RisksPage from './RisksPage';
@@ -29,7 +29,8 @@ import PageHeader from './PageHeader'; // Importation générique pour les place
 interface ModulePageProps {
   moduleId: string;
   onShowRelations: (entity: any, entityType: string) => void;
-  onShowValidation: (doc: Document) => void;
+  onShowValidation: (element: Document | Procedure) => void;
+  onShowImpactAnalysis: (element: any, type: string) => void;
   setActiveModule: (moduleId: string) => void;
   notifiedItemId: string | null;
 }
@@ -52,7 +53,7 @@ const GenericModulePlaceholder: React.FC<{ name: string; icon: React.ElementType
 
 // --- MAIN PAGE COMPONENT ---
 
-const ModulePage: React.FC<ModulePageProps> = ({ moduleId, onShowRelations, onShowValidation, setActiveModule, notifiedItemId }) => {
+const ModulePage: React.FC<ModulePageProps> = ({ moduleId, onShowRelations, onShowValidation, onShowImpactAnalysis, setActiveModule, notifiedItemId }) => {
     const module = modules.find(m => m.id === moduleId);
 
     const renderModuleContent = () => {
@@ -66,7 +67,7 @@ const ModulePage: React.FC<ModulePageProps> = ({ moduleId, onShowRelations, onSh
             case 'risques': return <RisksPage onShowRelations={onShowRelations} notifiedItemId={notifiedItemId} />;
             case 'documents': return <DocumentsPage onShowValidation={onShowValidation} onShowRelations={onShowRelations} notifiedItemId={notifiedItemId} />;
             case 'controles': return <ControlsPage onShowRelations={onShowRelations} />;
-            case 'procedures': return <ProceduresPage onShowRelations={onShowRelations} />;
+            case 'procedures': return <ProceduresPage onShowRelations={onShowRelations} onShowValidation={onShowValidation} onShowImpactAnalysis={onShowImpactAnalysis} />;
             case 'todo': return <ToDoPage notifiedItemId={notifiedItemId} />;
             case 'incidents': return <IncidentsPage onShowRelations={onShowRelations} notifiedItemId={notifiedItemId} />;
             case 'ameliorations': return <AmeliorationsPage onShowRelations={onShowRelations} />;

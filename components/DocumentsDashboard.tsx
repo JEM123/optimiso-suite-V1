@@ -1,15 +1,18 @@
-
-
 import React from 'react';
 import { CheckCircle } from 'lucide-react';
-import { mockData } from '../constants';
+import { useDataContext } from '../context/AppContext';
 import type { Document } from '../types';
 
 interface DocumentsDashboardProps {
   onShowValidation: (doc: Document) => void;
 }
 
-const DocumentsDashboard: React.FC<DocumentsDashboardProps> = ({ onShowValidation }) => (
+const DocumentsDashboard: React.FC<DocumentsDashboardProps> = ({ onShowValidation }) => {
+  const { data } = useDataContext();
+  const dashboardStats = data.dashboardStats as any;
+  const documents = data.documents as Document[];
+
+  return (
   <div className="space-y-6">
     <div className="flex items-center justify-between">
       <h2 className="text-xl font-semibold">Tableau de bord - Documents</h2>
@@ -19,17 +22,16 @@ const DocumentsDashboard: React.FC<DocumentsDashboardProps> = ({ onShowValidatio
     </div>
 
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-      <div className="bg-white p-4 rounded-lg shadow-sm border"><div className="text-3xl font-bold text-blue-600">{mockData.dashboardStats.documents.total}</div><div className="text-sm text-gray-600">Total documents</div></div>
-      <div className="bg-white p-4 rounded-lg shadow-sm border"><div className="text-3xl font-bold text-green-600">{mockData.dashboardStats.documents.publies}</div><div className="text-sm text-gray-600">Publiés</div></div>
-      <div className="bg-white p-4 rounded-lg shadow-sm border"><div className="text-3xl font-bold text-orange-600">{mockData.dashboardStats.documents.enCours}</div><div className="text-sm text-gray-600">En cours validation</div></div>
-      <div className="bg-white p-4 rounded-lg shadow-sm border"><div className="text-3xl font-bold text-gray-600">{mockData.dashboardStats.documents.archives}</div><div className="text-sm text-gray-600">Archivés</div></div>
+      <div className="bg-white p-4 rounded-lg shadow-sm border"><div className="text-3xl font-bold text-blue-600">{dashboardStats.documents.total}</div><div className="text-sm text-gray-600">Total documents</div></div>
+      <div className="bg-white p-4 rounded-lg shadow-sm border"><div className="text-3xl font-bold text-green-600">{dashboardStats.documents.publies}</div><div className="text-sm text-gray-600">Publiés</div></div>
+      <div className="bg-white p-4 rounded-lg shadow-sm border"><div className="text-3xl font-bold text-orange-600">{dashboardStats.documents.enCours}</div><div className="text-sm text-gray-600">En cours validation</div></div>
+      <div className="bg-white p-4 rounded-lg shadow-sm border"><div className="text-3xl font-bold text-gray-600">{dashboardStats.documents.archives}</div><div className="text-sm text-gray-600">Archivés</div></div>
     </div>
 
     <div className="bg-white p-4 rounded-lg shadow-sm border">
       <h3 className="font-semibold mb-4">Documents en attente de validation</h3>
       <div className="space-y-3">
-        {/* FIX: Property 'enCoursValidation' does not exist. Filter by `statut`. */}
-        {mockData.documents.filter(doc => doc.statut === 'en_validation').map((doc) => (
+        {documents.filter(doc => doc.statut === 'en_validation').map((doc) => (
           <div key={doc.id} className="flex items-center justify-between p-3 border rounded-lg hover:bg-gray-50">
             <div className="flex-1 min-w-0">
               <div className="font-medium text-sm truncate">{doc.nom}</div>
@@ -49,7 +51,7 @@ const DocumentsDashboard: React.FC<DocumentsDashboardProps> = ({ onShowValidatio
     <div className="bg-white p-4 rounded-lg shadow-sm border">
       <h3 className="font-semibold mb-4">Répartition par type</h3>
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        {mockData.dashboardStats.documents.parType.map((type) => (
+        {dashboardStats.documents.parType.map((type: any) => (
           <div key={type.type} className="text-center p-3 bg-gray-50 rounded-lg">
             <div className="text-2xl font-bold text-gray-800">{type.count}</div>
             <div className="text-sm text-gray-600">
@@ -62,6 +64,6 @@ const DocumentsDashboard: React.FC<DocumentsDashboardProps> = ({ onShowValidatio
       </div>
     </div>
   </div>
-);
+)};
 
 export default DocumentsDashboard;

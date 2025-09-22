@@ -1,9 +1,6 @@
-
-
 import React, { useState } from 'react';
 import type { Mission } from '../types';
 import { useDataContext } from '../context/AppContext';
-// FIX: Import the 'Settings' icon from lucide-react.
 import { X, Edit, Info, BarChart3, Link as LinkIcon, History, Briefcase, Building, Target, FileText, CheckCircle, AlertTriangle, Settings } from 'lucide-react';
 
 interface MissionDetailPanelProps {
@@ -53,6 +50,7 @@ const MissionDetailPanel: React.FC<MissionDetailPanelProps> = ({ mission, onClos
             <div className="p-4 border-b flex items-center justify-between bg-gray-50">
                 <div><h2 className="text-lg font-semibold text-gray-800 truncate">{mission.nom}</h2><p className="text-sm text-gray-500">{mission.reference}</p></div>
                 <div className="flex space-x-1">
+                    <button onClick={() => onShowRelations(mission, 'missions')} className="p-2 text-gray-500 hover:text-gray-800 hover:bg-gray-200 rounded-md"><LinkIcon className="h-4 w-4"/></button>
                     <button onClick={() => onEdit(mission)} className="p-2 text-gray-500 hover:text-gray-800 hover:bg-gray-200 rounded-md"><Edit className="h-4 w-4"/></button>
                     <button onClick={onClose} className="p-2 text-gray-500 hover:text-gray-800 hover:bg-gray-200 rounded-md"><X className="h-5 w-5"/></button>
                 </div>
@@ -92,8 +90,8 @@ const MissionDetailPanel: React.FC<MissionDetailPanelProps> = ({ mission, onClos
                 </div>}
                 
                 {activeTab === 'historique' && <div className="space-y-3 text-sm">
-                    <DetailItem label="Créé le" value={mission.dateCreation.toLocaleDateString('fr-FR')} />
-                    <DetailItem label="Dernière modification" value={mission.dateModification.toLocaleDateString('fr-FR')} />
+                    <DetailItem label="Créé le" value={new Date(mission.dateCreation).toLocaleDateString('fr-FR')} />
+                    <DetailItem label="Dernière modification" value={new Date(mission.dateModification).toLocaleDateString('fr-FR')} />
                     <DetailItem label="Auteur" value={(data.personnes as any[]).find((p: any) => p.id === mission.auteurId)?.nom || 'N/A'} />
                 </div>}
             </div>

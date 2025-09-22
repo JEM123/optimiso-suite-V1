@@ -1,5 +1,3 @@
-
-
 import React, { useState, useMemo, useEffect } from 'react';
 import type { Risque } from '../types';
 import { Plus, Search, Trash2, Edit, X, Info, ShieldCheck, TrendingUp, Link as LinkIcon, List, LayoutGrid, Map as MapIcon, Lock, Unlock, Filter, Download, AlertTriangle, Building2, FileSpreadsheet } from 'lucide-react';
@@ -139,7 +137,7 @@ const RiskCartography: React.FC<{
 // --- MAIN PAGE COMPONENT ---
 const RisksPage: React.FC<RisksPageProps> = ({ onShowRelations, notifiedItemId }) => {
     const { data, actions } = useDataContext();
-    const { clearNotifiedTarget } = useAppContext();
+    const { user, clearNotifiedTarget } = useAppContext();
     const risques = data.risques as Risque[];
     const processus = data.processus as any[];
     const categoriesRisques = data.categoriesRisques as any[];
@@ -171,27 +169,26 @@ const RisksPage: React.FC<RisksPageProps> = ({ onShowRelations, notifiedItemId }
     }, [risques, searchTerm, filters]);
 
     const handleOpenModal = (risk?: Risque) => { 
-        // FIX: `newRiskTemplate` is a factory function, not a constructor. The `new` keyword should be removed.
-        setEditingRisk(risk || newRiskTemplate(processus, 'pers-1')); 
+        setEditingRisk(risk || newRiskTemplate(processus, user.id)); 
         setIsModalOpen(true); 
     };
     
     const handleSaveRisk = async (riskToSave: Risque) => {
-        await actions.saveRisk(riskToSave);
+        await actions.saveRisque(riskToSave);
         setIsModalOpen(false); 
         setEditingRisk(null);
     };
 
     const handleDeleteRisk = async (id: string) => {
         if (window.confirm("Êtes-vous sûr de vouloir supprimer ce risque ?")) {
-            await actions.deleteRisk(id);
+            await actions.deleteRisque(id);
             if (selectedRisk?.id === id) setSelectedRisk(null);
         }
     };
     
     const handleToggleFreeze = (risk: Risque) => {
         const newStatus: Risque['statut'] = risk.statut === 'figé' ? 'valide' : 'figé';
-        actions.saveRisk({ ...risk, statut: newStatus });
+        actions.saveRisque({ ...risk, statut: newStatus });
     }
 
     const handleSelectRisk = (risk: Risque) => {
@@ -253,7 +250,6 @@ const RisksPage: React.FC<RisksPageProps> = ({ onShowRelations, notifiedItemId }
                         </div>
                     </div>
                     <div className="flex-1 overflow-auto p-4">
-                        {/* Content for list, matrix, map remains the same */}
                         {view === 'list' && (
                             <div className="bg-white border rounded-lg">
                                 <table className="min-w-full">
@@ -288,7 +284,6 @@ const RisksPage: React.FC<RisksPageProps> = ({ onShowRelations, notifiedItemId }
                     </div>
                 </div>
                 {selectedRisk && <RiskDetailPanel risque={selectedRisk} onClose={() => setSelectedRisk(null)} onEdit={handleOpenModal} onShowRelations={onShowRelations}/>}
-                {/* RiskFormModal would be here, no changes needed */}
             </div>
         </div>
     );

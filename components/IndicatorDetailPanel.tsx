@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import type { Indicateur } from '../types';
-import { mockData } from '../constants';
-import { Edit, BarChart3, Settings, Database, Link as LinkIcon, Plus, User, CheckCircle, AlertTriangle } from 'lucide-react';
+import { useDataContext } from '../context/AppContext';
+import { Edit, BarChart3, Settings, Database, Link as LinkIcon, Plus, User, CheckCircle, AlertTriangle, X } from 'lucide-react';
 import IndicatorChart from './IndicatorChart';
 
 interface IndicatorDetailPanelProps {
@@ -28,10 +28,11 @@ const StatCard: React.FC<{ title: string, value: string | number, subtext: strin
 
 
 const IndicatorDetailPanel: React.FC<IndicatorDetailPanelProps> = ({ indicator, onEdit, onAddMeasure, onShowRelations }) => {
+    const { data } = useDataContext();
     const [activeTab, setActiveTab] = useState('dashboard');
 
-    const responsable = mockData.personnes.find(p => p.id === indicator.responsableId);
-    const lastMeasure = indicator.mesures.length > 0 ? indicator.mesures.slice().sort((a,b) => b.dateMesure.getTime() - a.dateMesure.getTime())[0] : null;
+    const responsable = (data.personnes as any[]).find(p => p.id === indicator.responsableId);
+    const lastMeasure = indicator.mesures.length > 0 ? indicator.mesures.slice().sort((a,b) => new Date(b.dateMesure).getTime() - new Date(a.dateMesure).getTime())[0] : null;
 
     const lastValue = lastMeasure?.valeur ?? 0;
     const diff = lastMeasure ? (lastValue - indicator.objectif).toFixed(2) : 'N/A';
@@ -45,6 +46,7 @@ const IndicatorDetailPanel: React.FC<IndicatorDetailPanelProps> = ({ indicator, 
                     <p className="text-sm text-gray-500">{indicator.reference}</p>
                 </div>
                 <div className="flex items-center space-x-2">
+                    <button onClick={() => onShowRelations(indicator, 'indicateurs')} className="p-2 text-gray-500 hover:bg-gray-100 rounded-md" title="Voir les relations"><LinkIcon className="h-4 w-4"/></button>
                     <button onClick={() => onEdit(indicator)} className="p-2 text-gray-500 hover:bg-gray-100 rounded-md" title="Modifier"><Edit className="h-4 w-4"/></button>
                 </div>
             </div>
@@ -60,7 +62,7 @@ const IndicatorDetailPanel: React.FC<IndicatorDetailPanelProps> = ({ indicator, 
                 {activeTab === 'dashboard' && (
                     <div className="space-y-4">
                         <div className="grid grid-cols-3 gap-4">
-                            <StatCard title="Dernière Valeur" value={`${lastValue} ${indicator.unite}`} subtext={lastMeasure ? lastMeasure.dateMesure.toLocaleDateString('fr-FR') : '-'} colorClass="text-blue-600" />
+                            <StatCard title="Dernière Valeur" value={`${lastValue} ${indicator.unite}`} subtext={lastMeasure ? new Date(lastMeasure.dateMesure).toLocaleDateString('fr-FR') : '-'} colorClass="text-blue-600" />
                             <StatCard title="Objectif" value={`${indicator.objectif} ${indicator.unite}`} subtext="Valeur cible" colorClass="text-gray-700" />
                             <StatCard title="Écart / Objectif" value={`${diff}`} subtext="Performance" colorClass={performanceColor} />
                         </div>
@@ -89,8 +91,8 @@ const IndicatorDetailPanel: React.FC<IndicatorDetailPanelProps> = ({ indicator, 
                                 <tr><th className="px-4 py-2">Date</th><th className="px-4 py-2">Valeur</th><th className="px-4 py-2">Commentaire</th></tr>
                             </thead>
                             <tbody>
-                                {indicator.mesures.slice().sort((a,b) => b.dateMesure.getTime() - a.dateMesure.getTime()).map(m => (
-                                    <tr key={m.id} className="bg-white border-b"><td className="px-4 py-2">{m.dateMesure.toLocaleDateString('fr-FR')}</td><td className="px-4 py-2 font-medium">{m.valeur} {indicator.unite}</td><td className="px-4 py-2 italic text-gray-600">{m.commentaire}</td></tr>
+                                {indicator.mesures.slice().sort((a,b) => new Date(b.dateMesure).getTime() - new Date(a.dateMesure).getTime()).map(m => (
+                                    <tr key={m.id} className="bg-white border-b"><td className="px-4 py-2">{new Date(m.dateMesure).toLocaleDateString('fr-FR')}</td><td className="px-4 py-2 font-medium">{m.valeur} {indicator.unite}</td><td className="px-4 py-2 italic text-gray-600">{m.commentaire}</td></tr>
                                 ))}
                             </tbody>
                         </table>
@@ -98,8 +100,8 @@ const IndicatorDetailPanel: React.FC<IndicatorDetailPanelProps> = ({ indicator, 
                 )}
                  {activeTab === 'relations' && (
                      <div className="bg-white p-4 rounded-lg border space-y-3">
-                         <DetailItem label="Risques liés" value={indicator.risqueIds.map(id => mockData.risques.find(r=>r.id===id)?.nom).join(', ')} />
-                         <DetailItem label="Contrôles liés" value={indicator.controleIds.map(id => mockData.controles.find(c=>c.id===id)?.nom).join(', ')} />
+                         <DetailItem label="Risques liés" value={indicator.risqueIds.map(id => (data.risques as any[]).find(r=>r.id===id)?.nom).join(', ')} />
+                         <DetailItem label="Contrôles liés" value={indicator.controleIds.map(id => (data.controles as any[]).find(c=>c.id===id)?.nom).join(', ')} />
                      </div>
                 )}
             </div>

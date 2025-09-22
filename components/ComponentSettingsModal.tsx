@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import type { AccueilComponent } from '../types';
-import { mockData } from '../constants';
+import type { AccueilComponent, Indicateur } from '../types';
+import { useDataContext } from '../context/AppContext';
 import { X } from 'lucide-react';
 
 interface ComponentSettingsModalProps {
@@ -13,6 +13,7 @@ interface ComponentSettingsModalProps {
 const formInputClasses = "block w-full text-sm text-gray-800 bg-white border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-300 focus:border-transparent transition-colors";
 
 const ComponentSettingsModal: React.FC<ComponentSettingsModalProps> = ({ isOpen, onClose, onSave, component }) => {
+    const { data } = useDataContext();
     const [config, setConfig] = useState(component.config);
 
     useEffect(() => {
@@ -50,7 +51,7 @@ const ComponentSettingsModal: React.FC<ComponentSettingsModalProps> = ({ isOpen,
                         <label className="block text-sm font-medium text-gray-700 mb-1">Indicateur à afficher</label>
                         <select name="indicatorId" value={config.indicatorId || ''} onChange={handleChange} className={formInputClasses}>
                             <option value="" disabled>Sélectionner un indicateur</option>
-                            {mockData.indicateurs.map(ind => (
+                            {(data.indicateurs as Indicateur[]).map(ind => (
                                 <option key={ind.id} value={ind.id}>{ind.nom}</option>
                             ))}
                         </select>

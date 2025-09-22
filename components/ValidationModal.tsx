@@ -1,24 +1,33 @@
 import React from 'react';
 import { X } from 'lucide-react';
-import type { Document, Procedure, ValidationInstance } from '../types';
-import { mockData } from '../constants';
+import type { Document, Procedure, ValidationInstance, Personne, FluxDefinition } from '../types';
+import { useDataContext } from '../context/AppContext';
 
 interface ValidationModalProps {
     validationModal: { show: boolean; document?: Document; procedure?: Procedure };
     setValidationModal: (modalState: { show: boolean; document?: Document; procedure?: Procedure }) => void;
+    onApprove: (element: Document | Procedure) => void;
 }
 
-const ValidationModal: React.FC<ValidationModalProps> = ({ validationModal, setValidationModal }) => {
+const ValidationModal: React.FC<ValidationModalProps> = ({ validationModal, setValidationModal, onApprove }) => {
+    const { data } = useDataContext();
+    const { validationInstances, fluxDefinitions, personnes } = data;
+
     if (!validationModal.show) return null;
 
     const element = validationModal.document || validationModal.procedure;
     if (!element) return null;
 
-    const validationInstance = mockData.validationInstances.find(vi => vi.id === element.validationInstanceId);
+    const validationInstance = (validationInstances as ValidationInstance[]).find(vi => vi.id === element.validationInstanceId);
     if (!validationInstance) return null;
 
-    const fluxDef = mockData.fluxDefinitions.find(f => f.id === validationInstance.fluxDefinitionId);
+    const fluxDef = (fluxDefinitions as FluxDefinition[]).find(f => f.id === validationInstance.fluxDefinitionId);
     const isEnCours = validationInstance.statut === 'En cours';
+
+    const handleApprove = () => {
+        onApprove(element);
+        setValidationModal({ show: false });
+    };
 
     const getStatusText = (status: Document['statut'] | Procedure['statut']) => {
         switch (status) {
@@ -60,7 +69,7 @@ const ValidationModal: React.FC<ValidationModalProps> = ({ validationModal, setV
                         <h4 className="font-medium text-gray-800 mb-2">Historique des validations</h4>
                         <div className="space-y-3 max-h-60 overflow-y-auto pr-2">
                             {validationInstance.historique.map((entry) => {
-                                const approbateur = mockData.personnes.find(p => p.id === entry.decideurId);
+                                const approbateur = (personnes as Personne[]).find(p => p.id === entry.decideurId);
                                 const etapeDef = fluxDef?.etapes.find(e => e.id === entry.etapeId);
                                 const etapeType = etapeDef?.type === 'Finale' ? 'Approbation finale' : 'Approbation intermédiaire';
                                 const decision = entry.decision;
@@ -78,7 +87,7 @@ const ValidationModal: React.FC<ValidationModalProps> = ({ validationModal, setV
                                                 <span className="text-gray-500 font-normal"> - {etapeType}</span>
                                             </div>
                                             <div className="text-sm text-gray-600">
-                                                {entry.dateDecision ? entry.dateDecision.toLocaleDateString('fr-FR') : 'En attente'} - 
+                                                {entry.dateDecision ? new Date(entry.dateDecision).toLocaleDateString('fr-FR') : 'En attente'} - 
                                                 <span className={`font-medium ${decisionColor}`}>
                                                     {decision}
                                                 </span>
@@ -101,7 +110,7 @@ const ValidationModal: React.FC<ValidationModalProps> = ({ validationModal, setV
                             Fermer
                         </button>
                         {isEnCours && (
-                            <button className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 font-medium">
+                            <button onClick={handleApprove} className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 font-medium">
                                 Approuver
                             </button>
                         )}

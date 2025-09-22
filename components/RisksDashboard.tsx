@@ -1,6 +1,6 @@
 import React from 'react';
-import { mockData } from '../constants';
-import { AlertTriangle, TrendingUp, BarChart2 } from 'lucide-react';
+import { useDataContext } from '../context/AppContext';
+import { BarChart2, TrendingUp } from 'lucide-react';
 
 const StatCard: React.FC<{ title: string; value: string | number; children?: React.ReactNode }> = ({ title, value, children }) => (
     <div className="bg-white p-4 rounded-lg shadow-sm border">
@@ -10,37 +10,41 @@ const StatCard: React.FC<{ title: string; value: string | number; children?: Rea
     </div>
 );
 
-const RisksDashboard: React.FC = () => (
+const RisksDashboard: React.FC = () => {
+    const { data } = useDataContext();
+    const dashboardStats = data.dashboardStats as any;
+    
+    return (
     <div className="space-y-6">
         <h2 className="text-xl font-semibold">Tableau de bord - Risques</h2>
         
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-            <StatCard title="Risques Totaux" value={mockData.dashboardStats.risques.total} />
-            <StatCard title="Risques Critiques" value={mockData.dashboardStats.risques.parNiveau.critique}>
+            <StatCard title="Risques Totaux" value={dashboardStats.risques.total} />
+            <StatCard title="Risques Critiques" value={dashboardStats.risques.parNiveau.critique}>
                 <div className="w-full bg-gray-200 rounded-full h-1.5 mt-2">
-                    <div className="bg-red-600 h-1.5 rounded-full" style={{ width: `${(mockData.dashboardStats.risques.parNiveau.critique / mockData.dashboardStats.risques.total) * 100}%` }}></div>
+                    <div className="bg-red-600 h-1.5 rounded-full" style={{ width: `${(dashboardStats.risques.parNiveau.critique / dashboardStats.risques.total) * 100}%` }}></div>
                 </div>
             </StatCard>
-            <StatCard title="Risques Élevés" value={mockData.dashboardStats.risques.parNiveau.eleve}>
+            <StatCard title="Risques Élevés" value={dashboardStats.risques.parNiveau.eleve}>
                  <div className="w-full bg-gray-200 rounded-full h-1.5 mt-2">
-                    <div className="bg-orange-500 h-1.5 rounded-full" style={{ width: `${(mockData.dashboardStats.risques.parNiveau.eleve / mockData.dashboardStats.risques.total) * 100}%` }}></div>
+                    <div className="bg-orange-500 h-1.5 rounded-full" style={{ width: `${(dashboardStats.risques.parNiveau.eleve / dashboardStats.risques.total) * 100}%` }}></div>
                 </div>
             </StatCard>
-            <StatCard title="Risques Moyens" value={mockData.dashboardStats.risques.parNiveau.moyen} />
+            <StatCard title="Risques Moyens" value={dashboardStats.risques.parNiveau.moyen} />
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             <div className="bg-white p-4 rounded-lg shadow-sm border">
                 <h3 className="font-semibold mb-4 flex items-center"><BarChart2 className="h-5 w-5 mr-2 text-blue-500" />Risques par processus</h3>
                 <div className="space-y-3">
-                    {mockData.dashboardStats.risques.parProcessus.map(p => (
+                    {dashboardStats.risques.parProcessus.map((p: any) => (
                         <div key={p.nom}>
                             <div className="flex justify-between text-sm mb-1">
                                 <span>{p.nom}</span>
                                 <span>{p.count}</span>
                             </div>
                             <div className="w-full bg-gray-200 rounded-full h-2.5">
-                                <div className={`${p.couleur} h-2.5 rounded-full`} style={{ width: `${(p.count / mockData.dashboardStats.risques.total) * 100}%` }}></div>
+                                <div className={`${p.couleur} h-2.5 rounded-full`} style={{ width: `${(p.count / dashboardStats.risques.total) * 100}%` }}></div>
                             </div>
                         </div>
                     ))}
@@ -54,6 +58,6 @@ const RisksDashboard: React.FC = () => (
             </div>
         </div>
     </div>
-);
+)};
 
 export default RisksDashboard;

@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import type { Risque } from '../types';
-import { mockData } from '../constants';
+import { useDataContext } from '../context/AppContext';
 import { X, Edit, Info, ShieldCheck, TrendingUp, BookOpen, History, FileText, Settings, CheckCircle, BarChart3, Link as LinkIcon } from 'lucide-react';
 
 interface RiskDetailPanelProps {
@@ -53,14 +53,15 @@ const MasteryItem: React.FC<{ item: any, icon: React.ElementType, onClick: () =>
 );
 
 const RiskDetailPanel: React.FC<RiskDetailPanelProps> = ({ risque, onClose, onEdit, onShowRelations }) => {
+    const { data } = useDataContext();
     const [activeTab, setActiveTab] = useState('identification');
     
-    const processus = mockData.processus.find(p => p.id === risque.processusId);
-    const proprietaire = mockData.postes.find(p => p.id === risque.proprietairePosteId);
-    const controles = mockData.controles.filter(c => risque.controleMaitriseIds.includes(c.id));
-    const documents = mockData.documents.filter(d => risque.documentMaitriseIds.includes(d.id));
-    const procedures = mockData.procedures.filter(p => risque.procedureMaitriseIds.includes(p.id));
-    const indicateurs = mockData.indicateurs.filter(i => risque.indicateurIds?.includes(i.id));
+    const processus = (data.processus as any[]).find(p => p.id === risque.processusId);
+    const proprietaire = (data.postes as any[]).find(p => p.id === risque.proprietairePosteId);
+    const controles = (data.controles as any[]).filter(c => risque.controleMaitriseIds.includes(c.id));
+    const documents = (data.documents as any[]).filter(d => risque.documentMaitriseIds.includes(d.id));
+    const procedures = (data.procedures as any[]).filter(p => risque.procedureMaitriseIds.includes(p.id));
+    const indicateurs = (data.indicateurs as any[]).filter(i => risque.indicateurIds?.includes(i.id));
 
     return (
         <div className="w-full max-w-md bg-white border-l shadow-lg flex flex-col h-full absolute right-0 top-0 md:relative animate-slide-in-right">
@@ -100,7 +101,7 @@ const RiskDetailPanel: React.FC<RiskDetailPanelProps> = ({ risque, onClose, onEd
                         <DetailItem label="Propriétaire" value={proprietaire?.intitule} />
                         <DetailItem label="Catégories" value={
                             <div className="flex flex-wrap gap-1">
-                                {mockData.categoriesRisques.filter(c=>risque.categorieIds.includes(c.id)).map(c => <span key={c.id} className="px-2 py-0.5 bg-gray-200 text-gray-700 text-xs rounded-full">{c.nom}</span>)}
+                                {(data.categoriesRisques as any[]).filter(c=>risque.categorieIds.includes(c.id)).map(c => <span key={c.id} className="px-2 py-0.5 bg-gray-200 text-gray-700 text-xs rounded-full">{c.nom}</span>)}
                             </div>
                         } />
                         <DetailItem label="Causes" value={<p className="whitespace-pre-wrap">{risque.causes}</p>} />
@@ -142,8 +143,8 @@ const RiskDetailPanel: React.FC<RiskDetailPanelProps> = ({ risque, onClose, onEd
                 )}
                 {activeTab === 'historique' && (
                      <div className="space-y-3 text-sm">
-                        <div className="flex items-start space-x-3"><Info className="h-4 w-4 mt-0.5 text-gray-500"/><p>Créé par <strong>{mockData.personnes.find(p=>p.id === risque.auteurId)?.nom}</strong> le {risque.dateCreation.toLocaleDateString('fr-FR')}</p></div>
-                        <div className="flex items-start space-x-3"><Edit className="h-4 w-4 mt-0.5 text-gray-500"/><p>Modifié le {risque.dateModification.toLocaleDateString('fr-FR')}</p></div>
+                        <div className="flex items-start space-x-3"><Info className="h-4 w-4 mt-0.5 text-gray-500"/><p>Créé par <strong>{(data.personnes as any[]).find(p=>p.id === risque.auteurId)?.nom}</strong> le {new Date(risque.dateCreation).toLocaleDateString('fr-FR')}</p></div>
+                        <div className="flex items-start space-x-3"><Edit className="h-4 w-4 mt-0.5 text-gray-500"/><p>Modifié le {new Date(risque.dateModification).toLocaleDateString('fr-FR')}</p></div>
                     </div>
                 )}
             </div>

@@ -1,7 +1,9 @@
 import React from 'react';
-import { X, Briefcase, Users, Building2, FileText, Settings, Target, AlertTriangle, CheckCircle, BarChart3, TrendingUp, Shield, Scale } from 'lucide-react';
-import { mockData } from '../constants';
+// FIX: Import Link as LinkIcon from lucide-react.
+import { X, Users, Briefcase, FileText, Workflow, Target, AlertTriangle, CheckCircle, TrendingUp, Shield, Link as LinkIcon } from 'lucide-react';
 import { modules } from '../constants';
+import { useDataContext } from '../context/AppContext';
+import { Personne, Poste, Processus } from '../types';
 
 interface EntityRelationsProps {
     target: any;
@@ -9,133 +11,93 @@ interface EntityRelationsProps {
     onExplore: (entity: any, entityType: string) => void;
 }
 
-const getRelatedEntities = (entityId: string, entityType: string) => {
-    const data = mockData;
-    switch (entityType) {
-        case 'risques':
-            const risque = data.risques.find(e => e.id === entityId);
-            if (!risque) return {};
-            return {
-                'Processus': data.processus.filter(e => e.id === risque.processusId),
-                'Contrôles de Maîtrise': data.controles.filter(e => risque.controleMaitriseIds.includes(e.id)),
-                'Documents de Maîtrise': data.documents.filter(e => risque.documentMaitriseIds.includes(e.id)),
-                'Procédures de Maîtrise': data.procedures.filter(e => risque.procedureMaitriseIds.includes(e.id)),
-                'Indicateurs': data.indicateurs.filter(e => risque.indicateurIds.includes(e.id)),
-            };
-        case 'controles':
-            const controle = data.controles.find(e => e.id === entityId);
-            if (!controle) return {};
-            return {
-                'Risques Maîtrisés': data.risques.filter(e => controle.risqueMaitriseIds.includes(e.id)),
-                'Procédures': data.procedures.filter(e => controle.procedureIds.includes(e.id)),
-                'Documents': data.documents.filter(e => controle.documentIds.includes(e.id)),
-                'Indicateurs': data.indicateurs.filter(e => controle.indicateurIds.includes(e.id)),
-                'Exécutants': data.personnes.filter(e => controle.executantsIds.includes(e.id)),
-            };
-        case 'documents':
-            const document = data.documents.find(e => e.id === entityId);
-            if (!document) return {};
-            return {
-                'Processus': data.processus.filter(e => document.processusIds.includes(e.id)),
-                'Risques': data.risques.filter(e => document.risqueIds.includes(e.id)),
-                'Contrôles': data.controles.filter(e => document.controleIds.includes(e.id)),
-            };
-        case 'procedures':
-            const procedure = data.procedures.find(e => e.id === entityId);
-            if(!procedure) return {};
-            return {
-                'Risques': data.risques.filter(e => procedure.risqueIds.includes(e.id)),
-                'Contrôles': data.controles.filter(e => procedure.controleIds.includes(e.id)),
-                'Documents': data.documents.filter(e => procedure.documentIds.includes(e.id)),
-                'Acteurs (Postes)': data.postes.filter(e => procedure.acteursPosteIds.includes(e.id)),
-            }
-        case 'processus':
-            const processus = data.processus.find(e => e.id === entityId);
-            if (!processus) return {};
-            return {
-                'Missions': data.missions.filter(e => processus.missionIds?.includes(e.id)),
-                'Procédures': data.procedures.filter(e => processus.procedureIds.includes(e.id)),
-                'Risques': data.risques.filter(e => processus.risqueIds.includes(e.id)),
-                'Contrôles': data.controles.filter(e => processus.controleIds.includes(e.id)),
-                'Indicateurs': data.indicateurs.filter(e => processus.indicateurIds.includes(e.id)),
-                'Documents': data.documents.filter(e => processus.documentIds.includes(e.id)),
-            }
-        case 'personnes':
-            const personne = data.personnes.find(e => e.id === entityId);
-            if (!personne) return {};
-            return {
-                'Postes': data.postes.filter(e => personne.posteIds.includes(e.id)),
-                'Entités': data.entites.filter(e => personne.entiteIds.includes(e.id)),
-                'Rôles': data.roles.filter(e => personne.roleIds.includes(e.id)),
-            };
-        case 'postes':
-            const poste = data.postes.find(e => e.id === entityId);
-            if (!poste) return {};
-            return {
-                'Occupants': data.personnes.filter(e => poste.occupantsIds.includes(e.id)),
-                'Compétences Requises': data.competences.filter(e => poste.competencesRequisesIds?.includes(e.id)),
-                'Habilitations (Rôles)': data.roles.filter(e => poste.habilitationsRoleIds?.includes(e.id)),
-                'Entité': data.entites.filter(e => e.id === poste.entiteId),
-            };
-        case 'missions':
-            const mission = data.missions.find(e => e.id === entityId);
-            if(!mission) return {};
-            return {
-                'KPIs': data.indicateurs.filter(e => mission.kpiIds.includes(e.id)),
-                'Processus': data.processus.filter(e => mission.processusIds.includes(e.id)),
-                'Risques': data.risques.filter(e => mission.risqueIds.includes(e.id)),
-                'Contrôles': data.controles.filter(e => mission.controleIds.includes(e.id)),
-            };
-        case 'indicateurs':
-            const indicateur = data.indicateurs.find(e => e.id === entityId);
-            if(!indicateur) return {};
-            return {
-                'Processus': data.processus.filter(e => indicateur.processusIds.includes(e.id)),
-                'Risques': data.risques.filter(e => indicateur.risqueIds.includes(e.id)),
-                'Contrôles': data.controles.filter(e => indicateur.controleIds.includes(e.id)),
-            };
-        case 'incidents':
-            const incident = data.incidents.find(e => e.id === entityId);
-            if(!incident) return {};
-            return {
-                'Risque lié': data.risques.filter(e => e.id === incident.lienRisqueId),
-                'Contrôle lié': data.controles.filter(e => e.id === incident.lienControleId),
-                'Actif lié': data.actifs.filter(e => e.id === incident.lienActifId),
-            };
-        case 'ameliorations':
-             const amelioration = data.ameliorations.find(e => e.id === entityId);
-             if(!amelioration) return {};
-             return {
-                'Incident lié': data.incidents.filter(e => e.id === amelioration.lienIncidentId),
-                'Risque lié': data.risques.filter(e => e.id === amelioration.lienRisqueId),
-                'Contrôle lié': data.controles.filter(e => e.id === amelioration.lienControleId),
-             };
-        default:
-            return {};
-    }
-};
-
 const getModuleIdForEntityType = (entityType: string) => {
-    if (entityType.endsWith('s')) {
-        return entityType;
-    }
-    const module = modules.find(m => entityType.toLowerCase().includes(m.id.slice(0, -1)));
+    const pluralType = entityType.endsWith('s') ? entityType : `${entityType}s`;
+    const module = modules.find(m => m.id === pluralType);
     return module ? module.id : entityType;
 }
 
+const getEntityName = (entity: any) => entity.nom || entity.intitule || entity.titre;
 
 const EntityRelations: React.FC<EntityRelationsProps> = ({ target, onClose, onExplore }) => {
+    const { data } = useDataContext();
+
+    const getRelatedEntities = React.useCallback((entity: any) => {
+        const relations: Record<string, any[]> = {};
+        const entityType = entity.type;
+
+        // Direct links (outgoing from the entity)
+        for (const key in entity) {
+            if (key.endsWith('Id') && typeof entity[key] === 'string') {
+                const moduleName = getModuleIdForEntityType(key.slice(0, -2));
+                const related = (data[moduleName] as any[])?.find(e => e.id === entity[key]);
+                if (related) {
+                    if (!relations[moduleName]) relations[moduleName] = [];
+                    relations[moduleName].push(related);
+                }
+            } else if (key.endsWith('Ids') && Array.isArray(entity[key])) {
+                const moduleName = getModuleIdForEntityType(key.slice(0, -3));
+                const related = (data[moduleName] as any[])?.filter(e => entity[key].includes(e.id));
+                if (related && related.length > 0) {
+                    if (!relations[moduleName]) relations[moduleName] = [];
+                    relations[moduleName].push(...related);
+                }
+            }
+        }
+        
+        // Inverse links (incoming to the entity)
+        for (const moduleName in data) {
+            if (Array.isArray(data[moduleName])) {
+                (data[moduleName] as any[]).forEach(item => {
+                    for (const key in item) {
+                        if ((key.endsWith('Id') && item[key] === entity.id) || (key.endsWith('Ids') && Array.isArray(item[key]) && item[key].includes(entity.id))) {
+                            if (!relations[moduleName]) relations[moduleName] = [];
+                            // Avoid duplicates
+                            if (!relations[moduleName].some(r => r.id === item.id)) {
+                                relations[moduleName].push(item);
+                            }
+                        }
+                    }
+                });
+            }
+        }
+
+        // Special logic for deeper relationships
+        if (entityType === 'postes') {
+            const poste = entity as Poste;
+            relations['Processus (Propriétaire)'] = (data.processus as Processus[]).filter(p => p.proprietaireProcessusId === poste.id);
+            relations['RACI'] = (data.raci as any[]).filter(r => r.posteId === poste.id).map(r => {
+                const obj = (data[getModuleIdForEntityType(r.objetType)] as any[])?.find(o => o.id === r.objetId);
+                return obj ? { ...obj, raciRole: r.role } : null;
+            }).filter(Boolean);
+        }
+        if (entityType === 'personnes') {
+             const personne = entity as Personne;
+             const postes = (data.postes as Poste[]).filter(p => p.occupantsIds.includes(personne.id));
+             if (postes.length > 0) {
+                if (!relations['postes']) relations['postes'] = [];
+                relations['postes'].push(...postes.filter(p => !relations['postes'].some(rp => rp.id === p.id)));
+             }
+        }
+
+        return relations;
+    }, [data]);
+    
     if (!target) return null;
     
-    const relations = getRelatedEntities(target.id, target.type);
-    const entityName = target.nom || target.intitule || target.titre;
-
+    const relations = getRelatedEntities(target);
+    const entityName = getEntityName(target);
+    const ICONS: Record<string, React.ElementType> = {
+        personnes: Users, postes: Briefcase, documents: FileText, procedures: Workflow, processus: Target,
+        risques: AlertTriangle, controles: CheckCircle, indicateurs: TrendingUp, actifs: Shield
+    };
+    
     return (
         <div className="fixed inset-0 bg-black bg-opacity-25 backdrop-blur-sm flex items-start justify-end z-40" onClick={onClose}>
             <div className="bg-white h-full w-full max-w-md shadow-2xl flex flex-col" onClick={e => e.stopPropagation()}>
                 <div className="p-4 border-b bg-gray-50">
                     <div className="flex items-center justify-between mb-2">
-                        <h3 className="text-lg font-semibold text-gray-800">Explorateur de Relations</h3>
+                        <h3 className="text-lg font-semibold text-gray-800">Vue 360°</h3>
                         <button onClick={onClose} className="text-gray-400 hover:text-gray-600 p-1 rounded-full hover:bg-gray-200">
                             <X className="h-5 w-5" />
                         </button>
@@ -147,17 +109,19 @@ const EntityRelations: React.FC<EntityRelationsProps> = ({ target, onClose, onEx
                 </div>
                 
                 <div className="flex-grow p-4 overflow-y-auto space-y-4">
-                    {Object.keys(relations).length === 0 && <p className="text-gray-600 text-center pt-8">Aucune relation directe trouvée.</p>}
+                    {Object.keys(relations).length === 0 && <p className="text-gray-600 text-center pt-8">Aucune relation trouvée.</p>}
                     {Object.entries(relations).map(([relationKey, relationData]) => {
                         if (!relationData || (Array.isArray(relationData) && relationData.length === 0)) return null;
                         
                         const items = Array.isArray(relationData) ? relationData : [relationData];
                         const entityType = getModuleIdForEntityType(relationKey.toLowerCase());
+                        const Icon = ICONS[entityType] || LinkIcon;
                         
                         return (
                             <div key={relationKey}>
-                                <h4 className="font-medium text-gray-900 capitalize mb-2 border-b pb-1 text-sm">
-                                    {relationKey} ({items.length})
+                                <h4 className="font-medium text-gray-900 capitalize mb-2 border-b pb-1 text-sm flex items-center gap-2">
+                                    <Icon className="h-4 w-4 text-gray-500" />
+                                    {relationKey.replace(/ \(.+?\)/, '')} ({items.length})
                                 </h4>
                                 <div className="space-y-1 mt-2">
                                     {items.map((item: any) => (
@@ -166,8 +130,13 @@ const EntityRelations: React.FC<EntityRelationsProps> = ({ target, onClose, onEx
                                             onClick={() => onExplore(item, entityType)}
                                             className="block w-full text-left p-2 rounded-lg bg-gray-50 hover:bg-blue-50 border border-transparent hover:border-blue-200 transition-colors"
                                         >
-                                            <div className="text-sm font-medium text-blue-700">{item.nom || item.intitule || item.titre}</div>
-                                            <div className="text-xs text-gray-500">{item.reference}</div>
+                                            <div className="flex justify-between items-center">
+                                                <div>
+                                                    <div className="text-sm font-medium text-blue-700">{getEntityName(item)}</div>
+                                                    <div className="text-xs text-gray-500">{item.reference}</div>
+                                                </div>
+                                                {item.raciRole && <span className="text-lg font-bold text-blue-600">{item.raciRole}</span>}
+                                            </div>
                                         </button>
                                     ))}
                                 </div>

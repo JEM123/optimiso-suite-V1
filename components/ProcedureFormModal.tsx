@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { mockData } from '../constants';
-import type { Procedure } from '../types';
+import { useDataContext } from '../context/AppContext';
+import type { Procedure, Poste } from '../types';
 import { X } from 'lucide-react';
 
 interface ProcedureFormModalProps {
@@ -13,6 +13,7 @@ interface ProcedureFormModalProps {
 const formInputClasses = "block w-full text-sm text-gray-800 bg-white border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-300 focus:border-transparent transition-colors";
 
 const ProcedureFormModal: React.FC<ProcedureFormModalProps> = ({ isOpen, onClose, onSave, procedure }) => {
+    const { data } = useDataContext();
     const [formData, setFormData] = useState<Partial<Procedure>>(procedure || {});
 
     useEffect(() => {
@@ -51,7 +52,7 @@ const ProcedureFormModal: React.FC<ProcedureFormModalProps> = ({ isOpen, onClose
                     <div>
                         <label className="block text-sm font-medium text-gray-700 mb-1">Acteurs (Postes)</label>
                         <select multiple value={formData.acteursPosteIds || []} onChange={(e) => handleMultiSelectChange('acteursPosteIds', Array.from(e.target.selectedOptions, option => option.value))} className={`${formInputClasses} h-24`}>
-                            {mockData.postes.map(p => <option key={p.id} value={p.id}>{p.intitule}</option>)}
+                            {(data.postes as Poste[]).map(p => <option key={p.id} value={p.id}>{p.intitule}</option>)}
                         </select>
                     </div>
                     {/* Add more fields for other relations if needed */}

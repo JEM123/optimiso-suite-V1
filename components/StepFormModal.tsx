@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { mockData } from '../constants';
-import type { EtapeProcedure } from '../types';
+import { useDataContext } from '../context/AppContext';
+import type { EtapeProcedure, Poste, Document, Risque, Controle } from '../types';
 import { X } from 'lucide-react';
 
 interface StepFormModalProps {
@@ -13,6 +13,8 @@ interface StepFormModalProps {
 const formInputClasses = "block w-full text-sm text-gray-800 bg-white border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-300 focus:border-transparent transition-colors";
 
 const StepFormModal: React.FC<StepFormModalProps> = ({ isOpen, onClose, onSave, context }) => {
+    const { data } = useDataContext();
+    const { postes, documents, risques, controles } = data;
     const [formData, setFormData] = useState<Partial<EtapeProcedure>>(context.step || {});
 
     useEffect(() => {
@@ -47,32 +49,32 @@ const StepFormModal: React.FC<StepFormModalProps> = ({ isOpen, onClose, onSave, 
                     <div><label className="block text-sm font-medium text-gray-700 mb-1">Responsable (Poste)</label>
                         <select name="responsablePosteId" value={formData.responsablePosteId || ''} onChange={handleChange} className={formInputClasses} required>
                             <option value="" disabled>Sélectionner un poste</option>
-                            {mockData.postes.map(p => <option key={p.id} value={p.id}>{p.intitule}</option>)}
+                            {(postes as Poste[]).map(p => <option key={p.id} value={p.id}>{p.intitule}</option>)}
                         </select>
                     </div>
                      <div><label className="block text-sm font-medium text-gray-700 mb-1">Description</label><textarea name="description" value={formData.description || ''} onChange={handleChange} rows={3} className={formInputClasses}></textarea></div>
                      <div>
                         <label className="block text-sm font-medium text-gray-700 mb-1">Documents en entrée</label>
                         <select multiple value={formData.entreesIds || []} onChange={(e) => handleMultiSelectChange('entreesIds', Array.from(e.target.selectedOptions, option => option.value))} className={`${formInputClasses} h-24`}>
-                            {mockData.documents.map(d => <option key={d.id} value={d.id}>{d.nom}</option>)}
+                            {(documents as Document[]).map(d => <option key={d.id} value={d.id}>{d.nom}</option>)}
                         </select>
                     </div>
                      <div>
                         <label className="block text-sm font-medium text-gray-700 mb-1">Documents en sortie</label>
                         <select multiple value={formData.sortiesIds || []} onChange={(e) => handleMultiSelectChange('sortiesIds', Array.from(e.target.selectedOptions, option => option.value))} className={`${formInputClasses} h-24`}>
-                            {mockData.documents.map(d => <option key={d.id} value={d.id}>{d.nom}</option>)}
+                            {(documents as Document[]).map(d => <option key={d.id} value={d.id}>{d.nom}</option>)}
                         </select>
                     </div>
                     <div>
                         <label className="block text-sm font-medium text-gray-700 mb-1">Risques liés</label>
                         <select multiple value={formData.risqueIds || []} onChange={(e) => handleMultiSelectChange('risqueIds', Array.from(e.target.selectedOptions, option => option.value))} className={`${formInputClasses} h-24`}>
-                            {mockData.risques.map(r => <option key={r.id} value={r.id}>{r.reference} - {r.nom}</option>)}
+                            {(risques as Risque[]).map(r => <option key={r.id} value={r.id}>{r.reference} - {r.nom}</option>)}
                         </select>
                     </div>
                     <div>
                         <label className="block text-sm font-medium text-gray-700 mb-1">Contrôles de maîtrise</label>
                         <select multiple value={formData.controleIds || []} onChange={(e) => handleMultiSelectChange('controleIds', Array.from(e.target.selectedOptions, option => option.value))} className={`${formInputClasses} h-24`}>
-                            {mockData.controles.map(c => <option key={c.id} value={c.id}>{c.reference} - {c.nom}</option>)}
+                            {(controles as Controle[]).map(c => <option key={c.id} value={c.id}>{c.reference} - {c.nom}</option>)}
                         </select>
                     </div>
                 </div>

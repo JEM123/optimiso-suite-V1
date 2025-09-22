@@ -1,8 +1,9 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { mockData } from '../constants';
-import type { Role } from '../types';
+import { useDataContext } from '../context/AppContext';
+import type { Role, Personne } from '../types';
 import { X } from 'lucide-react';
 import PermissionsMatrix from './PermissionsMatrix';
+import { modules } from '../constants';
 
 interface RoleFormModalProps {
     isOpen: boolean;
@@ -13,14 +14,14 @@ interface RoleFormModalProps {
 
 const formInputClasses = "block w-full text-sm text-gray-800 bg-white border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-300 focus:border-transparent transition-colors";
 
-const MultiSelectPeople: React.FC<{ selectedIds: string[], onChange: (ids: string[]) => void }> = ({ selectedIds, onChange }) => {
+const MultiSelectPeople: React.FC<{ selectedIds: string[], onChange: (ids: string[]) => void, allPeople: Personne[] }> = ({ selectedIds, onChange, allPeople }) => {
     const [searchTerm, setSearchTerm] = useState('');
     
     const filteredPeople = useMemo(() => {
-        return mockData.personnes.filter(p => 
+        return allPeople.filter(p => 
             `${p.prenom} ${p.nom}`.toLowerCase().includes(searchTerm.toLowerCase())
         );
-    }, [searchTerm]);
+    }, [searchTerm, allPeople]);
 
     const handleSelect = (id: string) => {
         const newSelectedIds = selectedIds.includes(id) ? selectedIds.filter(i => i !== id) : [...selectedIds, id];
@@ -49,12 +50,18 @@ const MultiSelectPeople: React.FC<{ selectedIds: string[], onChange: (ids: strin
 }
 
 const RoleFormModal: React.FC<RoleFormModalProps> = ({ isOpen, onClose, onSave, role }) => {
+    const { data } = useDataContext();
     const [formData, setFormData] = useState<Partial<Role>>(role || {});
     const [activeTab, setActiveTab] = useState('general');
 
     useEffect(() => {
         if (isOpen) {
-            setFormData(role || {});
+            setFormData(role || {
+                permissions: modules.reduce((acc, module) => {
+                    acc[module.id] = { C: false, R: false, U: false, D: false };
+                    return acc;
+                }, {} as Role['permissions'])
+            });
             setActiveTab('general');
         }
     }, [role, isOpen]);
@@ -117,7 +124,7 @@ const RoleFormModal: React.FC<RoleFormModalProps> = ({ isOpen, onClose, onSave, 
                     {activeTab === 'assignations' && (
                         <div>
                             <label className="block text-sm font-semibold text-gray-700 mb-1">Personnes assignées</label>
-                            <MultiSelectPeople selectedIds={formData.personneIds || []} onChange={handlePeopleChange} />
+                            <MultiSelectPeople selectedIds={formData.personneIds || []} onChange={handlePeopleChange} allPeople={data.personnes as Personne[]} />
                         </div>
                     )}
 

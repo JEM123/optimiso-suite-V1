@@ -1,10 +1,10 @@
-
 import React, { useState, useMemo, useEffect } from 'react';
 import type { Document } from '../types';
 import { Plus, Search, Trash2, Edit, FileText, Link as LinkIcon, Download, FileSpreadsheet } from 'lucide-react';
 import DocumentDetailPanel from './DocumentDetailPanel';
 import DocumentFormModal from './DocumentFormModal';
 import { useDataContext, useAppContext } from '../context/AppContext';
+import { v4 as uuidv4 } from 'uuid'; // Assuming uuid is available for unique IDs
 
 // --- UTILITY FUNCTIONS & CONSTANTS ---
 const exportToCsv = (filename: string, rows: object[]) => {
@@ -77,7 +77,7 @@ interface DocumentsPageProps {
 // --- MAIN PAGE COMPONENT ---
 const DocumentsPage: React.FC<DocumentsPageProps> = ({ onShowValidation, onShowRelations, notifiedItemId }) => {
     const { data, actions } = useDataContext();
-    const { clearNotifiedTarget } = useAppContext();
+    const { user, clearNotifiedTarget } = useAppContext();
     const { documents, categoriesDocuments } = data;
     
     const [selectedDocument, setSelectedDocument] = useState<Document | null>(null);
@@ -104,7 +104,7 @@ const DocumentsPage: React.FC<DocumentsPageProps> = ({ onShowValidation, onShowR
         );
     }, [documents, searchTerm, filters]);
 
-    const handleOpenModal = (doc?: Document) => { 
+    const handleOpenModal = (doc?: Partial<Document>) => { 
         setEditingDocument(doc || newDocumentTemplate()); 
         setIsModalOpen(true); 
     };
@@ -122,6 +122,30 @@ const DocumentsPage: React.FC<DocumentsPageProps> = ({ onShowValidation, onShowR
         }
     };
     
+    const handleSubmitForValidation = (doc: Document) => {
+        if (window.confirm("Êtes-vous sûr de vouloir soumettre ce document pour validation ? Il ne sera plus modifiable.")) {
+            actions.saveDocument({ ...doc, statut: 'en_validation' });
+            // In a real app, this would also create the validationInstance
+        }
+    };
+    
+    const handleCreateNewVersion = (doc: Document) => {
+        const majorVersion = parseInt(doc.version.match(/(\d+)/)?.[0] || '1') + 1;
+        const newVersion: Partial<Document> = {
+            ...JSON.parse(JSON.stringify(doc)), // Deep copy
+            id: undefined, // Will be assigned on save
+            originalId: doc.originalId || doc.id,
+            version: `v${majorVersion}.0`,
+            statut: 'brouillon',
+            validationInstanceId: undefined,
+            versionHistory: [
+                { version: doc.version, date: doc.dateModification, authorId: doc.auteurId },
+                ...(doc.versionHistory || [])
+            ]
+        };
+        handleOpenModal(newVersion);
+    };
+
     const handleExportCsv = () => {
         const dataToExport = filteredDocuments.map(doc => ({
             Reference: doc.reference,
@@ -180,7 +204,7 @@ const DocumentsPage: React.FC<DocumentsPageProps> = ({ onShowValidation, onShowR
                     </div>
                 </div>
             </div>
-            {selectedDocument && <DocumentDetailPanel document={selectedDocument} onClose={() => setSelectedDocument(null)} onEdit={handleOpenModal} onShowValidation={onShowValidation} onShowRelations={onShowRelations} />}
+            {selectedDocument && <DocumentDetailPanel document={selectedDocument} onClose={() => setSelectedDocument(null)} onEdit={handleOpenModal} onShowValidation={onShowValidation} onShowRelations={onShowRelations} onSubmitForValidation={handleSubmitForValidation} onCreateNewVersion={handleCreateNewVersion} />}
             <DocumentFormModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} onSave={handleSaveDocument} document={editingDocument} />
         </div>
     );

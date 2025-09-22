@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
-import type { Controle, ExecutionControle } from '../types';
-import { mockData } from '../constants';
+import type { Controle, ExecutionControle, Personne, Risque, Document, Procedure } from '../types';
+import { useDataContext } from '../context/AppContext';
 import { X, Edit, Info, Clock, BookOpen, History, FileText, Settings, AlertTriangle, Check, XCircle, Loader, Link as LinkIcon } from 'lucide-react';
 
 interface ControlDetailPanelProps {
@@ -39,15 +39,16 @@ const ExecutionStatusIcon: React.FC<{ status: ExecutionControle['statut'] }> = (
 
 
 const ControlDetailPanel: React.FC<ControlDetailPanelProps> = ({ control, onClose, onEdit, onShowRelations }) => {
+    const { data } = useDataContext();
     const [activeTab, setActiveTab] = useState('details');
     
-    const { personnes, risques, documents, procedures, executionsControles } = mockData;
-    const executants = personnes.filter(p => control.executantsIds.includes(p.id));
-    const superviseur = personnes.find(p => p.id === control.superviseurId);
-    const linkedRisks = risques.filter(r => control.risqueMaitriseIds.includes(r.id));
-    const linkedDocuments = documents.filter(d => control.documentIds.includes(d.id));
-    const linkedProcedures = procedures.filter(p => control.procedureIds.includes(p.id));
-    const controlExecutions = executionsControles.filter(e => e.controleId === control.id);
+    const { personnes, risques, documents, procedures, executionsControles, categoriesControles } = data;
+    const executants = (personnes as Personne[]).filter(p => control.executantsIds.includes(p.id));
+    const superviseur = (personnes as Personne[]).find(p => p.id === control.superviseurId);
+    const linkedRisks = (risques as Risque[]).filter(r => control.risqueMaitriseIds.includes(r.id));
+    const linkedDocuments = (documents as Document[]).filter(d => control.documentIds.includes(d.id));
+    const linkedProcedures = (procedures as Procedure[]).filter(p => control.procedureIds.includes(p.id));
+    const controlExecutions = (executionsControles as ExecutionControle[]).filter(e => e.controleId === control.id);
 
     return (
         <div className="w-full max-w-md bg-white border-l shadow-lg flex flex-col h-full absolute right-0 top-0 md:relative animate-slide-in-right">
@@ -85,7 +86,7 @@ const ControlDetailPanel: React.FC<ControlDetailPanelProps> = ({ control, onClos
                         <DetailItem label="Méthode d'exécution" value={<p className="whitespace-pre-wrap">{control.methodeExecution}</p>} />
                         <DetailItem label="Catégories" value={
                             <div className="flex flex-wrap gap-1">
-                                {mockData.categoriesControles.filter(c=>control.categorieIds.includes(c.id)).map(c => <span key={c.id} className="px-2 py-0.5 bg-gray-200 text-gray-700 text-xs rounded-full">{c.nom}</span>)}
+                                {(categoriesControles as any[]).filter(c=>control.categorieIds.includes(c.id)).map(c => <span key={c.id} className="px-2 py-0.5 bg-gray-200 text-gray-700 text-xs rounded-full">{c.nom}</span>)}
                             </div>
                         } />
                     </div>
@@ -121,7 +122,7 @@ const ControlDetailPanel: React.FC<ControlDetailPanelProps> = ({ control, onClos
                                 <ExecutionStatusIcon status={exec.statut} />
                                 <div className="flex-1">
                                     <p className="text-sm font-medium text-gray-800">{exec.nom}</p>
-                                    <p className="text-xs text-gray-500">Échéance: {exec.dateEcheance.toLocaleDateString('fr-FR')}</p>
+                                    <p className="text-xs text-gray-500">Échéance: {new Date(exec.dateEcheance).toLocaleDateString('fr-FR')}</p>
                                 </div>
                              </div>
                         ))}

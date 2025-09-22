@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { mockData } from '../constants';
-import type { Controle, ChampResultat } from '../types';
+import { useDataContext } from '../context/AppContext';
+import type { Controle, ChampResultat, Personne, Risque, Document, Procedure } from '../types';
 import { X, Plus, Trash2 } from 'lucide-react';
 
 interface ControlFormModalProps {
@@ -41,6 +41,9 @@ const MultiSelect: React.FC<{ items: any[], selectedIds: string[], onChange: (id
 }
 
 const ControlFormModal: React.FC<ControlFormModalProps> = ({ isOpen, onClose, onSave, control }) => {
+    const { data } = useDataContext();
+    const { personnes, risques, documents, procedures } = data;
+
     const [formData, setFormData] = useState<Partial<Controle>>(control || newControlTemplate());
     const [activeTab, setActiveTab] = useState('identification');
 
@@ -112,15 +115,15 @@ const ControlFormModal: React.FC<ControlFormModalProps> = ({ isOpen, onClose, on
                         {formData.typePlanification === 'periodique' && <div><label className="block text-sm font-semibold text-gray-700 mb-1">Fréquence</label><select name="frequence" value={formData.frequence} onChange={handleChange} className={formInputClasses}>{['quotidienne', 'hebdomadaire', 'mensuelle', 'trimestrielle', 'annuelle'].map(f=><option key={f} value={f}>{f}</option>)}</select></div>}
                         <div><label className="block text-sm font-semibold text-gray-700 mb-1">Exécutants</label>
                             <select multiple value={formData.executantsIds} onChange={(e) => handleMultiSelectChange('executantsIds', Array.from(e.target.selectedOptions, option => option.value))} className={`${formInputClasses} h-24`}>
-                                {mockData.personnes.map(p=><option key={p.id} value={p.id}>{p.prenom} {p.nom}</option>)}
+                                {(personnes as Personne[]).map(p=><option key={p.id} value={p.id}>{p.prenom} {p.nom}</option>)}
                             </select>
                         </div>
                     </div>}
 
                     {activeTab === 'maitrise' && <div className="space-y-4 bg-gray-50 p-4 rounded-lg">
-                        <MultiSelect items={mockData.risques} selectedIds={formData.risqueMaitriseIds || []} onChange={(ids) => handleMultiSelectChange('risqueMaitriseIds', ids)} label="Risques maîtrisés" />
-                        <MultiSelect items={mockData.documents} selectedIds={formData.documentIds || []} onChange={(ids) => handleMultiSelectChange('documentIds', ids)} label="Documents liés" />
-                        <MultiSelect items={mockData.procedures} selectedIds={formData.procedureIds || []} onChange={(ids) => handleMultiSelectChange('procedureIds', ids)} label="Procédures liées" />
+                        <MultiSelect items={risques as Risque[]} selectedIds={formData.risqueMaitriseIds || []} onChange={(ids) => handleMultiSelectChange('risqueMaitriseIds', ids)} label="Risques maîtrisés" />
+                        <MultiSelect items={documents as Document[]} selectedIds={formData.documentIds || []} onChange={(ids) => handleMultiSelectChange('documentIds', ids)} label="Documents liés" />
+                        <MultiSelect items={procedures as Procedure[]} selectedIds={formData.procedureIds || []} onChange={(ids) => handleMultiSelectChange('procedureIds', ids)} label="Procédures liées" />
                     </div>}
 
                     {activeTab === 'resultats' && <div className="space-y-4">

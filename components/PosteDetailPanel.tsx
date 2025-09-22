@@ -1,8 +1,7 @@
 import React, { useState } from 'react';
-import type { Poste } from '../types';
-import { mockData } from '../constants';
+import type { Poste, Entite, Personne, Competence, Role, RACI, OccupationHistory, Processus, Controle } from '../types';
 import { Users, Edit, Briefcase, Info, BookOpen, UserCheck, Link as LinkIcon, X } from 'lucide-react';
-import { useAppContext } from '../context/AppContext';
+import { useAppContext, useDataContext } from '../context/AppContext';
 
 const POST_STATUS_COLORS: Record<Poste['statut'], string> = {
     'brouillon': 'bg-gray-100 text-gray-800',
@@ -34,7 +33,11 @@ interface PosteDetailPanelProps {
 const PosteDetailPanel: React.FC<PosteDetailPanelProps> = ({ poste, onClose, onEdit, onShowRelations }) => {
     const [activeTab, setActiveTab] = useState('details');
     const { settings } = useAppContext();
-    const { entites, personnes, competences, roles, raci, occupationHistory, processus, controles } = mockData;
+    const { data } = useDataContext();
+    const { entites, personnes, competences, roles, raci, occupationHistory, processus, controles } = data as {
+        entites: Entite[], personnes: Personne[], competences: Competence[], roles: Role[], raci: RACI[],
+        occupationHistory: OccupationHistory[], processus: Processus[], controles: Controle[]
+    };
     
     const entite = entites.find(e => e.id === poste.entiteId);
     const occupants = personnes.filter(p => poste.occupantsIds.includes(p.id));
@@ -103,7 +106,7 @@ const PosteDetailPanel: React.FC<PosteDetailPanelProps> = ({ poste, onClose, onE
                         <div className="flex items-baseline space-x-2 mt-1"><span className="text-2xl font-bold text-gray-900">{occupants.length}</span><span className="text-gray-600">/ {poste.effectifCible} occupant(s)</span></div>
                     </div>
                      <div><SectionTitle>Occupants Actuels</SectionTitle><div className="divide-y border rounded-md">{occupants.map(o => <div key={o.id} className="text-sm p-2 bg-white">{o.prenom} {o.nom}</div>)}</div></div>
-                     <div><SectionTitle>Historique</SectionTitle><div className="divide-y border rounded-md">{history.map(h => { const p = personnes.find(pe => pe.id === h.personneId); return (<div key={h.id} className="text-sm p-2 bg-white">{p?.prenom} {p?.nom} (du {h.dateDebut.toLocaleDateString('fr-FR')} au {h.dateFin?.toLocaleDateString('fr-FR') || 'présent'})</div>)})}</div></div>
+                     <div><SectionTitle>Historique</SectionTitle><div className="divide-y border rounded-md">{history.map(h => { const p = personnes.find(pe => pe.id === h.personneId); return (<div key={h.id} className="text-sm p-2 bg-white">{p?.prenom} {p?.nom} (du {new Date(h.dateDebut).toLocaleDateString('fr-FR')} au {h.dateFin ? new Date(h.dateFin).toLocaleDateString('fr-FR') : 'présent'})</div>)})}</div></div>
                 </div>}
                 {activeTab === 'raci' && <div className="space-y-2">
                     {raciLinks.map(link => {

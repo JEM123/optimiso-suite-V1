@@ -1,6 +1,6 @@
 import React from 'react';
-import type { Amelioration } from '../types';
-import { mockData } from '../constants';
+import type { Amelioration, Personne } from '../types';
+import { useDataContext } from '../context/AppContext';
 
 interface AmeliorationCardProps {
     amelioration: Amelioration;
@@ -16,7 +16,8 @@ const PRIORITY_COLORS: Record<Amelioration['priorite'], string> = {
 };
 
 const AmeliorationCard: React.FC<AmeliorationCardProps> = ({ amelioration, onSelectAmelioration, onDragStart }) => {
-    const pilote = mockData.personnes.find(p => p.id === amelioration.piloteId);
+    const { data } = useDataContext();
+    const pilote = (data.personnes as Personne[]).find(p => p.id === amelioration.piloteId);
     const piloteInitials = pilote ? `${pilote.prenom[0]}${pilote.nom[0]}` : '?';
 
     const totalActions = amelioration.actions.length;

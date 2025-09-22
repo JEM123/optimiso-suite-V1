@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
-import type { Amelioration, AmeliorationAction } from '../types';
-import { mockData } from '../constants';
+import type { Amelioration, AmeliorationAction, Personne, Entite, Risque, Incident, Controle } from '../types';
+import { useDataContext } from '../context/AppContext';
 import { X, Edit, Info, List, Link as LinkIcon, Plus, Trash2, CheckCircle, Clock, History, AlertTriangle, User, Building, Euro } from 'lucide-react';
 import AmeliorationActionFormModal from './AmeliorationActionFormModal';
 
@@ -33,16 +33,17 @@ const ActionItem: React.FC<{ action: AmeliorationAction; onEdit: () => void; onD
 
 
 const AmeliorationDetailPanel: React.FC<AmeliorationDetailPanelProps> = ({ amelioration, onClose, onEdit, onShowRelations, onSaveAction, onDeleteAction }) => {
+    const { data } = useDataContext();
     const [activeTab, setActiveTab] = useState('details');
     const [isActionModalOpen, setActionModalOpen] = useState(false);
     const [editingAction, setEditingAction] = useState<Partial<AmeliorationAction> | null>(null);
 
-    const pilote = mockData.personnes.find(p => p.id === amelioration.piloteId);
-    const commanditaire = mockData.personnes.find(p => p.id === amelioration.commanditaireId);
-    const entite = mockData.entites.find(e => e.id === amelioration.entiteId);
-    const linkedRisk = mockData.risques.find(r => r.id === amelioration.lienRisqueId);
-    const linkedIncident = mockData.incidents.find(i => i.id === amelioration.lienIncidentId);
-    const linkedControl = mockData.controles.find(c => c.id === amelioration.lienControleId);
+    const pilote = (data.personnes as Personne[]).find(p => p.id === amelioration.piloteId);
+    const commanditaire = (data.personnes as Personne[]).find(p => p.id === amelioration.commanditaireId);
+    const entite = (data.entites as Entite[]).find(e => e.id === amelioration.entiteId);
+    const linkedRisk = (data.risques as Risque[]).find(r => r.id === amelioration.lienRisqueId);
+    const linkedIncident = (data.incidents as Incident[]).find(i => i.id === amelioration.lienIncidentId);
+    const linkedControl = (data.controles as Controle[]).find(c => c.id === amelioration.lienControleId);
     
     const totalActions = amelioration.actions.length;
     const doneActions = amelioration.actions.filter(a => a.statut === 'Fait').length;
@@ -104,8 +105,8 @@ const AmeliorationDetailPanel: React.FC<AmeliorationDetailPanelProps> = ({ ameli
                     </div>}
                     {activeTab === 'history' && (
                         <div className="space-y-3 text-sm">
-                            <div className="flex items-start space-x-3"><Info className="h-4 w-4 mt-0.5 text-gray-500"/><p>Créé le {amelioration.dateCreation.toLocaleDateString('fr-FR')}</p></div>
-                            <div className="flex items-start space-x-3"><Edit className="h-4 w-4 mt-0.5 text-gray-500"/><p>Modifié le {amelioration.dateModification.toLocaleDateString('fr-FR')}</p></div>
+                            <div className="flex items-start space-x-3"><Info className="h-4 w-4 mt-0.5 text-gray-500"/><p>Créé le {new Date(amelioration.dateCreation).toLocaleDateString('fr-FR')}</p></div>
+                            <div className="flex items-start space-x-3"><Edit className="h-4 w-4 mt-0.5 text-gray-500"/><p>Modifié le {new Date(amelioration.dateModification).toLocaleDateString('fr-FR')}</p></div>
                         </div>
                     )}
                 </div>

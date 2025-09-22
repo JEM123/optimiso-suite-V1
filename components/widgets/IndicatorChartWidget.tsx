@@ -1,13 +1,14 @@
 import React from 'react';
-import { mockData } from '../../constants';
-import type { AccueilComponentConfig } from '../../types';
+import { useDataContext } from '../../context/AppContext';
+import type { AccueilComponentConfig, Indicateur } from '../../types';
 
 interface IndicatorChartWidgetProps {
     config: AccueilComponentConfig;
 }
 
 const IndicatorChartWidget: React.FC<IndicatorChartWidgetProps> = ({ config }) => {
-    const indicator = (mockData.indicateurs as any[]).find(i => i.id === config.indicatorId);
+    const { data } = useDataContext();
+    const indicator = (data.indicateurs as Indicateur[]).find(i => i.id === config.indicatorId);
 
     if (!indicator) {
         return (
@@ -17,15 +18,15 @@ const IndicatorChartWidget: React.FC<IndicatorChartWidgetProps> = ({ config }) =
         );
     }
     
-    const data = indicator.mesures;
+    const chartData = indicator.mesures;
     const title = indicator.nom;
-    const maxValue = data.length > 0 ? Math.max(...data.map((d: any) => d.valeur)) : 1;
+    const maxValue = chartData.length > 0 ? Math.max(...chartData.map((d: any) => d.valeur)) : 1;
     
     return (
         <div className="bg-white rounded-lg p-4 shadow-sm border h-full flex flex-col">
             <h3 className="text-lg font-semibold mb-4 text-gray-800">{title}</h3>
             <div className="flex-grow flex items-end space-x-2">
-                {data.map((mesure: any) => (
+                {chartData.map((mesure: any) => (
                     <div key={mesure.id} className="flex-1 flex flex-col items-center">
                         <div className="w-full bg-blue-500 rounded-t transition-all duration-300 hover:bg-blue-600 relative group"
                             style={{ height: `${(mesure.valeur / maxValue) * 100}%` }}>

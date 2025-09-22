@@ -137,6 +137,13 @@ export interface CategorieDocument extends BaseEntity {
     //
 }
 
+export interface VersionHistory {
+    version: string;
+    date: Date;
+    authorId: string;
+    notes?: string;
+}
+
 export interface Document extends BaseEntity {
   categorieIds: string[];
   source: 'Fichier' | 'Lien' | 'Description';
@@ -153,6 +160,8 @@ export interface Document extends BaseEntity {
   validationInstanceId?: string;
   risqueIds: string[];
   controleIds: string[];
+  versionHistory?: VersionHistory[];
+  originalId?: string;
 }
 
 export interface EtapeProcedure {
@@ -190,6 +199,8 @@ export interface Procedure extends BaseEntity {
   etapes: EtapeProcedure[];
   liens: ProcedureLien[];
   validationInstanceId?: string;
+  versionHistory?: VersionHistory[];
+  originalId?: string;
 }
 
 // --- FLUX & SYNCHRONISATION MODULE TYPES ---

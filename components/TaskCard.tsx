@@ -1,6 +1,6 @@
 import React from 'react';
-import type { Tache } from '../types';
-import { mockData } from '../constants';
+import type { Tache, Personne } from '../types';
+import { useDataContext } from '../context/AppContext';
 
 interface TaskCardProps {
     task: Tache;
@@ -16,7 +16,8 @@ const PRIORITY_COLORS: Record<Tache['priorite'], string> = {
 };
 
 const TaskCard: React.FC<TaskCardProps> = ({ task, onSelectTask, onDragStart }) => {
-    const assignee = mockData.personnes.find(p => p.id === task.assigneA);
+    const { data } = useDataContext();
+    const assignee = (data.personnes as Personne[]).find(p => p.id === task.assigneA);
     const assigneeInitials = assignee ? `${assignee.prenom[0]}${assignee.nom[0]}` : '?';
 
     return (
@@ -35,7 +36,7 @@ const TaskCard: React.FC<TaskCardProps> = ({ task, onSelectTask, onDragStart }) 
             </div>
             <div className="flex justify-between items-center mt-3">
                 <div className="text-xs text-gray-500">
-                    Échéance: {task.dateEcheance.toLocaleDateString('fr-FR')}
+                    Échéance: {new Date(task.dateEcheance).toLocaleDateString('fr-FR')}
                 </div>
                 <div 
                     className="w-6 h-6 bg-gray-200 rounded-full flex items-center justify-center text-xs font-bold text-gray-600"

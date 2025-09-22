@@ -8,25 +8,42 @@ import DocumentsDashboard from './components/DocumentsDashboard';
 import ValidationModal from './components/ValidationModal';
 import EntityRelations from './components/EntityRelations';
 import { AppProvider, useAppContext, useDataContext } from './context/AppContext';
+import type { Document, Procedure, ValidationInstance } from './types';
+import ImpactAnalysisModal from './components/ImpactAnalysisModal';
 
 const AppContent: React.FC = () => {
     const { activeModule, setActiveModule, sidebarOpen, setSidebarOpen, user, notifiedTarget } = useAppContext();
     const { data, actions } = useDataContext();
     
     const [relationExplorerTarget, setRelationExplorerTarget] = React.useState<any>(null);
-    const [validationModal, setValidationModal] = React.useState<{ show: boolean; documentId?: string; procedureId?: string }>({ show: false });
+    const [validationModal, setValidationModal] = React.useState<{ show: boolean; document?: Document; procedure?: Procedure }>({ show: false });
+    const [impactAnalysisTarget, setImpactAnalysisTarget] = React.useState<any>(null);
 
     const handleShowRelations = (entity: any, entityType: string) => {
         setRelationExplorerTarget({ ...entity, type: entityType });
     };
 
-    const handleShowValidation = (docId: string) => {
-        setValidationModal({ show: true, documentId: docId });
+    const handleShowValidation = (element: Document | Procedure) => {
+        setValidationModal({ show: true, document: 'source' in element ? element : undefined, procedure: !('source' in element) ? element : undefined });
+    };
+
+    const handleShowImpactAnalysis = (element: any, type: string) => {
+        setImpactAnalysisTarget({ ...element, type });
     };
     
-    const documentForModal = validationModal.documentId ? data.documents.find(d => d.id === validationModal.documentId) : undefined;
-    const procedureForModal = validationModal.procedureId ? data.procedures.find(p => p.id === validationModal.procedureId) : undefined;
-
+    const handleApproveValidation = async (element: Document | Procedure) => {
+        if ('source' in element) { // It's a Document
+            await actions.saveDocument({ ...element, statut: 'publie' });
+        } else { // It's a Procedure
+            await actions.saveProcedure({ ...element, statut: 'publie' });
+        }
+        
+        const validationInstance = (data.validationInstances as ValidationInstance[]).find(vi => vi.id === element.validationInstanceId);
+        if (validationInstance) {
+            await actions.saveValidationInstance({ ...validationInstance, statut: 'Approuvé' });
+        }
+    };
+    
     const renderContent = () => {
         const pageContainer = (content: React.ReactNode) => <div className="p-6">{content}</div>;
 
@@ -36,16 +53,16 @@ const AppContent: React.FC = () => {
             case 'risques-dashboard':
                 return pageContainer(<RisksDashboard />);
             case 'documents-dashboard':
-                return pageContainer(<DocumentsDashboard onShowValidation={(doc) => handleShowValidation(doc.id)} />);
+                return pageContainer(<DocumentsDashboard onShowValidation={handleShowValidation} />);
             default:
-                // ModulePage and its children now control their own padding and layout within the main content area.
                 return (
                     <ModulePage
                         moduleId={activeModule}
                         onShowRelations={handleShowRelations}
-                        onShowValidation={(doc) => handleShowValidation(doc.id)}
+                        onShowValidation={handleShowValidation}
                         setActiveModule={setActiveModule}
                         notifiedItemId={notifiedTarget?.moduleId === activeModule ? notifiedTarget.itemId : null}
+                        onShowImpactAnalysis={handleShowImpactAnalysis}
                     />
                 );
         }
@@ -72,15 +89,21 @@ const AppContent: React.FC = () => {
                 onClose={() => setRelationExplorerTarget(null)}
                 onExplore={handleShowRelations}
             />
+
+            <ImpactAnalysisModal
+                target={impactAnalysisTarget}
+                onClose={() => setImpactAnalysisTarget(null)}
+                onExplore={handleShowRelations}
+            />
             
             <ValidationModal 
-              validationModal={{ show: validationModal.show, document: documentForModal, procedure: procedureForModal }}
-              setValidationModal={(state) => setValidationModal({ show: state.show, documentId: state.document?.id, procedureId: state.procedure?.id })} 
+              validationModal={validationModal}
+              setValidationModal={setValidationModal} 
+              onApprove={handleApproveValidation}
             />
         </div>
     );
 }
-
 
 const App: React.FC = () => {
   return (

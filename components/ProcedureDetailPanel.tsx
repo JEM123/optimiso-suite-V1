@@ -1,8 +1,6 @@
-
-
 import React, { useState } from 'react';
-import type { Procedure, EtapeProcedure } from '../types';
-import { mockData } from '../constants';
+import type { Procedure, EtapeProcedure, Poste, Document, Risque, Controle } from '../types';
+import { useDataContext } from '../context/AppContext';
 import { X, Briefcase, FileInput, FileOutput, Edit, BookOpen, Info, AlertTriangle, CheckCircle } from 'lucide-react';
 
 interface ProcedureStepDetailPanelProps {
@@ -25,13 +23,14 @@ const RelationItem: React.FC<{ item: any; icon: React.ElementType, onClick: () =
 
 
 const ProcedureStepDetailPanel: React.FC<ProcedureStepDetailPanelProps> = ({ etape, procedure, onClose, onShowRelations, onEdit }) => {
+    const { data } = useDataContext();
     const [activeTab, setActiveTab] = useState('details');
 
-    const responsable = mockData.postes.find(p => p.id === etape.responsablePosteId);
-    const entrees = mockData.documents.filter(d => etape.entreesIds?.includes(d.id));
-    const sorties = mockData.documents.filter(d => etape.sortiesIds?.includes(d.id));
-    const risques = mockData.risques.filter(r => etape.risqueIds?.includes(r.id));
-    const controles = mockData.controles.filter(c => etape.controleIds?.includes(c.id));
+    const responsable = (data.postes as Poste[]).find(p => p.id === etape.responsablePosteId);
+    const entrees = (data.documents as Document[]).filter(d => etape.entreesIds?.includes(d.id));
+    const sorties = (data.documents as Document[]).filter(d => etape.sortiesIds?.includes(d.id));
+    const risques = (data.risques as Risque[]).filter(r => etape.risqueIds?.includes(r.id));
+    const controles = (data.controles as Controle[]).filter(c => etape.controleIds?.includes(c.id));
 
     return (
         <div className="w-full max-w-sm bg-white border-l shadow-lg flex flex-col h-full animate-slide-in-right z-10">

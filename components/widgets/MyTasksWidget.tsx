@@ -1,5 +1,5 @@
 import React from 'react';
-import { mockData } from '../../constants';
+import { useDataContext, useAppContext } from '../../context/AppContext';
 import type { AccueilComponentConfig, Tache } from '../../types';
 import { Calendar } from 'lucide-react';
 
@@ -8,8 +8,11 @@ interface MyTasksWidgetProps {
 }
 
 const MyTasksWidget: React.FC<MyTasksWidgetProps> = ({ config }) => {
-    // Assuming current user is pers-1 (Jean Dupont)
-    const currentUserTasks = mockData.taches.filter(t => t.assigneA === 'pers-1');
+    const { user } = useAppContext();
+    const { data } = useDataContext();
+    const tasks = data.taches as Tache[];
+
+    const currentUserTasks = tasks.filter(t => t.assigneA === user.id);
     const lateTasks = currentUserTasks.filter(t => new Date(t.dateEcheance) < new Date() && t.statut !== 'Fait' && t.statut !== 'Annulee');
     const otherActiveTasks = currentUserTasks.filter(t => !lateTasks.some(lt => lt.id === t.id) && t.statut !== 'Fait' && t.statut !== 'Annulee');
 
@@ -28,7 +31,7 @@ const MyTasksWidget: React.FC<MyTasksWidgetProps> = ({ config }) => {
                                 <div className="w-2 h-2 bg-red-500 rounded-full flex-shrink-0 mt-1.5"></div>
                                 <div>
                                     <p className="text-sm text-gray-800">{tache.titre}</p>
-                                    <p className="text-xs text-gray-500">{tache.sourceModule} - Échéance: {tache.dateEcheance.toLocaleDateString('fr-FR')}</p>
+                                    <p className="text-xs text-gray-500">{tache.sourceModule} - Échéance: {new Date(tache.dateEcheance).toLocaleDateString('fr-FR')}</p>
                                 </div>
                             </div>
                         ))}
@@ -42,7 +45,7 @@ const MyTasksWidget: React.FC<MyTasksWidgetProps> = ({ config }) => {
                                 <div className="w-2 h-2 bg-orange-500 rounded-full flex-shrink-0 mt-1.5"></div>
                                 <div>
                                     <p className="text-sm text-gray-800">{tache.titre}</p>
-                                    <p className="text-xs text-gray-500">{tache.sourceModule} - Échéance: {tache.dateEcheance.toLocaleDateString('fr-FR')}</p>
+                                    <p className="text-xs text-gray-500">{tache.sourceModule} - Échéance: {new Date(tache.dateEcheance).toLocaleDateString('fr-FR')}</p>
                                 </div>
                             </div>
                         ))}

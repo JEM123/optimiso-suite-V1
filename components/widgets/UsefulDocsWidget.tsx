@@ -1,5 +1,5 @@
 import React from 'react';
-import { mockData } from '../../constants';
+import { useDataContext } from '../../context/AppContext';
 import type { AccueilComponentConfig, Document } from '../../types';
 
 interface UsefulDocsWidgetProps {
@@ -7,7 +7,10 @@ interface UsefulDocsWidgetProps {
 }
 
 const UsefulDocsWidget: React.FC<UsefulDocsWidgetProps> = ({ config }) => {
-    const usefulDocs = mockData.documents.filter(d => d.miseEnAvant);
+    const { data } = useDataContext();
+    const documents = data.documents as Document[];
+    const usefulDocs = documents.filter(d => d.miseEnAvant);
+
     return (
         <div className="bg-white rounded-lg p-4 shadow-sm border">
             <div className="bg-blue-600 text-white p-3 rounded-lg mb-4">

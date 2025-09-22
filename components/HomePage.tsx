@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { mockData } from '../constants';
+import { useDataContext } from '../context/AppContext';
 import WidgetRenderer from './WidgetRenderer';
 import { Plus, Edit, Check } from 'lucide-react';
 import AddComponentModal from './AddComponentModal';
@@ -7,7 +7,8 @@ import ComponentSettingsModal from './ComponentSettingsModal';
 import { AccueilPage, ComponentType, AccueilComponent } from '../types';
 
 const HomePage: React.FC = () => {
-    const [pageConfig, setPageConfig] = useState<AccueilPage>(mockData.mockAccueilPages[0]);
+    const { data } = useDataContext();
+    const [pageConfig, setPageConfig] = useState<AccueilPage>((data.mockAccueilPages as AccueilPage[])[0]);
     const [isEditing, setIsEditing] = useState(false);
     
     const [isAddModalOpen, setAddModalOpen] = useState(false);

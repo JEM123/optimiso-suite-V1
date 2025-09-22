@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { mockData } from '../constants';
-import type { Tache } from '../types';
+import { useDataContext } from '../context/AppContext';
+import type { Tache, Personne } from '../types';
 import { X } from 'lucide-react';
 
 interface TaskFormModalProps {
@@ -13,6 +13,7 @@ interface TaskFormModalProps {
 const formInputClasses = "block w-full text-sm text-gray-800 bg-white border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-300 focus:border-transparent transition-colors";
 
 const TaskFormModal: React.FC<TaskFormModalProps> = ({ isOpen, onClose, onSave, task }) => {
+    const { data } = useDataContext();
     const [formData, setFormData] = useState<Partial<Tache>>(task || {});
 
     useEffect(() => {
@@ -52,7 +53,7 @@ const TaskFormModal: React.FC<TaskFormModalProps> = ({ isOpen, onClose, onSave, 
                             <label className="block text-sm font-medium text-gray-700 mb-1">Assigner à</label>
                             <select name="assigneA" value={formData.assigneA || ''} onChange={handleChange} className={formInputClasses} required>
                                 <option value="" disabled>Sélectionner une personne</option>
-                                {mockData.personnes.map(p => <option key={p.id} value={p.id}>{p.prenom} {p.nom}</option>)}
+                                {(data.personnes as Personne[]).map(p => <option key={p.id} value={p.id}>{p.prenom} {p.nom}</option>)}
                             </select>
                         </div>
                         <div>

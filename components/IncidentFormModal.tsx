@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { mockData } from '../constants';
-import type { Incident, IncidentCategorie, IncidentPriorite, IncidentGravite } from '../types';
+import { useDataContext } from '../context/AppContext';
+import type { Incident, Personne, Risque } from '../types';
 import { X } from 'lucide-react';
 
 interface IncidentFormModalProps {
@@ -13,6 +13,8 @@ interface IncidentFormModalProps {
 const formInputClasses = "block w-full text-sm text-gray-800 bg-white border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-300 focus:border-transparent transition-colors";
 
 const IncidentFormModal: React.FC<IncidentFormModalProps> = ({ isOpen, onClose, onSave, incident }) => {
+    const { data } = useDataContext();
+    const { personnes, risques } = data;
     const [formData, setFormData] = useState<Partial<Incident>>(incident || {});
 
     useEffect(() => {
@@ -40,10 +42,10 @@ const IncidentFormModal: React.FC<IncidentFormModalProps> = ({ isOpen, onClose, 
                     <div><label className="block text-sm font-medium mb-1">Description</label><textarea name="description" value={formData.description || ''} onChange={handleChange} rows={4} className={formInputClasses} required></textarea></div>
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                         <div><label className="block text-sm font-medium mb-1">Catégorie</label><select name="categorie" value={formData.categorie} onChange={handleChange} className={formInputClasses}>{['Sécurité', 'Qualité', 'SI', 'RH', 'Environnement'].map(c=><option key={c} value={c}>{c}</option>)}</select></div>
-                        <div><label className="block text-sm font-medium mb-1">Assigné à</label><select name="assigneAId" value={formData.assigneAId || ''} onChange={handleChange} className={formInputClasses} required><option value="" disabled>Sélectionner</option>{mockData.personnes.map(p=><option key={p.id} value={p.id}>{p.prenom} {p.nom}</option>)}</select></div>
+                        <div><label className="block text-sm font-medium mb-1">Assigné à</label><select name="assigneAId" value={formData.assigneAId || ''} onChange={handleChange} className={formInputClasses} required><option value="" disabled>Sélectionner</option>{(personnes as Personne[]).map(p=><option key={p.id} value={p.id}>{p.prenom} {p.nom}</option>)}</select></div>
                         <div><label className="block text-sm font-medium mb-1">Priorité</label><select name="priorite" value={formData.priorite} onChange={handleChange} className={formInputClasses}>{['Faible', 'Moyenne', 'Élevée', 'Critique'].map(p=><option key={p} value={p}>{p}</option>)}</select></div>
                         <div><label className="block text-sm font-medium mb-1">Gravité</label><select name="gravite" value={formData.gravite} onChange={handleChange} className={formInputClasses}>{['Mineure', 'Majeure', 'Critique'].map(g=><option key={g} value={g}>{g}</option>)}</select></div>
-                         <div><label className="block text-sm font-medium mb-1">Risque lié</label><select name="lienRisqueId" value={formData.lienRisqueId || ''} onChange={handleChange} className={formInputClasses}><option value="">Aucun</option>{mockData.risques.map(r=><option key={r.id} value={r.id}>{r.reference} - {r.nom}</option>)}</select></div>
+                         <div><label className="block text-sm font-medium mb-1">Risque lié</label><select name="lienRisqueId" value={formData.lienRisqueId || ''} onChange={handleChange} className={formInputClasses}><option value="">Aucun</option>{(risques as Risque[]).map(r=><option key={r.id} value={r.id}>{r.reference} - {r.nom}</option>)}</select></div>
                         <div><label className="block text-sm font-medium mb-1">SLA (heures)</label><input type="number" name="SLA_Cible" value={formData.SLA_Cible || 24} onChange={handleChange} className={formInputClasses} min="1" /></div>
                     </div>
                     <div>

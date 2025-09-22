@@ -1,6 +1,6 @@
 import React from 'react';
 import type { Amelioration } from '../types';
-import { mockData } from '../constants';
+import { useDataContext } from '../context/AppContext';
 import { AlertTriangle, Clock, TrendingUp, CheckCircle, BarChart2 } from 'lucide-react';
 
 interface AmeliorationsDashboardProps {
@@ -20,7 +20,8 @@ const StatCard: React.FC<{ title: string; value: number; icon: React.ElementType
 );
 
 const AmeliorationsDashboard: React.FC<AmeliorationsDashboardProps> = ({ ameliorations }) => {
-    const stats = mockData.dashboardStats.ameliorations;
+    const { data } = useDataContext();
+    const stats = (data.dashboardStats as any).ameliorations;
     const actionsEnRetard = ameliorations.flatMap(a => a.actions).filter(ac => ac.statut !== 'Fait' && new Date(ac.dateEcheance) < new Date());
 
     return (
@@ -30,40 +31,6 @@ const AmeliorationsDashboard: React.FC<AmeliorationsDashboardProps> = ({ amelior
                 <StatCard title="En cours" value={stats.enCours} icon={Clock} color="bg-yellow-500" />
                 <StatCard title="Actions en retard" value={actionsEnRetard.length} icon={AlertTriangle} color="bg-red-500" />
                 <StatCard title="Clôturées" value={stats.cloture} icon={CheckCircle} color="bg-green-500" />
-            </div>
-
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                 <div className="bg-white p-4 rounded-lg shadow-sm border">
-                    <h3 className="font-semibold mb-4 text-gray-800 flex items-center"><BarChart2 className="h-5 w-5 mr-2" />Origine des améliorations</h3>
-                    <div className="space-y-3">
-                        {stats.parOrigine.map(d => (
-                            <div key={d.origine}>
-                                <div className="flex justify-between text-sm mb-1">
-                                    <span>{d.origine}</span>
-                                    <span>{d.count} ({stats.total > 0 ? ((d.count/stats.total)*100).toFixed(0) : 0}%)</span>
-                                </div>
-                                <div className="w-full bg-gray-200 rounded-full h-2.5">
-                                    <div className={`${d.color} h-2.5 rounded-full`} style={{ width: stats.total > 0 ? `${(d.count / stats.total) * 100}%` : '0%' }}></div>
-                                </div>
-                            </div>
-                        ))}
-                    </div>
-                </div>
-                <div className="bg-white p-4 rounded-lg shadow-sm border">
-                    <h3 className="font-semibold mb-4 text-gray-800">Actions en retard</h3>
-                    <div className="space-y-2 max-h-60 overflow-y-auto">
-                        {actionsEnRetard.map(action => {
-                            const parent = ameliorations.find(a => a.actions.some(ac => ac.id === action.id));
-                            return (
-                                <div key={action.id} className="p-2 border-l-4 border-red-500 bg-red-50 rounded-r-md">
-                                    <p className="font-medium text-sm text-red-800">{action.titre}</p>
-                                    <p className="text-xs text-gray-600">Amélioration: {parent?.reference}</p>
-                                </div>
-                            );
-                        })}
-                         {actionsEnRetard.length === 0 && <p className="text-sm text-gray-500 text-center pt-8">Aucune action en retard.</p>}
-                    </div>
-                </div>
             </div>
         </div>
     );

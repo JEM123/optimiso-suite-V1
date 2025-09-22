@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
-import type { Role } from '../types';
-import { mockData } from '../constants';
-import { X, Edit, Info, Shield, Users, Calendar } from 'lucide-react';
+import type { Role, Personne } from '../types';
+import { useDataContext } from '../context/AppContext';
+import { X, Edit, Info, Shield, Users } from 'lucide-react';
 import PermissionsMatrix from './PermissionsMatrix';
 
 interface RoleDetailPanelProps {
@@ -18,9 +18,10 @@ const DetailItem: React.FC<{ label: string; value: React.ReactNode }> = ({ label
 );
 
 const RoleDetailPanel: React.FC<RoleDetailPanelProps> = ({ role, onClose, onEdit }) => {
+    const { data } = useDataContext();
     const [activeTab, setActiveTab] = useState('permissions');
     
-    const assignedPeople = mockData.personnes.filter(p => role.personneIds.includes(p.id));
+    const assignedPeople = (data.personnes as Personne[]).filter(p => role.personneIds.includes(p.id));
 
     return (
         <div className="w-full max-w-lg bg-white border-l shadow-lg flex flex-col h-full absolute right-0 top-0 md:relative animate-slide-in-right">
@@ -55,8 +56,8 @@ const RoleDetailPanel: React.FC<RoleDetailPanelProps> = ({ role, onClose, onEdit
                     <div className="space-y-4">
                         <DetailItem label="Description" value={role.description} />
                         <DetailItem label="Statut" value={<span className="capitalize">{role.statut}</span>} />
-                        <DetailItem label="Créé le" value={role.dateCreation.toLocaleDateString('fr-FR')} />
-                        <DetailItem label="Modifié le" value={role.dateModification.toLocaleDateString('fr-FR')} />
+                        <DetailItem label="Créé le" value={new Date(role.dateCreation).toLocaleDateString('fr-FR')} />
+                        <DetailItem label="Modifié le" value={new Date(role.dateModification).toLocaleDateString('fr-FR')} />
                     </div>
                 )}
                 {activeTab === 'permissions' && (

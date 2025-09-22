@@ -1,6 +1,6 @@
 import React, { useState, useMemo } from 'react';
-import type { Personne, Competence } from '../types';
-import { mockData } from '../constants';
+import type { Personne, Competence, Poste, Entite, Role, EvaluationCompetence } from '../types';
+import { useDataContext } from '../context/AppContext';
 import { X, Edit, Info, Briefcase, Building, KeyRound, History, TrendingUp, Link as LinkIcon } from 'lucide-react';
 import CompetenceRadarChart from './CompetenceRadarChart';
 
@@ -31,10 +31,15 @@ const RelationItem: React.FC<{ item: any; icon: React.ElementType, onClick: () =
 
 
 const PersonDetailPanel: React.FC<PersonDetailPanelProps> = ({ person, onClose, onEdit, onNavigate, onShowRelations }) => {
+    const { data } = useDataContext();
     const [activeTab, setActiveTab] = useState('info');
     
-    const { postes: allPostes, entites, roles, competences: allCompetences, evaluationsCompetences } = mockData;
+    const { postes: allPostes, entites, roles, competences: allCompetences, evaluationsCompetences } = data as {
+        postes: Poste[], entites: Entite[], roles: Role[], competences: Competence[], evaluationsCompetences: EvaluationCompetence[]
+    };
+
     const postes = allPostes.filter(p => person.posteIds.includes(p.id));
+    
     const personCompetences = useMemo(() => {
         const required = new Map<string, { competence: Competence, niveauAttendu: number }>();
         person.posteIds.forEach(posteId => {
@@ -162,8 +167,8 @@ const PersonDetailPanel: React.FC<PersonDetailPanelProps> = ({ person, onClose, 
                 )}
                 {activeTab === 'history' && (
                      <div className="space-y-3 text-sm">
-                        <div className="flex items-start space-x-3"><Info className="h-4 w-4 mt-0.5 text-gray-500"/><p>Créé par <strong>{mockData.personnes.find(p=>p.id === person.auteurId)?.nom || 'system'}</strong> le {person.dateCreation.toLocaleDateString('fr-FR')}</p></div>
-                        <div className="flex items-start space-x-3"><Edit className="h-4 w-4 mt-0.5 text-gray-500"/><p>Modifié le {person.dateModification.toLocaleDateString('fr-FR')}</p></div>
+                        <div className="flex items-start space-x-3"><Info className="h-4 w-4 mt-0.5 text-gray-500"/><p>Créé par <strong>{(data.personnes as Personne[]).find(p=>p.id === person.auteurId)?.nom || 'system'}</strong> le {new Date(person.dateCreation).toLocaleDateString('fr-FR')}</p></div>
+                        <div className="flex items-start space-x-3"><Edit className="h-4 w-4 mt-0.5 text-gray-500"/><p>Modifié le {new Date(person.dateModification).toLocaleDateString('fr-FR')}</p></div>
                     </div>
                 )}
             </div>

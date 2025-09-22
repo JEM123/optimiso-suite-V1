@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import type { Incident, IncidentTask } from '../types';
-import { mockData } from '../constants';
+import type { Incident, IncidentTask, Personne, Risque, Controle } from '../types';
+import { useDataContext } from '../context/AppContext';
 import { X, Edit, Info, Shield, CheckCircle, AlertTriangle, Link as LinkIcon, List, Clock, User, GitBranch, Plus, Trash2 } from 'lucide-react';
 import IncidentTaskFormModal from './IncidentTaskFormModal';
 
@@ -38,15 +38,16 @@ const TaskItem: React.FC<{ task: IncidentTask; onEdit: () => void; onDelete: () 
 );
 
 const IncidentDetailPanel: React.FC<IncidentDetailPanelProps> = ({ incident, onClose, onEdit, onShowRelations, onSaveTask, onDeleteTask }) => {
+    const { data } = useDataContext();
     const [activeTab, setActiveTab] = useState('details');
     const [slaProgress, setSlaProgress] = useState(0);
     const [isTaskModalOpen, setTaskModalOpen] = useState(false);
     const [editingTask, setEditingTask] = useState<Partial<IncidentTask> | null>(null);
 
-    const declarant = mockData.personnes.find(p => p.id === incident.declarantId);
-    const assignee = mockData.personnes.find(p => p.id === incident.assigneAId);
-    const linkedRisk = mockData.risques.find(r => r.id === incident.lienRisqueId);
-    const linkedControl = mockData.controles.find(c => c.id === incident.lienControleId);
+    const declarant = (data.personnes as Personne[]).find(p => p.id === incident.declarantId);
+    const assignee = (data.personnes as Personne[]).find(p => p.id === incident.assigneAId);
+    const linkedRisk = (data.risques as Risque[]).find(r => r.id === incident.lienRisqueId);
+    const linkedControl = (data.controles as Controle[]).find(c => c.id === incident.lienControleId);
     
     useEffect(() => {
         const now = new Date().getTime();

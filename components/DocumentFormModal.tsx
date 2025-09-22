@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { mockData } from '../constants';
-import type { Document } from '../types';
+import { useDataContext } from '../context/AppContext';
+import type { Document, Risque, Controle } from '../types';
 import { X } from 'lucide-react';
 
 interface DocumentFormModalProps {
@@ -33,6 +33,8 @@ const MultiSelect: React.FC<{ items: any[], selectedIds: string[], onChange: (id
 }
 
 const DocumentFormModal: React.FC<DocumentFormModalProps> = ({ isOpen, onClose, onSave, document }) => {
+    const { data } = useDataContext();
+    const { categoriesDocuments, risques, controles } = data;
     const [formData, setFormData] = useState<Partial<Document>>(document || {});
     const [activeTab, setActiveTab] = useState('info');
 
@@ -100,7 +102,7 @@ const DocumentFormModal: React.FC<DocumentFormModalProps> = ({ isOpen, onClose, 
                         </div>
                          <div><label className="block text-sm font-medium text-gray-700 mb-1">Catégories</label>
                             <select multiple value={formData.categorieIds} onChange={(e) => handleMultiSelectChange('categorieIds', Array.from(e.target.selectedOptions, option => option.value))} className={`${formInputClasses} h-20`}>
-                                {mockData.categoriesDocuments.map(c=><option key={c.id} value={c.id}>{c.nom}</option>)}
+                                {(categoriesDocuments as any[]).map(c=><option key={c.id} value={c.id}>{c.nom}</option>)}
                             </select>
                         </div>
                         <div className="flex items-center space-x-4 pt-2">
@@ -123,8 +125,8 @@ const DocumentFormModal: React.FC<DocumentFormModalProps> = ({ isOpen, onClose, 
                     </div>}
 
                     {activeTab === 'relations' && <div className="space-y-4 bg-gray-50 p-4 rounded-lg">
-                        <MultiSelect items={mockData.risques} selectedIds={formData.risqueIds || []} onChange={(ids) => handleMultiSelectChange('risqueIds', ids)} label="Risques liés" />
-                        <MultiSelect items={mockData.controles} selectedIds={formData.controleIds || []} onChange={(ids) => handleMultiSelectChange('controleIds', ids)} label="Contrôles liés" />
+                        <MultiSelect items={risques as Risque[]} selectedIds={formData.risqueIds || []} onChange={(ids) => handleMultiSelectChange('risqueIds', ids)} label="Risques liés" />
+                        <MultiSelect items={controles as Controle[]} selectedIds={formData.controleIds || []} onChange={(ids) => handleMultiSelectChange('controleIds', ids)} label="Contrôles liés" />
                     </div>}
 
                 </div>

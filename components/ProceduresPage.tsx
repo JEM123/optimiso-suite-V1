@@ -1,7 +1,7 @@
 import React, { useState, useMemo, useCallback, useEffect, useRef } from 'react';
 import { useDataContext } from '../context/AppContext';
 import type { Procedure, EtapeProcedure, ProcedureLien } from '../types';
-import { Plus, Search, Trash2, Edit, Workflow, ChevronLeft, Menu } from 'lucide-react';
+import { Plus, Search, Trash2, Edit, Workflow, ChevronLeft, Menu, CheckCircle, Link as LinkIcon, BarChart } from 'lucide-react';
 import { ReactFlowProvider, useNodesState, useEdgesState, useReactFlow, applyNodeChanges, type OnNodesChange, type OnEdgesChange, type OnConnect, type Node, type Edge, type Connection, type NodePositionChange } from 'reactflow';
 import ProcedureFormModal from './ProcedureFormModal';
 import ProcedureFlow from './ProcedureFlow';
@@ -15,7 +15,7 @@ const PROC_STATUS_COLORS: Record<Procedure['statut'], string> = {
     'gelé': 'bg-purple-100 text-purple-800', 'figé': 'bg-indigo-100 text-indigo-800',
     'planifié': 'bg-blue-100 text-blue-800', 'terminé': 'bg-green-100 text-green-800',
     'non-conforme': 'bg-red-200 text-red-900', 'clôturé': 'bg-gray-300 text-gray-800',
-    'a_faire': 'bg-yellow-100 text-yellow-800', 'en_retard': 'bg-red-100 text-red-800',
+    'a_faire': 'bg-yellow-100 text-yellow-800', 'en_retard': 'bg-red-200 text-red-900',
     'en_validation': 'bg-yellow-100 text-yellow-800',
     'publie': 'bg-green-100 text-green-800',
     'rejete': 'bg-red-100 text-red-800',
@@ -40,11 +40,14 @@ const newProcedureTemplate = (): Partial<Procedure> => ({
 
 interface ProceduresPageProps {
     onShowRelations: (entity: any, entityType: string) => void;
+    onShowValidation: (element: Procedure) => void;
+    onShowImpactAnalysis: (element: any, type: string) => void;
 }
 
-const ProceduresPageContent: React.FC<ProceduresPageProps> = ({ onShowRelations }) => {
-    const { data } = useDataContext();
-    const [procedures, setProcedures] = useState<Procedure[]>(data.procedures as Procedure[]);
+const ProceduresPageContent: React.FC<ProceduresPageProps> = ({ onShowRelations, onShowValidation, onShowImpactAnalysis }) => {
+    const { data, actions } = useDataContext();
+    const { procedures } = data as { procedures: Procedure[] };
+
     const [selectedProcedureId, setSelectedProcedureId] = useState<string | null>(procedures[0]?.id || null);
     const [selectedStepId, setSelectedStepId] = useState<string | null>(null);
     const [searchTerm, setSearchTerm] = useState('');
@@ -52,7 +55,6 @@ const ProceduresPageContent: React.FC<ProceduresPageProps> = ({ onShowRelations 
     const [editingProcedure, setEditingProcedure] = useState<Partial<Procedure> | null>(null);
     const [isSidebarOpen, setIsSidebarOpen] = useState(true);
     
-    // FIX: The `useRef` hook with a generic type requires an initial value.
     const prevProcIdRef = useRef<string | null>(null);
     const { screenToFlowPosition, fitView } = useReactFlow();
 
@@ -63,8 +65,12 @@ const ProceduresPageContent: React.FC<ProceduresPageProps> = ({ onShowRelations 
     const selectedStep = useMemo(() => selectedProcedure?.etapes.find(e => e.id === selectedStepId), [selectedProcedure, selectedStepId]);
 
     const updateProcedureState = useCallback((procId: string, updater: (proc: Procedure) => Procedure) => {
-        setProcedures(procs => procs.map(p => p.id === procId ? updater(p) : p));
-    }, []);
+        const currentProc = procedures.find(p => p.id === procId);
+        if (currentProc) {
+            const updatedProc = updater(currentProc);
+            actions.saveProcedure(updatedProc);
+        }
+    }, [procedures, actions]);
     
     useEffect(() => {
         if (selectedProcedure) {
@@ -117,12 +123,12 @@ const ProceduresPageContent: React.FC<ProceduresPageProps> = ({ onShowRelations 
     const onDrop = useCallback((event: React.DragEvent) => {
         event.preventDefault();
         const type = event.dataTransfer.getData('application/reactflow');
-        if (!type || !selectedProcedureId) return;
+        if (!type || !selectedProcedureId || !selectedProcedure) return;
 
         const position = screenToFlowPosition({ x: event.clientX, y: event.clientY });
         const newStep: EtapeProcedure = {
             id: `${type}-${Date.now()}`,
-            ordre: (selectedProcedure?.etapes.length || 0) + 1,
+            ordre: (selectedProcedure.etapes.length || 0) + 1,
             libelle: `Nouvelle ${type}`,
             position,
             type: type as EtapeProcedure['type'],
@@ -137,19 +143,23 @@ const ProceduresPageContent: React.FC<ProceduresPageProps> = ({ onShowRelations 
     }, [selectedProcedureId, updateProcedureState]);
 
     const handleOpenProcModal = (proc?: Procedure) => { setEditingProcedure(proc || newProcedureTemplate()); setProcModalOpen(true); };
+    
     const handleSaveProcedure = (procToSave: Procedure) => {
-        if (procToSave.id) {
-            updateProcedureState(procToSave.id, () => procToSave);
-        } else {
-            const newProc = { ...newProcedureTemplate(), ...procToSave, id: `proc-${Date.now()}` } as Procedure;
-            setProcedures([...procedures, newProc]);
-            setSelectedProcedureId(newProc.id);
-        }
+        actions.saveProcedure(procToSave).then(() => {
+            if (!procToSave.id) {
+                // This is a new procedure, we need to find its new ID to select it.
+                // A better approach would be for the action to return the new item.
+                // For now, we'll just not select it.
+            } else {
+                setSelectedProcedureId(procToSave.id);
+            }
+        });
         setProcModalOpen(false);
     };
+
     const handleDeleteProcedure = (procId: string) => {
         if (window.confirm("Êtes-vous sûr de vouloir supprimer cette procédure ?")) {
-            setProcedures(procs => procs.filter(p => p.id !== procId));
+            actions.deleteProcedure(procId);
             if (selectedProcedureId === procId) setSelectedProcedureId(procedures.length > 1 ? procedures[0].id : null);
         }
     };
@@ -180,6 +190,11 @@ const ProceduresPageContent: React.FC<ProceduresPageProps> = ({ onShowRelations 
                                     <p className="text-xs text-gray-500">{proc.reference}</p>
                                     <span className={`mt-1 inline-block px-2 py-0.5 text-xs rounded-full ${PROC_STATUS_COLORS[proc.statut]}`}>{proc.statut.replace(/_/g, ' ')}</span>
                                     <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 flex gap-1">
+                                        {proc.validationInstanceId && (
+                                            <button onClick={(e) => { e.stopPropagation(); onShowValidation(proc); }} className="p-1 hover:bg-gray-200 rounded-md" title="Voir flux de validation">
+                                                <CheckCircle className="h-4 w-4 text-green-600"/>
+                                            </button>
+                                        )}
                                         <button onClick={(e) => { e.stopPropagation(); handleOpenProcModal(proc)}} className="p-1 hover:bg-gray-200 rounded-md"><Edit className="h-4 w-4 text-blue-600"/></button>
                                         <button onClick={(e) => { e.stopPropagation(); handleDeleteProcedure(proc.id)}} className="p-1 hover:bg-gray-200 rounded-md"><Trash2 className="h-4 w-4 text-red-600"/></button>
                                     </div>
@@ -193,36 +208,49 @@ const ProceduresPageContent: React.FC<ProceduresPageProps> = ({ onShowRelations 
                 {isSidebarOpen && <div className="p-2 border-t"><button onClick={() => handleOpenProcModal()} className="w-full flex items-center justify-center gap-2 bg-blue-600 text-white px-3 py-1.5 rounded-lg hover:bg-blue-700 text-sm font-medium"><Plus className="h-4 w-4" /><span>Nouvelle</span></button></div>}
             </div>
             
-            <div className="flex-1 flex min-w-0">
-                <div className="flex-1 relative">
-                    {selectedProcedure ? (
-                        <ProcedureFlow nodes={nodes} edges={edges} onNodesChange={handleNodesChange} onEdgesChange={onEdgesChange} onConnect={onConnect} onNodeClick={(evt, node) => setSelectedStepId(node.id)} onPaneClick={() => setSelectedStepId(null)} onDrop={onDrop} />
-                    ) : (
-                        <div className="flex h-full items-center justify-center text-center p-4 bg-gray-50">
-                            <div>
-                                <Workflow className="mx-auto h-12 w-12 text-gray-400" />
-                                <h3 className="mt-2 text-sm font-medium text-gray-900">Aucune procédure sélectionnée</h3>
-                                <p className="mt-1 text-sm text-gray-500">Sélectionnez ou créez une procédure pour commencer.</p>
+            <div className="flex-1 flex flex-col min-w-0">
+                <div className="flex-1 flex min-w-0">
+                    <div className="flex-1 flex flex-col relative">
+                         {selectedProcedure && (
+                            <div className="p-2 border-b bg-white flex items-center justify-between">
+                                <h3 className="font-semibold text-gray-800">{selectedProcedure.nom} - v{selectedProcedure.version}</h3>
+                                <div className="flex items-center gap-2">
+                                    <button onClick={() => onShowImpactAnalysis(selectedProcedure, 'procedures')} className="flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm bg-white border hover:bg-gray-50"><BarChart className="h-4 w-4"/>Analyser l'impact</button>
+                                    <button onClick={() => onShowRelations(selectedProcedure, 'procedures')} className="flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm bg-white border hover:bg-gray-50"><LinkIcon className="h-4 w-4"/>Explorer les relations</button>
+                                </div>
                             </div>
+                        )}
+                        <div className="flex-grow">
+                            {selectedProcedure ? (
+                                <ProcedureFlow nodes={nodes} edges={edges} onNodesChange={handleNodesChange} onEdgesChange={onEdgesChange} onConnect={onConnect} onNodeClick={(evt, node) => setSelectedStepId(node.id)} onPaneClick={() => setSelectedStepId(null)} onDrop={onDrop} />
+                            ) : (
+                                <div className="flex h-full items-center justify-center text-center p-4 bg-gray-50">
+                                    <div>
+                                        <Workflow className="mx-auto h-12 w-12 text-gray-400" />
+                                        <h3 className="mt-2 text-sm font-medium text-gray-900">Aucune procédure sélectionnée</h3>
+                                        <p className="mt-1 text-sm text-gray-500">Sélectionnez ou créez une procédure pour commencer.</p>
+                                    </div>
+                                </div>
+                            )}
                         </div>
+                    </div>
+                    {selectedProcedure && selectedStep && (
+                        <ProcedureStepDetailPanel key={selectedStep.id} etape={selectedStep} procedure={selectedProcedure} onClose={() => setSelectedStepId(null)} onShowRelations={onShowRelations} onSave={handleSaveStep} />
                     )}
                 </div>
-                {selectedProcedure && selectedStep && (
-                    <ProcedureStepDetailPanel key={selectedStep.id} etape={selectedStep} procedure={selectedProcedure} onClose={() => setSelectedStepId(null)} onShowRelations={onShowRelations} onSave={handleSaveStep} />
-                )}
             </div>
             <ProcedureFormModal isOpen={isProcModalOpen} onClose={() => setProcModalOpen(false)} onSave={handleSaveProcedure} procedure={editingProcedure} />
         </div>
     );
 }
 
-const ProceduresPage: React.FC<ProceduresPageProps> = ({ onShowRelations }) => {
+const ProceduresPage: React.FC<ProceduresPageProps> = ({ onShowRelations, onShowValidation, onShowImpactAnalysis }) => {
     return (
         <div className="flex flex-col h-full bg-gray-50 rounded-lg border">
             <PageHeader title="Procédures" icon={Workflow} description="Modélisez et visualisez les flux de travail de votre organisation."/>
             <div className="flex-grow h-[calc(100%-80px)]">
                  <ReactFlowProvider>
-                    <ProceduresPageContent onShowRelations={onShowRelations} />
+                    <ProceduresPageContent onShowRelations={onShowRelations} onShowValidation={onShowValidation} onShowImpactAnalysis={onShowImpactAnalysis} />
                  </ReactFlowProvider>
             </div>
         </div>

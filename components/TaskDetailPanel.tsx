@@ -1,6 +1,6 @@
 import React from 'react';
-import type { Tache } from '../types';
-import { mockData } from '../constants';
+import type { Tache, Personne } from '../types';
+import { useDataContext } from '../context/AppContext';
 import { X, Edit, Info, Clock, User, GitBranch, AlertCircle, CheckCircle, Settings, FileText, Calendar } from 'lucide-react';
 
 interface TaskDetailPanelProps {
@@ -37,18 +37,19 @@ const SOURCE_ICONS: Record<Tache['sourceModule'], React.ElementType> = {
 
 
 const TaskDetailPanel: React.FC<TaskDetailPanelProps> = ({ task, onClose, onEdit }) => {
-    const assignee = mockData.personnes.find(p => p.id === task.assigneA);
-    const creator = mockData.personnes.find(p => p.id === task.createur);
+    const { data } = useDataContext();
+    const assignee = (data.personnes as Personne[]).find(p => p.id === task.assigneA);
+    const creator = (data.personnes as Personne[]).find(p => p.id === task.createur);
     const SourceIcon = SOURCE_ICONS[task.sourceModule];
 
     const getSourceElement = () => {
         if (!task.sourceId) return null;
         switch (task.sourceModule) {
             case 'Controle':
-                const exec = mockData.executionsControles.find(e => e.id === task.sourceId);
-                return mockData.controles.find(c => c.id === exec?.controleId);
+                const exec = (data.executionsControles as any[]).find(e => e.id === task.sourceId);
+                return (data.controles as any[]).find(c => c.id === exec?.controleId);
             case 'FluxValidation':
-                return mockData.documents.find(d => d.id === task.sourceId);
+                return (data.documents as any[]).find(d => d.id === task.sourceId);
             default: return null;
         }
     }
@@ -80,7 +81,7 @@ const TaskDetailPanel: React.FC<TaskDetailPanelProps> = ({ task, onClose, onEdit
                 />
                 <DetailItem 
                     label="Échéance" 
-                    value={task.dateEcheance.toLocaleDateString('fr-FR')} 
+                    value={new Date(task.dateEcheance).toLocaleDateString('fr-FR')} 
                     icon={Calendar}
                 />
                  <DetailItem 
@@ -104,8 +105,8 @@ const TaskDetailPanel: React.FC<TaskDetailPanelProps> = ({ task, onClose, onEdit
                     label="Historique" 
                     value={
                         <div>
-                            <p>Créé par {creator ? `${creator.prenom} ${creator.nom}` : 'Système'} le {task.dateCreation.toLocaleDateString('fr-FR')}</p>
-                            {task.dateCloture && <p>Clôturé le {task.dateCloture.toLocaleDateString('fr-FR')}</p>}
+                            <p>Créé par {creator ? `${creator.prenom} ${creator.nom}` : 'Système'} le {new Date(task.dateCreation).toLocaleDateString('fr-FR')}</p>
+                            {task.dateCloture && <p>Clôturé le {new Date(task.dateCloture).toLocaleDateString('fr-FR')}</p>}
                         </div>
                     } 
                     icon={Clock}

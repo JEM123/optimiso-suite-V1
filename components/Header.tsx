@@ -1,4 +1,3 @@
-
 import React, { useState, useMemo } from 'react';
 import { Search, Bell, Settings } from 'lucide-react';
 import { modules } from '../constants';

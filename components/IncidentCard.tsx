@@ -1,8 +1,6 @@
-
-
 import React from 'react';
-import type { Incident } from '../types';
-import { mockData } from '../constants';
+import type { Incident, Personne } from '../types';
+import { useDataContext } from '../context/AppContext';
 import { AlertTriangle, Clock } from 'lucide-react';
 
 interface IncidentCardProps {
@@ -19,7 +17,8 @@ const PRIORITY_COLORS: Record<Incident['priorite'], string> = {
 };
 
 const IncidentCard: React.FC<IncidentCardProps> = ({ incident, onSelectIncident, onDragStart }) => {
-    const assignee = mockData.personnes.find(p => p.id === incident.assigneAId);
+    const { data } = useDataContext();
+    const assignee = (data.personnes as Personne[]).find(p => p.id === incident.assigneAId);
     const assigneeInitials = assignee ? `${assignee.prenom[0]}${assignee.nom[0]}` : '?';
     const isSlaBreached = new Date(incident.echeanceSLA) < new Date() && incident.statut !== 'Clôturé';
 
@@ -32,7 +31,6 @@ const IncidentCard: React.FC<IncidentCardProps> = ({ incident, onSelectIncident,
         >
             <div className="flex justify-between items-start">
                 <p className="text-sm font-medium text-gray-800 pr-2">{incident.titre}</p>
-                 {/* FIX: The `title` prop is not valid on lucide-react icons. Wrapped in a span to provide a tooltip. */}
                  {isSlaBreached && <span title="SLA dépassé"><AlertTriangle className="h-4 w-4 text-red-500 flex-shrink-0" /></span>}
             </div>
              <p className="text-xs text-gray-500 mt-1">{incident.reference}</p>

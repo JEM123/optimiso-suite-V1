@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { mockData } from '../constants';
-import type { Amelioration, AmeliorationType, AmeliorationPriorite, AmeliorationOrigine } from '../types';
+import { useDataContext } from '../context/AppContext';
+import type { Amelioration, AmeliorationType, AmeliorationPriorite, AmeliorationOrigine, Personne, Entite, Incident, Risque } from '../types';
 import { X } from 'lucide-react';
 
 interface AmeliorationFormModalProps {
@@ -13,6 +13,8 @@ interface AmeliorationFormModalProps {
 const formInputClasses = "block w-full text-sm text-gray-800 bg-white border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-300 focus:border-transparent transition-colors";
 
 const AmeliorationFormModal: React.FC<AmeliorationFormModalProps> = ({ isOpen, onClose, onSave, amelioration }) => {
+    const { data } = useDataContext();
+    const { personnes, entites, incidents, risques } = data;
     const [formData, setFormData] = useState<Partial<Amelioration>>(amelioration || {});
     const [activeTab, setActiveTab] = useState('general');
 
@@ -58,9 +60,9 @@ const AmeliorationFormModal: React.FC<AmeliorationFormModalProps> = ({ isOpen, o
                         <div><label className="block text-sm font-medium mb-1">Titre</label><input type="text" name="titre" value={formData.titre || ''} onChange={handleChange} className={formInputClasses} required /></div>
                         <div><label className="block text-sm font-medium mb-1">Description</label><textarea name="description" value={formData.description || ''} onChange={handleChange} rows={4} className={formInputClasses} required></textarea></div>
                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <div><label className="block text-sm font-medium mb-1">Pilote</label><select name="piloteId" value={formData.piloteId || ''} onChange={handleChange} className={formInputClasses} required><option value="" disabled>Sélectionner</option>{mockData.personnes.map(p=><option key={p.id} value={p.id}>{p.prenom} {p.nom}</option>)}</select></div>
-                            <div><label className="block text-sm font-medium mb-1">Commanditaire</label><select name="commanditaireId" value={formData.commanditaireId || ''} onChange={handleChange} className={formInputClasses}><option value="">Aucun</option>{mockData.personnes.map(p=><option key={p.id} value={p.id}>{p.prenom} {p.nom}</option>)}</select></div>
-                            <div><label className="block text-sm font-medium mb-1">Entité</label><select name="entiteId" value={formData.entiteId || ''} onChange={handleChange} className={formInputClasses}><option value="">Aucune</option>{mockData.entites.map(e=><option key={e.id} value={e.id}>{e.nom}</option>)}</select></div>
+                            <div><label className="block text-sm font-medium mb-1">Pilote</label><select name="piloteId" value={formData.piloteId || ''} onChange={handleChange} className={formInputClasses} required><option value="" disabled>Sélectionner</option>{(personnes as Personne[]).map(p=><option key={p.id} value={p.id}>{p.prenom} {p.nom}</option>)}</select></div>
+                            <div><label className="block text-sm font-medium mb-1">Commanditaire</label><select name="commanditaireId" value={formData.commanditaireId || ''} onChange={handleChange} className={formInputClasses}><option value="">Aucun</option>{(personnes as Personne[]).map(p=><option key={p.id} value={p.id}>{p.prenom} {p.nom}</option>)}</select></div>
+                            <div><label className="block text-sm font-medium mb-1">Entité</label><select name="entiteId" value={formData.entiteId || ''} onChange={handleChange} className={formInputClasses}><option value="">Aucune</option>{(entites as Entite[]).map(e=><option key={e.id} value={e.id}>{e.nom}</option>)}</select></div>
                              <div><label className="block text-sm font-medium mb-1">Échéance Cible</label><input type="date" name="echeanceCible" value={formData.echeanceCible ? new Date(formData.echeanceCible).toISOString().split('T')[0] : ''} onChange={handleChange} className={formInputClasses} /></div>
                         </div>
                         <div><label className="block text-sm font-medium mb-1">Objectif Mesurable</label><textarea name="objectifMesurable" value={formData.objectifMesurable || ''} onChange={handleChange} rows={2} className={formInputClasses}></textarea></div>
@@ -68,8 +70,8 @@ const AmeliorationFormModal: React.FC<AmeliorationFormModalProps> = ({ isOpen, o
                     
                     {activeTab === 'links' && <div className="space-y-4">
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                             <div><label className="block text-sm font-medium mb-1">Type</label><select name="type" value={formData.type} onChange={handleChange} className={formInputClasses}>{['Corrective', 'Préventive', 'Opportunité'].map(c=><option key={c} value={c}>{c}</option>)}</select></div>
-                             <div><label className="block text-sm font-medium mb-1">Priorité</label><select name="priorite" value={formData.priorite} onChange={handleChange} className={formInputClasses}>{['basse', 'moyenne', 'haute', 'critique'].map(p=><option key={p} value={p} className="capitalize">{p}</option>)}</select></div>
+                             <div><label className="block text-sm font-medium mb-1">Type</label><select name="type" value={formData.type} onChange={handleChange} className={formInputClasses}>{['Corrective', 'Préventive', 'Opportunité'].map(c=><option key={c} value={c as AmeliorationType}>{c}</option>)}</select></div>
+                             <div><label className="block text-sm font-medium mb-1">Priorité</label><select name="priorite" value={formData.priorite} onChange={handleChange} className={formInputClasses}>{['basse', 'moyenne', 'haute', 'critique'].map(p=><option key={p} value={p as AmeliorationPriorite} className="capitalize">{p}</option>)}</select></div>
                              <div><label className="block text-sm font-medium mb-1">Budget (CHF)</label><input type="number" name="budget" value={formData.budget || ''} onChange={handleChange} className={formInputClasses} /></div>
                              <div><label className="block text-sm font-medium mb-1">Confidentialité</label><select name="confidentialite" value={formData.confidentialite} onChange={handleChange} className={formInputClasses}>{['publique', 'restreinte'].map(p=><option key={p} value={p} className="capitalize">{p}</option>)}</select></div>
                         </div>
@@ -80,8 +82,8 @@ const AmeliorationFormModal: React.FC<AmeliorationFormModalProps> = ({ isOpen, o
                             </select>
                         </div>
                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <div><label className="block text-sm font-medium mb-1">Incident Lié</label><select name="lienIncidentId" value={formData.lienIncidentId || ''} onChange={handleChange} className={formInputClasses}><option value="">Aucun</option>{mockData.incidents.map(i=><option key={i.id} value={i.id}>{i.reference} - {i.titre}</option>)}</select></div>
-                            <div><label className="block text-sm font-medium mb-1">Risque Lié</label><select name="lienRisqueId" value={formData.lienRisqueId || ''} onChange={handleChange} className={formInputClasses}><option value="">Aucun</option>{mockData.risques.map(r=><option key={r.id} value={r.id}>{r.reference} - {r.nom}</option>)}</select></div>
+                            <div><label className="block text-sm font-medium mb-1">Incident Lié</label><select name="lienIncidentId" value={formData.lienIncidentId || ''} onChange={handleChange} className={formInputClasses}><option value="">Aucun</option>{(incidents as Incident[]).map(i=><option key={i.id} value={i.id}>{i.reference} - {i.titre}</option>)}</select></div>
+                            <div><label className="block text-sm font-medium mb-1">Risque Lié</label><select name="lienRisqueId" value={formData.lienRisqueId || ''} onChange={handleChange} className={formInputClasses}><option value="">Aucun</option>{(risques as Risque[]).map(r=><option key={r.id} value={r.id}>{r.reference} - {r.nom}</option>)}</select></div>
                          </div>
                     </div>}
 
