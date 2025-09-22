@@ -2,6 +2,52 @@ import React, { createContext, useContext, useState, useReducer, useMemo, useCal
 import { mockData, modules as appModules } from '../constants';
 import type { Personne, Risque, Role, Document, Actualite, NormeLoiCadre, NormeLoiExigence, Competence, CampagneEvaluation, EvaluationCompetence, PlanFormation, Mission, Processus, Notification, ISettings, Procedure, Poste, Entite, Controle, Indicateur, Tache, Incident, Amelioration, Actif, FluxDefinition, ValidationInstance, SyncConnector } from '../types';
 
+// --- LOCAL STORAGE PERSISTENCE ---
+
+const LOCAL_STORAGE_KEY = 'optimisoSuiteData';
+
+const isoDateRegex = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}.\d{3}Z$/;
+const reviveDates = (key: string, value: any) => {
+    if (typeof value === 'string' && isoDateRegex.test(value)) {
+        try {
+            return new Date(value);
+        } catch (e) {
+            // ignore if not a valid date
+        }
+    }
+    return value;
+};
+
+const loadDataFromLocalStorage = (): IDataState => {
+    try {
+        const serializedState = localStorage.getItem(LOCAL_STORAGE_KEY);
+        if (serializedState === null) {
+            return mockData;
+        }
+        const storedData = JSON.parse(serializedState, reviveDates);
+        const initialState = { ...mockData };
+        for (const key in storedData) {
+            if (Object.prototype.hasOwnProperty.call(initialState, key)) {
+                initialState[key] = storedData[key];
+            }
+        }
+        return initialState;
+    } catch (err) {
+        console.error("Could not load state from localStorage", err);
+        return mockData;
+    }
+};
+
+const saveDataToLocalStorage = async (state: IDataState): Promise<void> => {
+    try {
+        const serializedState = JSON.stringify(state);
+        localStorage.setItem(LOCAL_STORAGE_KEY, serializedState);
+    } catch (err) {
+        console.error("Could not save state to localStorage", err);
+    }
+};
+
+
 // --- INITIAL SETTINGS STATE ---
 const initialSettings: ISettings = {
     modules: appModules.reduce((acc, mod) => {
@@ -76,17 +122,86 @@ const dataReducer = (state: IDataState, action: DataAction): IDataState => {
     switch (action.type) {
         case 'SAVE_ITEM': {
             const { key, item } = action.payload;
+            let newState = { ...state };
             const collection = state[key] as any[];
-            const itemExists = collection.some(i => i.id === item.id);
-            const newCollection = itemExists
-                ? collection.map(i => i.id === item.id ? item : i)
-                : [...collection, { ...item, id: `${String(key).slice(0, 4)}-${Date.now()}` }];
-            return { ...state, [key]: newCollection };
+            
+            const itemToSave = { ...item };
+            let isNew = !itemToSave.id;
+            
+            if (isNew) {
+                // FIX: Corrected logic to ensure `slice` is called on a string.
+                const prefix = String(key).slice(0, 4);
+                itemToSave.id = `${prefix}-${Date.now()}`;
+            } else {
+                isNew = !collection.some(i => i.id === itemToSave.id);
+            }
+
+            const newCollection = isNew
+                ? [...collection, itemToSave]
+                : collection.map(i => i.id === itemToSave.id ? itemToSave : i);
+            
+            newState = { ...newState, [key]: newCollection };
+
+            // Specific logic for Processus to maintain Mission relationship consistency
+            if (key === 'processus') {
+                const proc = itemToSave as Processus;
+                const oldProc = isNew ? null : collection.find(p => p.id === proc.id);
+                const oldMissionId = oldProc?.missionId;
+                const newMissionId = proc.missionId;
+
+                if (oldMissionId !== newMissionId) {
+                    const missions = newState.missions as Mission[];
+                    const newMissions = missions.map(m => {
+                        let newProcessusIds = m.processusIds ? [...m.processusIds] : [];
+                        let changed = false;
+
+                        // Remove from old mission
+                        if (oldMissionId && m.id === oldMissionId) {
+                            const index = newProcessusIds.indexOf(proc.id);
+                            if (index > -1) {
+                                newProcessusIds.splice(index, 1);
+                                changed = true;
+                            }
+                        }
+                        // Add to new mission
+                        if (newMissionId && m.id === newMissionId) {
+                            if (!newProcessusIds.includes(proc.id)) {
+                                newProcessusIds.push(proc.id);
+                                changed = true;
+                            }
+                        }
+                        return changed ? { ...m, processusIds: newProcessusIds } : m;
+                    });
+                    newState = { ...newState, missions: newMissions };
+                }
+            }
+            
+            saveDataToLocalStorage(newState);
+            return newState;
         }
         case 'DELETE_ITEM': {
             const { key, id } = action.payload;
             const collection = state[key] as any[];
-            return { ...state, [key]: collection.filter(i => i.id !== id) };
+            let newState = { ...state, [key]: collection.filter(i => i.id !== id) };
+
+            // Specific logic for Processus delete
+            if (key === 'processus') {
+                const procToDelete = collection.find(p => p.id === id) as Processus | undefined;
+                if (procToDelete && procToDelete.missionId) {
+                    const missions = newState.missions as Mission[];
+                    const newMissions = missions.map(m => {
+                        if (m.id === procToDelete.missionId) {
+                            const newProcessusIds = m.processusIds.filter(pid => pid !== id);
+                            return { ...m, processusIds: newProcessusIds };
+                        }
+                        return m;
+                    });
+                    newState = { ...newState, missions: newMissions };
+                }
+            }
+            
+            saveDataToLocalStorage(newState);
+            return newState;
         }
         default:
             return state;
@@ -106,7 +221,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     const [settings, setSettings] = useState<ISettings>(initialSettings);
 
     // Data State Management
-    const [data, dispatch] = useReducer(dataReducer, mockData);
+    const [data, dispatch] = useReducer(dataReducer, loadDataFromLocalStorage());
     const [loading, setLoading] = useState(false);
 
     // Notification Actions
@@ -134,6 +249,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
     const actions = useMemo(() => {
         const createActions = <T extends { id: string }>(key: keyof IDataState) => {
+            // FIX: Corrected logic to ensure `slice` and `charAt` are called on a string.
             const keyStr = String(key);
             const capitalizedKey = keyStr.charAt(0).toUpperCase() + keyStr.slice(1, -1);
             return {

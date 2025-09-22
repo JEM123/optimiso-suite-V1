@@ -52,7 +52,6 @@ const buildTree = (entities: Entite[], parentId?: string): (Entite & { children:
 
 const ENTITY_TYPE_COLORS: Record<Entite['type'], string> = { 'Direction': 'border-blue-500', 'Division': 'border-purple-500', 'Service': 'border-green-500', 'Équipe': 'border-teal-500', 'Autre': 'border-gray-500' };
 const ENTITY_TYPE_ICONS: Record<Entite['type'], React.ElementType> = { 'Direction': Building, 'Division': Layers, 'Service': Component, 'Équipe': Users, 'Autre': Shield };
-// FIX: Added missing status keys to satisfy the Record<Entite['statut'], string> type.
 const ENTITY_STATUS_COLORS: Record<Entite['statut'], string> = {
     'brouillon': 'bg-gray-100 text-gray-800',
     'en_cours': 'bg-yellow-100 text-yellow-800',
@@ -187,7 +186,7 @@ const EntityDetailPanel: React.FC<{ entity: Entite; onClose: () => void; onEdit:
                  {activeTab === 'attachments' && <div className="space-y-3">
                      {[ {icon: Users, title: 'Personnes', data: attachments.personnes}, {icon: Briefcase, title: 'Postes', data: attachments.postes}, {icon: LinkIcon, title: 'Risques', data: attachments.risques} ].map(item => (
                          <div key={item.title}><div className="flex items-center space-x-2 text-gray-700 text-sm font-medium"><item.icon className="h-4 w-4"/><span>{item.title} ({item.data.length})</span></div>
-                         {item.data.length > 0 && <div className="pl-6 text-sm text-gray-600 border-l-2 ml-2 mt-1">{item.data.map((d: any) => <p key={d.id}>- {d.nom}</p>)}</div>}
+                         {item.data.length > 0 && <div className="pl-6 text-sm text-gray-600 border-l-2 ml-2 mt-1">{item.data.map((d: any) => <p key={d.id}>- {d.nom || d.intitule}</p>)}</div>}
                          </div>
                      ))}
                 </div>}

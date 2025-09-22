@@ -24,7 +24,7 @@ const MultiSelect: React.FC<{ items: any[], selectedIds: string[], onChange: (id
 const newProcessusTemplate = (): Partial<Processus> => ({
     nom: '', reference: '', type: 'Métier', niveau: 'L2', actif: true, statut: 'brouillon',
     proprietaireProcessusId: '', entitesConcerneesIds: [], procedureIds: [], indicateurIds: [],
-    risqueIds: [], controleIds: [], documentIds: [], missionIds: [], exigenceIds: [],
+    risqueIds: [], controleIds: [], documentIds: [], missionId: '', exigenceIds: [],
     champsLibres: {},
     dateCreation: new Date(), dateModification: new Date(), auteurId: 'pers-1'
 });
@@ -117,6 +117,13 @@ export const ProcessusFormModal: React.FC<ProcessusFormModalProps> = ({ isOpen, 
                             <div><label className="block text-sm font-semibold mb-1">Type</label><select name="type" value={formData.type} onChange={handleChange} className={formInputClasses}>{['Management', 'Métier', 'Support'].map(t => <option key={t} value={t}>{t}</option>)}</select></div>
                             <div><label className="block text-sm font-semibold mb-1">Niveau</label><select name="niveau" value={formData.niveau} onChange={handleChange} className={formInputClasses}>{['L0', 'L1', 'L2', 'L3'].map(l => <option key={l} value={l}>{l}</option>)}</select></div>
                              <div><label className="block text-sm font-semibold mb-1">Parent</label><select name="parentId" value={formData.parentId || ''} onChange={handleChange} className={formInputClasses}><option value="">Aucun</option>{(data.processus as any[]).filter(p => p.id !== formData.id).map(p => <option key={p.id} value={p.id}>{p.nom}</option>)}</select></div>
+                             <div>
+                                <label className="block text-sm font-semibold text-gray-700 mb-1">Mission Mère <span className="text-red-500">*</span></label>
+                                <select name="missionId" value={formData.missionId || ''} onChange={handleChange} className={formInputClasses} required>
+                                    <option value="" disabled>Sélectionner une mission...</option>
+                                    {(data.missions as any[]).map((m: any) => <option key={m.id} value={m.id}>{m.nom}</option>)}
+                                </select>
+                            </div>
                              <div><label className="block text-sm font-semibold mb-1">Propriétaire (Poste)</label><select name="proprietaireProcessusId" value={formData.proprietaireProcessusId || ''} onChange={handleChange} className={formInputClasses} required><option value="" disabled>Sélectionner...</option>{(data.postes as any[]).map(p => <option key={p.id} value={p.id}>{p.intitule}</option>)}</select></div>
                         </div>
                         <div><label className="block text-sm font-semibold mb-1">Description</label><textarea name="description" value={formData.description || ''} onChange={handleChange} rows={3} className={formInputClasses}></textarea></div>

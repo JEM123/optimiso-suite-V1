@@ -5,7 +5,6 @@ import { mockData } from '../constants';
 import type { Poste, Entite, Personne, Competence, Role, RACI, OccupationHistory } from '../types';
 import { Users, Edit, Plus, ChevronDown, List, Workflow, Search, Trash2, Briefcase, Info, BookOpen, UserCheck, Link as LinkIcon, Download, X, History, Building, FileSpreadsheet, Image } from 'lucide-react';
 import PosteDetailPanel from './PosteDetailPanel';
-// FIX: Module '"./PosteFormModal"' has no default export. Changed to named import.
 import { PosteFormModal } from './PosteFormModal';
 
 // --- UTILITY FUNCTIONS & CONSTANTS ---

@@ -67,7 +67,8 @@ export const mockData = {
           portee: 'Tous les collaborateurs de l\'entreprise',
           entrees: 'Demande de recrutement validée', sorties: 'Collaborateur intégré et opérationnel',
           responsablePosteId: 'pos-4',
-          processusIds: ['p-l2-rh-01'], procedureIds: ['proced-1'], documentIds: ['doc-form-recrut', 'doc-1'],
+          processusIds: ['p-l1-rh', 'p-l2-rh-01'],
+          procedureIds: ['proced-1'], documentIds: ['doc-form-recrut', 'doc-1'],
           risqueIds: ['RSK-001'], controleIds: ['ctrl-2'], exigenceIds: [],
           actif: true, confidentialite: 'publique',
           dateCreation: new Date(), dateModification: new Date(), auteurId: 'pers-1',
@@ -80,7 +81,8 @@ export const mockData = {
           portee: 'Direction, actionnaires, auditeurs',
           entrees: 'Pièces comptables, factures', sorties: 'Bilan, Compte de résultat, Annexes',
           responsablePosteId: 'pos-2',
-          processusIds: ['p-l2-fin-01'], procedureIds: ['proced-2'], documentIds: ['doc-2'],
+          processusIds: ['p-l1-fin', 'p-l2-fin-01'],
+          procedureIds: ['proced-2'], documentIds: ['doc-2'],
           risqueIds: ['RSK-002'], controleIds: ['ctrl-1'], exigenceIds: [],
           actif: true, confidentialite: 'restreinte',
           dateCreation: new Date(), dateModification: new Date(), auteurId: 'pers-2',
@@ -284,7 +286,7 @@ export const mockData = {
         { id: 'p2-decision', type: 'decision', ordre: 3, libelle: 'Écarts détectés ?', position: { x: 350, y: 275 } },
         { id: 'p2-step-yes', type: 'step', ordre: 4, libelle: 'Analyser et corriger', responsablePosteId: 'pos-3', position: { x: 150, y: 400 } },
         { id: 'p2-step-no', type: 'step', ordre: 5, libelle: 'Validation par le CFO', responsablePosteId: 'pos-2', position: { x: 550, y: 400 }, risqueIds: ['RSK-002'], controleIds: ['ctrl-1'] },
-        { id: 'p2-end', type: 'end', ordre: 6, libelle: 'Clôture mensuelle OK', position: { x: 350, y: 525 } }
+        { id: 'p2-end', ordre: 6, libelle: 'Clôture mensuelle OK', position: { x: 350, y: 525 } }
       ],
       liens: [
         { id: 'l-p2-start-s1', source: 'p2-start', target: 'p2-step1' },
@@ -298,10 +300,10 @@ export const mockData = {
   ] as Procedure[],
 
   processus: [
-    { id: 'p-l1-rh', reference: 'P-RH', nom: 'Gérer les Ressources Humaines', type: 'Support', niveau: 'L1', actif: true, statut: 'valide', dateCreation: new Date(), dateModification: new Date(), auteurId: 'pers-1', proprietaireProcessusId: 'pos-4', entitesConcerneesIds: ['ent-5'], procedureIds: [], indicateurIds: [], risqueIds: [], controleIds: [], documentIds: [], missionIds: ['miss-1'] },
-    { id: 'p-l2-rh-01', reference: 'P-RH-01', nom: 'Recrutement et Intégration', type: 'Support', niveau: 'L2', parentId: 'p-l1-rh', actif: true, statut: 'valide', dateCreation: new Date(), dateModification: new Date(), auteurId: 'pers-1', proprietaireProcessusId: 'pos-4', entitesConcerneesIds: ['ent-5'], procedureIds: ['proced-1'], indicateurIds: ['ind-2'], risqueIds: ['RSK-001'], controleIds: ['ctrl-2'], documentIds: ['doc-form-recrut', 'doc-1'], missionIds: ['miss-1'] },
-    { id: 'p-l1-fin', reference: 'P-FIN', nom: 'Gérer la Finance', type: 'Support', niveau: 'L1', actif: true, statut: 'valide', dateCreation: new Date(), dateModification: new Date(), auteurId: 'pers-1', proprietaireProcessusId: 'pos-2', entitesConcerneesIds: ['ent-2'], procedureIds: [], indicateurIds: [], risqueIds: [], controleIds: [], documentIds: [], missionIds: ['miss-2'] },
-    { id: 'p-l2-fin-01', reference: 'P-FIN-01', nom: 'Produire les comptes', type: 'Support', niveau: 'L2', parentId: 'p-l1-fin', actif: true, statut: 'valide', dateCreation: new Date(), dateModification: new Date(), auteurId: 'pers-1', proprietaireProcessusId: 'pos-2', entitesConcerneesIds: ['ent-2', 'ent-4'], procedureIds: ['proced-2'], indicateurIds: ['ind-1'], risqueIds: ['RSK-002'], controleIds: ['ctrl-1'], documentIds: ['doc-2'], missionIds: ['miss-2'] },
+    { id: 'p-l1-rh', reference: 'P-RH', nom: 'Gérer les Ressources Humaines', type: 'Support', niveau: 'L1', actif: true, statut: 'valide', dateCreation: new Date(), dateModification: new Date(), auteurId: 'pers-1', proprietaireProcessusId: 'pos-4', entitesConcerneesIds: ['ent-5'], procedureIds: [], indicateurIds: [], risqueIds: [], controleIds: [], documentIds: [], missionId: 'miss-1' },
+    { id: 'p-l2-rh-01', reference: 'P-RH-01', nom: 'Recrutement et Intégration', type: 'Support', niveau: 'L2', parentId: 'p-l1-rh', actif: true, statut: 'valide', dateCreation: new Date(), dateModification: new Date(), auteurId: 'pers-1', proprietaireProcessusId: 'pos-4', entitesConcerneesIds: ['ent-5'], procedureIds: ['proced-1'], indicateurIds: ['ind-2'], risqueIds: ['RSK-001'], controleIds: ['ctrl-2'], documentIds: ['doc-form-recrut', 'doc-1'], missionId: 'miss-1' },
+    { id: 'p-l1-fin', reference: 'P-FIN', nom: 'Gérer la Finance', type: 'Support', niveau: 'L1', actif: true, statut: 'valide', dateCreation: new Date(), dateModification: new Date(), auteurId: 'pers-1', proprietaireProcessusId: 'pos-2', entitesConcerneesIds: ['ent-2'], procedureIds: [], indicateurIds: [], risqueIds: [], controleIds: [], documentIds: [], missionId: 'miss-2' },
+    { id: 'p-l2-fin-01', reference: 'P-FIN-01', nom: 'Produire les comptes', type: 'Support', niveau: 'L2', parentId: 'p-l1-fin', actif: true, statut: 'valide', dateCreation: new Date(), dateModification: new Date(), auteurId: 'pers-1', proprietaireProcessusId: 'pos-2', entitesConcerneesIds: ['ent-2', 'ent-4'], procedureIds: ['proced-2'], indicateurIds: ['ind-1'], risqueIds: ['RSK-002'], controleIds: ['ctrl-1'], documentIds: ['doc-2'], missionId: 'miss-2' },
   ] as Processus[],
 
   risques: [

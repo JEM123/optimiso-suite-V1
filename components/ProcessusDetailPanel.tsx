@@ -23,6 +23,7 @@ const ProcessusDetailPanel: React.FC<ProcessusDetailPanelProps> = ({ processus, 
     const parent = (data.processus as Processus[]).find(p => p.id === processus.parentId);
     const children = (data.processus as Processus[]).filter(p => p.parentId === processus.id);
     const proprietaire = (data.postes as any[]).find((p: any) => p.id === processus.proprietaireProcessusId);
+    const mission = (data.missions as any[]).find(m => m.id === processus.missionId);
     
     const customFieldDefs = settings.customFields.processus || [];
     const hasCustomFields = customFieldDefs.length > 0 && processus.champsLibres && Object.keys(processus.champsLibres).some(key => processus.champsLibres[key]);
@@ -44,6 +45,14 @@ const ProcessusDetailPanel: React.FC<ProcessusDetailPanelProps> = ({ processus, 
             <div className="flex-grow p-4 overflow-y-auto bg-gray-50/50 space-y-4">
                 <DetailItem label="Type" value={processus.type} />
                 <DetailItem label="Niveau" value={processus.niveau} />
+                 <DetailItem label="Mission Mère" value={
+                    mission ? (
+                        <div className="flex items-center gap-2">
+                            <Briefcase className="h-4 w-4 text-gray-500"/>
+                            <span>{mission.nom}</span>
+                        </div>
+                    ) : 'Aucune'
+                } />
                 <DetailItem label="Propriétaire" value={proprietaire?.intitule} />
                 <DetailItem label="Parent" value={parent?.nom || 'Aucun'} />
                 

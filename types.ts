@@ -176,6 +176,7 @@ export interface EtapeProcedure {
   type: 'start' | 'end' | 'step' | 'decision';
   risqueIds?: string[];
   controleIds?: string[];
+  documentIds?: string[];
 }
 
 export interface ProcedureLien {
@@ -308,7 +309,7 @@ export interface Processus extends BaseEntity {
   risqueIds: string[];
   controleIds: string[];
   documentIds: string[];
-  missionIds?: string[];
+  missionId: string;
   exigenceIds?: string[];
   
   champsLibres?: Record<string, any>;
@@ -617,57 +618,49 @@ export interface NormeLoiCadre extends Omit<BaseEntity, 'statut'> {
   perimetre?: string;
   responsableConformiteId: string; // Link to Personne or Poste
   entitesConcerneesIds: string[]; // Links to Entites
-  documentsReferenceIds: string[]; // Links to Documents
-  champsLibres?: Record<string, any>;
+  documentsReferenceIds: string[];
   actif: boolean;
 }
 
 export interface NormeLoiExigence {
-  id: string;
-  cadreId: string;
-  reference: string; // e.g., "8.5.1"
-  intitule: string;
-  description: string;
-  obligation: 'Obligatoire' | 'Recommandée';
-  criticite: 'Faible' | 'Moyenne' | 'Élevée';
-  periodiciteEval: 'À la demande' | 'Trimestrielle' | 'Semestrielle' | 'Annuelle';
-  responsableId: string; // Link to Personne or Poste
-  processusLiesIds: string[];
-  controlesLiesIds: string[];
-  documentsPreuvesIds: string[];
-  indicateursSuiviIds: string[];
-  statutConformite: 'Non applicable' | 'Conforme' | 'Partiellement conforme' | 'Non conforme' | 'À évaluer';
-  dateDerniereEval?: Date;
-  prochaineEcheance?: Date;
-  commentaires?: string;
-  auteurId?: string;
-  dateCreation?: Date;
-  dateModification?: Date;
+    id: string;
+    cadreId: string;
+    reference: string;
+    intitule: string;
+    description: string;
+    obligation: 'Obligatoire' | 'Recommandée';
+    criticite: 'Faible' | 'Moyenne' | 'Élevée';
+    periodiciteEval: 'À la demande' | 'Trimestrielle' | 'Semestrielle' | 'Annuelle';
+    responsableId: string; // Link to Poste
+    processusLiesIds: string[];
+    controlesLiesIds: string[];
+    documentsPreuvesIds: string[];
+    indicateursSuiviIds: string[];
+    statutConformite: 'Non applicable' | 'Conforme' | 'Partiellement conforme' | 'Non conforme' | 'À évaluer';
+    dateCreation?: Date;
+    dateModification?: Date;
+    auteurId?: string;
 }
 
-// --- MISSIONS MODULE TYPES ---
-export interface Mission extends Omit<BaseEntity, 'nom'> {
-    nom: string; // Titre
+export interface Mission extends BaseEntity {
     objectifs: string;
     kpiIds: string[];
     rattachementType: 'Entite' | 'Poste';
     rattachementId: string;
-    portee: string; // clients internes/externes
-    entrees: string; // SIPOC simplifié
-    sorties: string; // SIPOC simplifié
+    portee: string; // Describes clients/scope
+    entrees: string;
+    sorties: string;
     responsablePosteId: string;
     processusIds: string[];
     procedureIds: string[];
     documentIds: string[];
-    exigenceIds?: string[];
     risqueIds: string[];
     controleIds: string[];
-    champsLibres?: Record<string, any>;
+    exigenceIds: string[];
     actif: boolean;
     confidentialite: 'publique' | 'restreinte';
 }
 
-// --- NOTIFICATIONS MODULE TYPES ---
 export type NotificationType = 'validation' | 'mention' | 'alerte' | 'tache' | 'evaluation';
 
 export interface Notification {
@@ -676,19 +669,18 @@ export interface Notification {
     title: string;
     description: string;
     date: Date;
-    userId?: string; // If undefined, it's for everyone
+    userId?: string; // If undefined, it's for all users
     targetModule: string;
     targetId: string;
 }
 
-// --- SETTINGS MODULE TYPES ---
 export type CustomFieldType = 'text' | 'number' | 'date' | 'textarea' | 'select';
 
 export interface CustomFieldDef {
     id: string;
     name: string;
     type: CustomFieldType;
-    options?: string[]; // For 'select' type
+    options?: string[];
     required: boolean;
 }
 

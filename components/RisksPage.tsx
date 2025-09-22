@@ -1,3 +1,4 @@
+
 import React, { useState, useMemo, useEffect } from 'react';
 import type { Risque } from '../types';
 import { Plus, Search, Trash2, Edit, X, Info, ShieldCheck, TrendingUp, Link as LinkIcon, List, LayoutGrid, Map as MapIcon, Lock, Unlock, Filter, Download, AlertTriangle, Building2, FileSpreadsheet } from 'lucide-react';
@@ -175,6 +176,10 @@ const RisksPage: React.FC<RisksPageProps> = ({ onShowRelations, notifiedItemId }
     
     const handleSaveRisk = async (riskToSave: Risque) => {
         await actions.saveRisque(riskToSave);
+        // FIX: Update selected risk after saving if it was the one being edited. This fixes a type error where a boolean was being assigned.
+        if (selectedRisk?.id === riskToSave.id) {
+            setSelectedRisk(riskToSave);
+        }
         setIsModalOpen(false); 
         setEditingRisk(null);
     };
@@ -283,10 +288,11 @@ const RisksPage: React.FC<RisksPageProps> = ({ onShowRelations, notifiedItemId }
                         )}
                     </div>
                 </div>
-                {selectedRisk && <RiskDetailPanel risque={selectedRisk} onClose={() => setSelectedRisk(null)} onEdit={handleOpenModal} onShowRelations={onShowRelations}/>}
+                {selectedRisk && <RiskDetailPanel risque={selectedRisk} onClose={() => setSelectedRisk(null)} onEdit={handleOpenModal} onShowRelations={onShowRelations} />}
             </div>
         </div>
     );
 };
 
+// FIX: Add default export to fix module import error.
 export default RisksPage;

@@ -1,7 +1,8 @@
+
 import React, { useState, useMemo, useCallback, useEffect, useRef } from 'react';
 import { useDataContext } from '../context/AppContext';
 import type { Procedure, EtapeProcedure, ProcedureLien } from '../types';
-import { Plus, Search, Trash2, Edit, Workflow, ChevronLeft, Menu, CheckCircle, Link as LinkIcon, BarChart } from 'lucide-react';
+import { Plus, Search, Trash2, Edit, Workflow, ChevronLeft, Menu, CheckCircle, Link as LinkIcon, BarChart, AlertTriangle, X } from 'lucide-react';
 import { ReactFlowProvider, useNodesState, useEdgesState, useReactFlow, applyNodeChanges, type OnNodesChange, type OnEdgesChange, type OnConnect, type Node, type Edge, type Connection, type NodePositionChange } from 'reactflow';
 import ProcedureFormModal from './ProcedureFormModal';
 import ProcedureFlow from './ProcedureFlow';
@@ -44,6 +45,108 @@ interface ProceduresPageProps {
     onShowImpactAnalysis: (element: any, type: string) => void;
 }
 
+const validateProcedure = (procedure: Procedure): string[] => {
+    const issues: string[] = [];
+    const { etapes, liens } = procedure;
+
+    if (etapes.length === 0) {
+        issues.push("Alerte : Le diagramme est vide.");
+        return issues;
+    }
+
+    const startNodes = etapes.filter(e => e.type === 'start');
+    if (startNodes.length === 0) {
+        issues.push("Erreur : Aucun point de départ ('start') n'a été trouvé.");
+    }
+    if (startNodes.length > 1) {
+        issues.push("Alerte : Plusieurs points de départ ('start') ont été trouvés.");
+    }
+
+    const endNodes = etapes.filter(e => e.type === 'end');
+    if (endNodes.length === 0) {
+        issues.push("Alerte : Aucun point de fin ('end') n'a été trouvé.");
+    }
+    
+    etapes.forEach(etape => {
+        const hasIncoming = liens.some(l => l.target === etape.id);
+        const hasOutgoing = liens.some(l => l.source === etape.id);
+
+        if (etape.type === 'start' && hasIncoming) {
+             issues.push(`Alerte : Le point de départ '${etape.libelle}' ne devrait pas avoir de connexion entrante.`);
+        }
+        if (etape.type === 'start' && !hasOutgoing) {
+            issues.push(`Alerte : Le point de départ '${etape.libelle}' n'a pas de sortie.`);
+        }
+
+        if (etape.type === 'end' && hasOutgoing) {
+             issues.push(`Alerte : Le point de fin '${etape.libelle}' ne devrait pas avoir de connexion sortante.`);
+        }
+        if (etape.type === 'end' && !hasIncoming) {
+            issues.push(`Alerte : Le point de fin '${etape.libelle}' n'est jamais atteint.`);
+        }
+        
+        if (etape.type === 'step' || etape.type === 'decision') {
+            if (!hasIncoming && !startNodes.some(start => liens.some(l => l.source === start.id && l.target === etape.id))) {
+                 if (!liens.some(l => l.target === etape.id)) {
+                    issues.push(`Alerte : L'étape '${etape.libelle}' n'a pas d'entrée.`);
+                 }
+            }
+        }
+        
+        if (etape.type === 'step') {
+            if (!hasOutgoing) {
+                issues.push(`Alerte : L'étape '${etape.libelle}' n'a pas de sortie.`);
+            }
+        }
+        
+        if (etape.type === 'decision') {
+            const outgoing = liens.filter(l => l.source === etape.id);
+            if (outgoing.length === 0) {
+                 issues.push(`Alerte : La décision '${etape.libelle}' n'a pas de sortie.`);
+            }
+            if (!outgoing.some(l => l.sourceHandle === 'yes')) {
+                issues.push(`Alerte : La décision '${etape.libelle}' n'a pas de branche 'Oui'.`);
+            }
+            if (!outgoing.some(l => l.sourceHandle === 'no')) {
+                issues.push(`Alerte : La décision '${etape.libelle}' n'a pas de branche 'Non'.`);
+            }
+        }
+    });
+
+    return issues;
+};
+
+const ValidationResultsPanel: React.FC<{ issues: string[]; onClose: () => void }> = ({ issues, onClose }) => {
+    const hasIssues = issues.length > 0;
+    
+    return (
+        <div className="absolute bottom-4 left-1/2 -translate-x-1/2 w-full max-w-2xl bg-white rounded-lg shadow-lg border z-20 animate-fade-in-up">
+            <div className={`p-3 flex justify-between items-center border-b ${hasIssues ? 'bg-yellow-50 border-yellow-200' : 'bg-green-50 border-green-200'}`}>
+                <div className={`flex items-center gap-2 font-semibold ${hasIssues ? 'text-yellow-800' : 'text-green-800'}`}>
+                    {hasIssues ? <AlertTriangle className="h-5 w-5" /> : <CheckCircle className="h-5 w-5" />}
+                    <span>{hasIssues ? `Validation terminée avec ${issues.length} alerte(s)` : 'Validation réussie'}</span>
+                </div>
+                <button onClick={onClose} className="p-1 rounded-full hover:bg-gray-200"><X className="h-5 w-5 text-gray-600" /></button>
+            </div>
+            <div className="p-4 max-h-40 overflow-y-auto">
+                {hasIssues ? (
+                    <ul className="space-y-2 text-sm text-gray-700">
+                        {issues.map((issue, index) => (
+                            <li key={index} className="flex items-start gap-2">
+                                <span className="text-yellow-600 font-bold">&bull;</span>
+                                <span>{issue}</span>
+                            </li>
+                        ))}
+                    </ul>
+                ) : (
+                    <p className="text-sm text-green-700">Aucun problème de logique détecté dans le diagramme.</p>
+                )}
+            </div>
+        </div>
+    );
+};
+
+
 const ProceduresPageContent: React.FC<ProceduresPageProps> = ({ onShowRelations, onShowValidation, onShowImpactAnalysis }) => {
     const { data, actions } = useDataContext();
     const { procedures } = data as { procedures: Procedure[] };
@@ -54,6 +157,7 @@ const ProceduresPageContent: React.FC<ProceduresPageProps> = ({ onShowRelations,
     const [isProcModalOpen, setProcModalOpen] = useState(false);
     const [editingProcedure, setEditingProcedure] = useState<Partial<Procedure> | null>(null);
     const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+    const [validationIssues, setValidationIssues] = useState<string[] | null>(null);
     
     const prevProcIdRef = useRef<string | null>(null);
     const { screenToFlowPosition, fitView } = useReactFlow();
@@ -79,6 +183,7 @@ const ProceduresPageContent: React.FC<ProceduresPageProps> = ({ onShowRelations,
             
             if (prevProcIdRef.current !== selectedProcedure.id) {
                 setSelectedStepId(null);
+                setValidationIssues(null); // Clear validation on procedure change
                 setTimeout(() => fitView({ padding: 0.2 }), 100);
             }
         } else {
@@ -164,6 +269,13 @@ const ProceduresPageContent: React.FC<ProceduresPageProps> = ({ onShowRelations,
         }
     };
 
+    const handleValidateDiagram = () => {
+        if (selectedProcedure) {
+            const issues = validateProcedure(selectedProcedure);
+            setValidationIssues(issues);
+        }
+    };
+
     const filteredProcedures = useMemo(() => procedures.filter(p => p.nom.toLowerCase().includes(searchTerm.toLowerCase()) || p.reference.toLowerCase().includes(searchTerm.toLowerCase())), [procedures, searchTerm]);
 
     return (
@@ -215,6 +327,7 @@ const ProceduresPageContent: React.FC<ProceduresPageProps> = ({ onShowRelations,
                             <div className="p-2 border-b bg-white flex items-center justify-between">
                                 <h3 className="font-semibold text-gray-800">{selectedProcedure.nom} - v{selectedProcedure.version}</h3>
                                 <div className="flex items-center gap-2">
+                                    <button onClick={handleValidateDiagram} className="flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm bg-white border hover:bg-gray-50"><CheckCircle className="h-4 w-4 text-green-600"/>Valider le diagramme</button>
                                     <button onClick={() => onShowImpactAnalysis(selectedProcedure, 'procedures')} className="flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm bg-white border hover:bg-gray-50"><BarChart className="h-4 w-4"/>Analyser l'impact</button>
                                     <button onClick={() => onShowRelations(selectedProcedure, 'procedures')} className="flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm bg-white border hover:bg-gray-50"><LinkIcon className="h-4 w-4"/>Explorer les relations</button>
                                 </div>
@@ -233,6 +346,9 @@ const ProceduresPageContent: React.FC<ProceduresPageProps> = ({ onShowRelations,
                                 </div>
                             )}
                         </div>
+                        {validationIssues !== null && (
+                            <ValidationResultsPanel issues={validationIssues} onClose={() => setValidationIssues(null)} />
+                        )}
                     </div>
                     {selectedProcedure && selectedStep && (
                         <ProcedureStepDetailPanel key={selectedStep.id} etape={selectedStep} procedure={selectedProcedure} onClose={() => setSelectedStepId(null)} onShowRelations={onShowRelations} onSave={handleSaveStep} />
