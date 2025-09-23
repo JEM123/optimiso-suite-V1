@@ -1,5 +1,3 @@
-
-
 import React, { useState, useMemo, useCallback, useEffect, useRef } from 'react';
 import { useDataContext } from '../context/AppContext';
 import type { Procedure, EtapeProcedure, ProcedureLien } from '../types';
@@ -248,13 +246,20 @@ const ProceduresPageContent: React.FC<ProceduresPageProps> = ({ onShowRelations,
             etapes: updatedEtapes,
         }));
     }, [selectedProcedureId, selectedProcedure, getNodes, updateProcedureState]);
-
+    
     const onConnect = useCallback((params: Connection) => {
-        if (!selectedProcedureId) return;
-        const newLink: ProcedureLien = { id: `e${params.source}-${params.target}`, sourceHandle: params.sourceHandle, targetHandle: params.targetHandle, ...params };
+        if (!selectedProcedureId || !params.source || !params.target) return;
+        const newLink: ProcedureLien = {
+            id: `e${params.source}-${params.target}-${params.sourceHandle || ''}-${params.targetHandle || ''}`,
+            source: params.source,
+            target: params.target,
+            sourceHandle: params.sourceHandle,
+            targetHandle: params.targetHandle,
+        };
         if (params.sourceHandle === 'yes') newLink.label = 'Oui';
         if (params.sourceHandle === 'no') newLink.label = 'Non';
-        updateProcedureState(selectedProcedureId, p => ({...p, liens: [...p.liens, newLink]}));
+        // FIX: Defensively guard against p.liens being undefined in case a partial object was saved.
+        updateProcedureState(selectedProcedureId, p => ({...p, liens: [...(p.liens || []), newLink]}));
     }, [selectedProcedureId, updateProcedureState]);
     
     const onDrop = useCallback((event: React.DragEvent) => {
@@ -272,7 +277,8 @@ const ProceduresPageContent: React.FC<ProceduresPageProps> = ({ onShowRelations,
                 position,
                 type: toolboxType as EtapeProcedure['type'],
             };
-            updateProcedureState(selectedProcedureId, p => ({ ...p, etapes: [...p.etapes, newStep] }));
+            // FIX: Defensively guard against p.etapes being undefined by using `|| []` to prevent spreading a non-object.
+            updateProcedureState(selectedProcedureId, p => ({ ...p, etapes: [...(p.etapes || []), newStep] }));
             return;
         }
     

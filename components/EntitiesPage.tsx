@@ -121,7 +121,8 @@ const EntityDetailPanel: React.FC<{ entity: Entite; onClose: () => void; onEdit:
         risques: (risques as Risque[]).filter(r => r.entiteIds.includes(entity.id)),
     }), [entity.id, personnes, postes, risques]);
     
-    const DetailItem = ({ label, value }: { label: string; value: React.ReactNode }) => (
+    // FIX: Changed component definition to use React.FC to correctly handle the 'key' prop provided by React during list rendering, resolving a TypeScript error.
+    const DetailItem: React.FC<{ label: string; value: React.ReactNode }> = ({ label, value }) => (
         <div><p className="text-sm font-semibold text-gray-700">{label}</p><div className="text-sm text-gray-900 mt-1">{value || '-'}</div></div>
     );
     

@@ -34,7 +34,7 @@ const AmeliorationFormModal: React.FC<AmeliorationFormModalProps> = ({ isOpen, o
     };
     
     const handleMultiSelectChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-        const selectedOptions = Array.from(e.target.selectedOptions, option => option.value as AmeliorationOrigine);
+        const selectedOptions = Array.from(e.target.selectedOptions, (option: HTMLOptionElement) => option.value as AmeliorationOrigine);
         setFormData(prev => ({...prev, origine: selectedOptions}));
     };
 

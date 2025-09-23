@@ -55,25 +55,25 @@ const StepFormModal: React.FC<StepFormModalProps> = ({ isOpen, onClose, onSave, 
                      <div><label className="block text-sm font-medium text-gray-700 mb-1">Description</label><textarea name="description" value={formData.description || ''} onChange={handleChange} rows={3} className={formInputClasses}></textarea></div>
                      <div>
                         <label className="block text-sm font-medium text-gray-700 mb-1">Documents en entrée</label>
-                        <select multiple value={formData.entreesIds || []} onChange={(e) => handleMultiSelectChange('entreesIds', Array.from(e.target.selectedOptions, option => option.value))} className={`${formInputClasses} h-24`}>
+                        <select multiple value={formData.entreesIds || []} onChange={(e) => handleMultiSelectChange('entreesIds', Array.from(e.target.selectedOptions, (option: HTMLOptionElement) => option.value))} className={`${formInputClasses} h-24`}>
                             {(documents as Document[]).map(d => <option key={d.id} value={d.id}>{d.nom}</option>)}
                         </select>
                     </div>
                      <div>
                         <label className="block text-sm font-medium text-gray-700 mb-1">Documents en sortie</label>
-                        <select multiple value={formData.sortiesIds || []} onChange={(e) => handleMultiSelectChange('sortiesIds', Array.from(e.target.selectedOptions, option => option.value))} className={`${formInputClasses} h-24`}>
+                        <select multiple value={formData.sortiesIds || []} onChange={(e) => handleMultiSelectChange('sortiesIds', Array.from(e.target.selectedOptions, (option: HTMLOptionElement) => option.value))} className={`${formInputClasses} h-24`}>
                             {(documents as Document[]).map(d => <option key={d.id} value={d.id}>{d.nom}</option>)}
                         </select>
                     </div>
                     <div>
                         <label className="block text-sm font-medium text-gray-700 mb-1">Risques liés</label>
-                        <select multiple value={formData.risqueIds || []} onChange={(e) => handleMultiSelectChange('risqueIds', Array.from(e.target.selectedOptions, option => option.value))} className={`${formInputClasses} h-24`}>
+                        <select multiple value={formData.risqueIds || []} onChange={(e) => handleMultiSelectChange('risqueIds', Array.from(e.target.selectedOptions, (option: HTMLOptionElement) => option.value))} className={`${formInputClasses} h-24`}>
                             {(risques as Risque[]).map(r => <option key={r.id} value={r.id}>{r.reference} - {r.nom}</option>)}
                         </select>
                     </div>
                     <div>
                         <label className="block text-sm font-medium text-gray-700 mb-1">Contrôles de maîtrise</label>
-                        <select multiple value={formData.controleIds || []} onChange={(e) => handleMultiSelectChange('controleIds', Array.from(e.target.selectedOptions, option => option.value))} className={`${formInputClasses} h-24`}>
+                        <select multiple value={formData.controleIds || []} onChange={(e) => handleMultiSelectChange('controleIds', Array.from(e.target.selectedOptions, (option: HTMLOptionElement) => option.value))} className={`${formInputClasses} h-24`}>
                             {(controles as Controle[]).map(c => <option key={c.id} value={c.id}>{c.reference} - {c.nom}</option>)}
                         </select>
                     </div>

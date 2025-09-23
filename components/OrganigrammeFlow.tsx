@@ -1,21 +1,31 @@
 import React, { useEffect } from 'react';
 import ReactFlow, { Controls, Background, useNodesState, useEdgesState, useReactFlow, Node, Edge } from 'reactflow';
+import { EntiteNode, PosteNode } from './OrganigrammeNodes';
+
+const nodeTypes = {
+    entite: EntiteNode,
+    poste: PosteNode,
+};
 
 interface OrganigrammeFlowProps {
-    initialNodes: Node[];
-    initialEdges: Edge[];
+    nodes: Node[];
+    edges: Edge[];
+    onNodeClick?: (event: React.MouseEvent, node: Node) => void;
 }
 
-const OrganigrammeFlow: React.FC<OrganigrammeFlowProps> = ({ initialNodes, initialEdges }) => {
-    const [nodes, setNodes, onNodesChange] = useNodesState(initialNodes);
-    const [edges, setEdges, onEdgesChange] = useEdgesState(initialEdges);
+const OrganigrammeFlow: React.FC<OrganigrammeFlowProps> = ({ nodes: propNodes, edges: propEdges, onNodeClick }) => {
+    const [nodes, setNodes, onNodesChange] = useNodesState([]);
+    const [edges, setEdges, onEdgesChange] = useEdgesState([]);
     const { fitView } = useReactFlow();
 
     useEffect(() => {
-        setNodes(initialNodes);
-        setEdges(initialEdges);
-        setTimeout(() => fitView({ padding: 0.1, duration: 300 }), 50);
-    }, [initialNodes, initialEdges, setNodes, setEdges, fitView]);
+        setNodes(propNodes);
+        setEdges(propEdges);
+    }, [propNodes, propEdges, setNodes, setEdges]);
+    
+    useEffect(() => {
+        fitView({ padding: 0.1, duration: 300 });
+    }, [propNodes, propEdges, fitView]);
 
     return (
         <ReactFlow
@@ -23,13 +33,16 @@ const OrganigrammeFlow: React.FC<OrganigrammeFlowProps> = ({ initialNodes, initi
             edges={edges}
             onNodesChange={onNodesChange}
             onEdgesChange={onEdgesChange}
+            onNodeClick={onNodeClick}
+            nodeTypes={nodeTypes}
             fitView
             nodesDraggable={false}
             nodesConnectable={false}
             className="bg-gray-100"
             proOptions={{ hideAttribution: true }}
+            zoomOnDoubleClick={false}
         >
-            <Controls />
+            <Controls showInteractive={false} />
             <Background />
         </ReactFlow>
     );

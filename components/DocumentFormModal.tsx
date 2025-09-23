@@ -101,7 +101,7 @@ const DocumentFormModal: React.FC<DocumentFormModalProps> = ({ isOpen, onClose, 
                            <div><label className="block text-sm font-medium text-gray-700 mb-1">Date d'échéance</label><input type="date" name="dateEcheance" value={formData.champsLibres?.dateEcheance || ''} onChange={handleDateChange} className={formInputClasses} /></div>
                         </div>
                          <div><label className="block text-sm font-medium text-gray-700 mb-1">Catégories</label>
-                            <select multiple value={formData.categorieIds} onChange={(e) => handleMultiSelectChange('categorieIds', Array.from(e.target.selectedOptions, option => option.value))} className={`${formInputClasses} h-20`}>
+                            <select multiple value={formData.categorieIds} onChange={(e) => handleMultiSelectChange('categorieIds', Array.from(e.target.selectedOptions, (option: HTMLOptionElement) => option.value))} className={`${formInputClasses} h-20`}>
                                 {(categoriesDocuments as any[]).map(c=><option key={c.id} value={c.id}>{c.nom}</option>)}
                             </select>
                         </div>

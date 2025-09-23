@@ -66,7 +66,7 @@ const NormeLoiCadreFormModal: React.FC<NormeLoiCadreFormModalProps> = ({ isOpen,
                     </div>
                     <div>
                         <label className="block text-sm font-medium mb-1">Entités Concernées</label>
-                        <select multiple value={formData.entitesConcerneesIds || []} onChange={(e) => handleMultiSelectChange('entitesConcerneesIds', Array.from(e.target.selectedOptions, option => option.value))} className={`${formInputClasses} h-24`}>
+                        <select multiple value={formData.entitesConcerneesIds || []} onChange={(e) => handleMultiSelectChange('entitesConcerneesIds', Array.from(e.target.selectedOptions, (option: HTMLOptionElement) => option.value))} className={`${formInputClasses} h-24`}>
                             {mockData.entites.map(e => <option key={e.id} value={e.id}>{e.nom}</option>)}
                         </select>
                     </div>

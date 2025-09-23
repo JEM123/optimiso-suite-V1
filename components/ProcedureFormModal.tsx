@@ -51,7 +51,7 @@ const ProcedureFormModal: React.FC<ProcedureFormModalProps> = ({ isOpen, onClose
                     <div><label className="block text-sm font-medium text-gray-700 mb-1">Description</label><textarea name="description" value={formData.description || ''} onChange={handleChange} rows={3} className={formInputClasses}></textarea></div>
                     <div>
                         <label className="block text-sm font-medium text-gray-700 mb-1">Acteurs (Postes)</label>
-                        <select multiple value={formData.acteursPosteIds || []} onChange={(e) => handleMultiSelectChange('acteursPosteIds', Array.from(e.target.selectedOptions, option => option.value))} className={`${formInputClasses} h-24`}>
+                        <select multiple value={formData.acteursPosteIds || []} onChange={(e) => handleMultiSelectChange('acteursPosteIds', Array.from(e.target.selectedOptions, (option: HTMLOptionElement) => option.value))} className={`${formInputClasses} h-24`}>
                             {(data.postes as Poste[]).map(p => <option key={p.id} value={p.id}>{p.intitule}</option>)}
                         </select>
                     </div>

@@ -63,7 +63,7 @@ const ModulePage: React.FC<ModulePageProps> = ({ moduleId, onShowRelations, onSh
             case 'roles': return <RolesPage />;
             case 'entites': return <EntitiesPage />;
             case 'postes': return <PostesPage onShowRelations={onShowRelations} />;
-            case 'organigramme': return <OrganigrammePage />;
+            case 'organigramme': return <OrganigrammePage onShowRelations={onShowRelations} />;
             case 'missions': return <MissionsPage onShowRelations={onShowRelations} />;
             case 'processus': return <ProcessusPage onShowRelations={onShowRelations} />;
             case 'risques': return <RisksPage onShowRelations={onShowRelations} notifiedItemId={notifiedItemId} />;

@@ -64,16 +64,18 @@ const SettingsModule: React.FC = () => {
                     Configurez le formatage des références pour les nouveaux éléments.
                 </div>
                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    {Object.entries(localSettings.references).map(([module, format]) => (
+                    {Object.entries(localSettings.references).map(([module, format]) => {
+                        const refFormat = format as ReferenceFormat;
+                        return (
                         <div key={module} className="p-4 bg-white border rounded-lg">
                             <h4 className="font-semibold text-gray-800 capitalize mb-3">{module}</h4>
                             <div className="space-y-3">
-                                <div><label className="block text-sm mb-1">Préfixe</label><input type="text" value={format.prefix} onChange={e => handleRefChange(module, 'prefix', e.target.value)} className={formInputClasses}/></div>
-                                <div><label className="block text-sm mb-1">Nombre de chiffres</label><input type="number" min="2" max="8" value={format.digits} onChange={e => handleRefChange(module, 'digits', parseInt(e.target.value))} className={formInputClasses}/></div>
-                                <div className="bg-gray-100 p-2 rounded text-sm">Exemple: <span className="font-mono">{`${format.prefix}${String(1).padStart(format.digits, '0')}`}</span></div>
+                                <div><label className="block text-sm mb-1">Préfixe</label><input type="text" value={refFormat.prefix} onChange={e => handleRefChange(module, 'prefix', e.target.value)} className={formInputClasses}/></div>
+                                <div><label className="block text-sm mb-1">Nombre de chiffres</label><input type="number" min="2" max="8" value={refFormat.digits} onChange={e => handleRefChange(module, 'digits', parseInt(e.target.value))} className={formInputClasses}/></div>
+                                <div className="bg-gray-100 p-2 rounded text-sm">Exemple: <span className="font-mono">{`${refFormat.prefix}${String(1).padStart(refFormat.digits, '0')}`}</span></div>
                             </div>
                         </div>
-                    ))}
+                    )})}
                  </div>
             </div>
         )

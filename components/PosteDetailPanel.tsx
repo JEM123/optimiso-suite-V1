@@ -50,7 +50,8 @@ const PosteDetailPanel: React.FC<PosteDetailPanelProps> = ({ poste, onClose, onE
     const hasCustomFields = customFieldDefs.length > 0 && poste.champsLibres && Object.keys(poste.champsLibres).some(key => poste.champsLibres[key]);
 
 
-    const DetailItem = ({ label, value }: { label: string; value: React.ReactNode }) => (
+    // FIX: Changed component definition to use React.FC to correctly handle the 'key' prop provided by React during list rendering, resolving a TypeScript error.
+    const DetailItem: React.FC<{ label: string; value: React.ReactNode }> = ({ label, value }) => (
         <div><p className="text-sm font-semibold text-gray-700">{label}</p><p className="text-sm text-gray-900 mt-1">{value || '-'}</p></div>
     );
     

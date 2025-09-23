@@ -1,6 +1,6 @@
-
 import React, { useState, useMemo, useEffect } from 'react';
-import type { Risque } from '../types';
+// FIX: Import specific types for better type safety.
+import type { Risque, Processus, CategorieRisque, Entite } from '../types';
 import { Plus, Search, Trash2, Edit, X, Info, ShieldCheck, TrendingUp, Link as LinkIcon, List, LayoutGrid, Map as MapIcon, Lock, Unlock, Filter, Download, AlertTriangle, Building2, FileSpreadsheet } from 'lucide-react';
 import RiskDetailPanel from './RiskDetailPanel';
 import RiskMatrix from './RiskMap';
@@ -67,7 +67,8 @@ const RiskCartography: React.FC<{
     analysisType: keyof Pick<Risque, 'analyseInherente' | 'analyseResiduelle' | 'analyseFuture'> 
 }> = ({ risks, analysisType }) => {
     const { data } = useDataContext();
-    const allEntities = data.entites as any[];
+    // FIX: Changed type from any[] to Entite[] for better type safety and to resolve inference errors.
+    const allEntities = data.entites as Entite[];
 
     const risksByEntity = useMemo(() => {
         const byEntity = new Map<string, { critical: number, high: number, medium: number, low: number, risks: Risque[] }>();
@@ -140,8 +141,9 @@ const RisksPage: React.FC<RisksPageProps> = ({ onShowRelations, notifiedItemId }
     const { data, actions } = useDataContext();
     const { user, clearNotifiedTarget } = useAppContext();
     const risques = data.risques as Risque[];
-    const processus = data.processus as any[];
-    const categoriesRisques = data.categoriesRisques as any[];
+    // FIX: Use specific types instead of any[] for better type safety.
+    const processus = data.processus as Processus[];
+    const categoriesRisques = data.categoriesRisques as CategorieRisque[];
 
     const [view, setView] = useState<'list' | 'matrix' | 'map'>('list');
     const [selectedRisk, setSelectedRisk] = useState<Risque | null>(null);
@@ -176,7 +178,6 @@ const RisksPage: React.FC<RisksPageProps> = ({ onShowRelations, notifiedItemId }
     
     const handleSaveRisk = async (riskToSave: Risque) => {
         await actions.saveRisque(riskToSave);
-        // FIX: Update selected risk after saving if it was the one being edited. This fixes a type error where a boolean was being assigned.
         if (selectedRisk?.id === riskToSave.id) {
             setSelectedRisk(riskToSave);
         }
@@ -243,15 +244,18 @@ const RisksPage: React.FC<RisksPageProps> = ({ onShowRelations, notifiedItemId }
                                 <button onClick={() => setView('map')} className={`px-3 py-1.5 rounded-md text-sm font-medium flex items-center gap-1.5 ${view === 'map' ? 'bg-white text-blue-600 shadow-sm' : 'text-gray-600'}`}><MapIcon className="h-4 w-4"/>Cartographie</button>
                             </div>
                             {(view === 'matrix' || view === 'map') && (
-                                <select value={analysisType} onChange={e => setAnalysisType(e.target.value as any)} className="border rounded-lg py-1.5 px-2 text-sm bg-white">
+                                // FIX: Corrected type assertion for the select onChange handler.
+                                <select value={analysisType} onChange={e => setAnalysisType(e.target.value as typeof analysisType)} className="border rounded-lg py-1.5 px-2 text-sm bg-white">
                                     <option value="analyseInherente">Analyse Inhérente</option><option value="analyseResiduelle">Analyse Résiduelle</option><option value="analyseFuture">Analyse Future</option>
                                 </select>
                             )}
                         </div>
                         <div className="flex items-center gap-2">
                              <div className="relative flex-grow max-w-xs"><Search className="absolute left-2 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" /><input type="text" placeholder="Rechercher..." value={searchTerm} onChange={e => setSearchTerm(e.target.value)} className="pl-8 pr-2 py-1.5 border rounded-lg w-full text-sm"/></div>
-                             <select onChange={e => setFilters(f => ({...f, categorieId: e.target.value}))} className="border rounded-lg py-1.5 px-2 text-sm"><option value="all">Toutes les catégories</option>{categoriesRisques.map(c=><option key={c.id} value={c.id}>{c.nom}</option>)}</select>
-                             <select onChange={e => setFilters(f => ({...f, processusId: e.target.value}))} className="border rounded-lg py-1.5 px-2 text-sm"><option value="all">Tous les processus</option>{processus.map(p=><option key={p.id} value={p.id}>{p.nom}</option>)}</select>
+                             {/* FIX: Explicitly type map parameter to resolve TS inference error. */}
+                             <select onChange={e => setFilters(f => ({...f, categorieId: e.target.value}))} className="border rounded-lg py-1.5 px-2 text-sm"><option value="all">Toutes les catégories</option>{categoriesRisques.map((c: CategorieRisque)=><option key={c.id} value={c.id}>{c.nom}</option>)}</select>
+                             {/* FIX: Explicitly type map parameter to resolve TS inference error. */}
+                             <select onChange={e => setFilters(f => ({...f, processusId: e.target.value}))} className="border rounded-lg py-1.5 px-2 text-sm"><option value="all">Tous les processus</option>{processus.map((p: Processus)=><option key={p.id} value={p.id}>{p.nom}</option>)}</select>
                         </div>
                     </div>
                     <div className="flex-1 overflow-auto p-4">
@@ -294,5 +298,4 @@ const RisksPage: React.FC<RisksPageProps> = ({ onShowRelations, notifiedItemId }
     );
 };
 
-// FIX: Add default export to fix module import error.
 export default RisksPage;

@@ -15,7 +15,7 @@ const formInputClasses = "block w-full text-sm text-gray-800 bg-white border bor
 const MultiSelect: React.FC<{ items: any[], selectedIds: string[], onChange: (ids: string[]) => void, label: string }> = ({ items, selectedIds, onChange, label }) => (
     <div>
         <label className="block text-sm font-semibold text-gray-700 mb-1">{label}</label>
-        <select multiple value={selectedIds} onChange={(e) => onChange(Array.from(e.target.selectedOptions, option => option.value))} className={`${formInputClasses} h-24`}>
+        <select multiple value={selectedIds} onChange={(e) => onChange(Array.from(e.target.selectedOptions, (option: HTMLOptionElement) => option.value))} className={`${formInputClasses} h-24`}>
             {items.map(item => <option key={item.id} value={item.id}>{item.nom || item.intitule}</option>)}
         </select>
     </div>

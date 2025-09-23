@@ -28,14 +28,13 @@ const KpiCardsWidget: React.FC<KpiCardsWidgetProps> = ({ config }) => {
     const pendingValidations = (data.validationInstances as any[]).filter(v => v.statut === 'En cours').length;
 
     return (
-         <div className="bg-white rounded-lg p-4 shadow-sm border">
-            {config.title && <h3 className="text-lg font-semibold mb-4 text-gray-800">{config.title}</h3>}
-            <div className="grid grid-cols-2 gap-4">
+        <div className="bg-gray-100 p-4 rounded-lg">
+            <h3 className="text-lg font-semibold mb-4 text-gray-800">{config.title || 'Indicateurs Clés'}</h3>
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
                 <StatCard title="Risques Totaux" value={totalRisks} icon={AlertTriangle} color="text-red-500" module="risques" setActiveModule={setActiveModule}/>
                 <StatCard title="Incidents Ouverts" value={openIncidents} icon={ShieldCheck} color="text-orange-500" module="incidents" setActiveModule={setActiveModule}/>
                 <StatCard title="Documents Publiés" value={publishedDocs} icon={FileText} color="text-blue-500" module="documents" setActiveModule={setActiveModule}/>
-                {/* FIX: Added the missing 'module' prop and corrected the 'color' prop to a valid Tailwind class. */}
-                <StatCard title="Validations" value={pendingValidations} icon={CheckSquare} color="text-green-500" module="mes-validations" setActiveModule={setActiveModule}/>
+                <StatCard title="Validations en Attente" value={pendingValidations} icon={CheckSquare} color="text-green-500" module="mes-validations" setActiveModule={setActiveModule}/>
             </div>
         </div>
     );

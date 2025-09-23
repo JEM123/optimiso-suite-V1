@@ -3,7 +3,6 @@
 import React, { useState } from 'react';
 import type { Actif } from '../types';
 import { mockData } from '../constants';
-// FIX: 'Tool' is not an exported member of 'lucide-react'. Replaced with 'Wrench' which is suitable for "Maintenance".
 import { X, Edit, Info, Users, Calendar, Link as LinkIcon, Wrench, History, HardDrive, Network, Server, FileText, Settings, AlertTriangle, CheckCircle } from 'lucide-react';
 import ActifTree from './ActifTree';
 
@@ -77,9 +76,7 @@ const ActifDetailPanel: React.FC<ActifDetailPanelProps> = ({ actif, onClose, onE
             <div className="flex-grow p-4 overflow-y-auto bg-gray-50/50">
                 {activeTab === 'details' && (
                     <div className="space-y-4">
-                        {/* FIX: The 'owner' object is a union type of Personne | Poste. Used a type guard to access the correct name property ('intitule' for Poste, 'nom' for Personne). */}
                         <DetailItem label="Propriétaire" value={owner ? ('intitule' in owner ? owner.intitule : `${owner.prenom} ${owner.nom}`) : undefined} icon={Users} />
-                        {/* FIX: The 'manager' object is a union type of Personne | Poste. Used a type guard to access the correct name property ('intitule' for Poste, 'nom' for Personne). */}
                         <DetailItem label="Gestionnaire" value={manager ? ('intitule' in manager ? manager.intitule : `${manager.prenom} ${manager.nom}`) : undefined} icon={Users} />
                         <DetailItem label="Date d'achat" value={actif.dateAchat ? new Date(actif.dateAchat).toLocaleDateString('fr-FR') : 'N/A'} icon={Calendar} />
                         <DetailItem label="Valeur" value={actif.valeur ? `${actif.valeur.toLocaleString('fr-FR')} CHF` : 'N/A'} icon={Info} />

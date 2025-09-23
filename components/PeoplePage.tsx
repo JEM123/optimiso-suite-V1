@@ -126,9 +126,7 @@ const PeoplePage: React.FC<PeoplePageProps> = ({ onShowRelations, setActiveModul
                 </div>
                 <div className="p-2 border-b bg-white flex flex-wrap items-center gap-2">
                     <div className="relative flex-grow max-w-xs"><Search className="absolute left-2 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" /><input type="text" placeholder="Rechercher..." value={searchTerm} onChange={e => setSearchTerm(e.target.value)} className="pl-8 pr-2 py-1.5 border rounded-lg w-full text-sm"/></div>
-                    {/* FIX: Explicitly type `p` as string to resolve type error. */}
                     <select onChange={e => setFilters(f => ({...f, profil: e.target.value}))} className="border rounded-lg py-1.5 px-2 text-sm"><option value="all">Tous les profils</option>{[...new Set((personnes as Personne[]).map(p => p.profil))].map((p: string)=><option key={p} value={p} className="capitalize">{p}</option>)}</select>
-                    {/* FIX: Explicitly type `s` as string to resolve type error. */}
                     <select onChange={e => setFilters(f => ({...f, statut: e.target.value}))} className="border rounded-lg py-1.5 px-2 text-sm"><option value="all">Tous les statuts</option>{[...new Set((personnes as Personne[]).map(p => p.statut))].map((s: string)=><option key={s} value={s} className="capitalize">{s.replace(/_/g, ' ')}</option>)}</select>
                 </div>
                 <div className="flex-1 overflow-auto p-4 bg-gray-50">
