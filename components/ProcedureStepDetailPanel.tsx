@@ -1,8 +1,8 @@
 
 import React, { useState, useEffect } from 'react';
-import type { Procedure, EtapeProcedure } from '../types';
+import type { Procedure, EtapeProcedure, Document, Risque, Controle } from '../types';
 import { mockData } from '../constants';
-import { X, Briefcase, Edit, AlertTriangle, CheckCircle, Save, Ban } from 'lucide-react';
+import { X, Briefcase, Edit, AlertTriangle, CheckCircle, Save, Ban, FileText } from 'lucide-react';
 
 interface ProcedureStepDetailPanelProps {
     etape: EtapeProcedure;
@@ -69,10 +69,11 @@ const ProcedureStepDetailPanel: React.FC<ProcedureStepDetailPanelProps> = ({ eta
     };
 
     const handleMultiSelectChange = (field: keyof EtapeProcedure, ids: string[]) => {
-        setFormData(prev => ({...prev, [field]: ids}));
+        setFormData(prev => ({...prev, [field]: ids as any}));
     }
 
     const responsable = mockData.postes.find(p => p.id === formData.responsablePosteId);
+    const documents = mockData.documents.filter(r => formData.documentIds?.includes(r.id));
     const risques = mockData.risques.filter(r => formData.risqueIds?.includes(r.id));
     const controles = mockData.controles.filter(c => formData.controleIds?.includes(c.id));
 
@@ -121,6 +122,12 @@ const ProcedureStepDetailPanel: React.FC<ProcedureStepDetailPanelProps> = ({ eta
                 {isEditing ? (
                     <>
                         <MultiSelect 
+                            items={mockData.documents} 
+                            selectedIds={formData.documentIds || []} 
+                            onChange={(ids) => handleMultiSelectChange('documentIds', ids)}
+                            label="Documents de référence"
+                        />
+                        <MultiSelect 
                             items={mockData.risques} 
                             selectedIds={formData.risqueIds || []} 
                             onChange={(ids) => handleMultiSelectChange('risqueIds', ids)}
@@ -135,6 +142,10 @@ const ProcedureStepDetailPanel: React.FC<ProcedureStepDetailPanelProps> = ({ eta
                     </>
                 ) : (
                     <>
+                        <div>
+                            <h4 className="font-semibold text-gray-800 mb-2 flex items-center gap-2"><FileText className="h-4 w-4" />Documents de référence ({documents.length})</h4>
+                            <div className="space-y-2">{documents.map(doc => <RelationItem key={doc.id} item={doc} icon={FileText} onClick={() => onShowRelations(doc, 'documents')} />)}</div>
+                        </div>
                         <div>
                             <h4 className="font-semibold text-gray-800 mb-2 flex items-center gap-2"><AlertTriangle className="h-4 w-4" />Risques liés ({risques.length})</h4>
                             <div className="space-y-2">{risques.map(risk => <RelationItem key={risk.id} item={risk} icon={AlertTriangle} onClick={() => onShowRelations(risk, 'risques')} />)}</div>

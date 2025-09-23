@@ -1,13 +1,14 @@
+
 import React from 'react';
 import { Handle, Position, type NodeProps } from 'reactflow';
 import { useDataContext } from '../context/AppContext';
 import type { Processus, Risque, Indicateur } from '../types';
-import { Plus, Minus, AlertTriangle, TrendingUp, Edit, Trash2, Link as LinkIcon, Briefcase } from 'lucide-react';
+import { Plus, Minus, AlertTriangle, TrendingUp, Edit, Trash2, Link as LinkIcon, Briefcase, GitMerge, Shield, Settings, Target } from 'lucide-react';
 
-const typeColors: Record<Processus['type'], string> = {
-    'Management': 'border-purple-500 bg-purple-50',
-    'Métier': 'border-blue-500 bg-blue-50',
-    'Support': 'border-green-500 bg-green-50',
+const typeInfo: Record<Processus['type'], { border: string, bg: string, icon: React.ElementType }> = {
+    'Management': { border: 'border-purple-500', bg: 'bg-purple-50', icon: Shield },
+    'Métier': { border: 'border-blue-500', bg: 'bg-blue-50', icon: GitMerge },
+    'Support': { border: 'border-green-500', bg: 'bg-green-50', icon: Settings },
 };
 
 // Helper to get risk status
@@ -42,10 +43,10 @@ const getKpiStatus = (indicators: Indicateur[]) => {
     return 'text-green-500';
 };
 
-const ProcessusNode = ({ data, selected }: NodeProps<Processus & { onEdit: (p: Processus) => void, onAddSub: (p: Processus) => void, onDelete: (p: Processus) => void, onShowRelations: (p: any, type: string) => void, childrenCount: number, isExpanded: boolean, onExpandCollapse: (id: string) => void }>) => {
+const ProcessusNode = ({ data, selected }: NodeProps<Processus & { onEdit: (p: Processus) => void, onAddSub: (p: Processus) => void, onDelete: (p: Processus) => void, onShowRelations: (p: any, type: string) => void, childrenCount: number, isExpanded: boolean, onExpandCollapse: (id: string) => void, isDimmed?: boolean }>) => {
     const { data: appData } = useDataContext();
     
-    const { onEdit, onAddSub, onDelete, onShowRelations, childrenCount, isExpanded, onExpandCollapse, ...processus } = data;
+    const { onEdit, onAddSub, onDelete, onShowRelations, childrenCount, isExpanded, onExpandCollapse, isDimmed, ...processus } = data;
     
     const linkedRisks = (appData.risques as Risque[]).filter(r => processus.risqueIds.includes(r.id));
     const linkedIndicators = (appData.indicateurs as Indicateur[]).filter(i => processus.indicateurIds.includes(i.id));
@@ -53,13 +54,18 @@ const ProcessusNode = ({ data, selected }: NodeProps<Processus & { onEdit: (p: P
 
     const riskStatus = getRiskStatus(linkedRisks);
     const kpiStatusColor = getKpiStatus(linkedIndicators);
+    
+    const { border, bg, icon: Icon } = typeInfo[processus.type] || { border: 'border-gray-500', bg: 'bg-gray-50', icon: Target };
 
     return (
-        <div className={`p-3 rounded-lg shadow-md border-l-4 w-64 group relative ${typeColors[processus.type]} ${selected ? 'ring-2 ring-blue-500' : ''}`}>
+        <div className={`p-3 rounded-lg shadow-md border-l-4 w-64 group relative ${border} ${bg} transition-opacity duration-300 ${isDimmed ? 'opacity-30' : 'opacity-100'} ${selected ? 'ring-2 ring-offset-2 ring-blue-600' : ''}`}>
             <Handle type="target" position={Position.Top} className="!bg-gray-400 !w-3 !h-3" />
             
-            <div className="font-bold text-sm text-gray-800 truncate">{processus.nom}</div>
-            <p className="text-xs text-gray-500">{processus.reference}</p>
+            <div className="flex items-center gap-2">
+                <Icon className={`h-5 w-5 ${border.replace('border-', 'text-')}`} />
+                <div className="font-bold text-sm text-gray-800 truncate">{processus.nom}</div>
+            </div>
+            <p className="text-xs text-gray-500 ml-7">{processus.reference}</p>
             {proprietaire && <p className="text-xs text-gray-600 mt-2 flex items-center gap-1.5"><Briefcase className="h-3 w-3" />{proprietaire.intitule}</p>}
 
             <div className="flex items-center justify-between mt-3 pt-2 border-t">

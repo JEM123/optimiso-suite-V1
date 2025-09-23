@@ -1,3 +1,4 @@
+
 import React, { DragEvent, useCallback } from 'react';
 import ReactFlow, { Controls, Background, MiniMap, type OnNodesChange, type OnEdgesChange, type OnConnect, type Node, type Edge } from 'reactflow';
 import type { EtapeProcedure } from '../types';
@@ -46,6 +47,7 @@ interface ProcedureFlowProps {
     onNodeClick: (event: React.MouseEvent, node: Node<EtapeProcedure>) => void;
     onPaneClick: () => void;
     onDrop: (event: DragEvent) => void;
+    onNodeDragStop?: (event: React.MouseEvent, node: Node<EtapeProcedure>) => void;
 }
 
 const ProcedureFlow: React.FC<ProcedureFlowProps> = (props) => {
@@ -64,6 +66,7 @@ const ProcedureFlow: React.FC<ProcedureFlowProps> = (props) => {
                 onConnect={props.onConnect}
                 onNodeClick={props.onNodeClick}
                 onPaneClick={props.onPaneClick}
+                onNodeDragStop={props.onNodeDragStop}
                 nodeTypes={nodeTypes}
                 fitView
                 className="bg-gray-50"

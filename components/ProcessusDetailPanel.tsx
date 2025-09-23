@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import type { Processus } from '../types';
 import { useDataContext, useAppContext } from '../context/AppContext';
@@ -8,6 +9,7 @@ interface ProcessusDetailPanelProps {
     onClose: () => void;
     onEdit: (p: Processus) => void;
     onShowRelations: (entity: any, entityType: string) => void;
+    onNavigate: (proc: Processus) => void;
 }
 
 const DetailItem: React.FC<{ label: string; value: React.ReactNode }> = ({ label, value }) => (
@@ -17,7 +19,7 @@ const DetailItem: React.FC<{ label: string; value: React.ReactNode }> = ({ label
     </div>
 );
 
-const ProcessusDetailPanel: React.FC<ProcessusDetailPanelProps> = ({ processus, onClose, onEdit, onShowRelations }) => {
+const ProcessusDetailPanel: React.FC<ProcessusDetailPanelProps> = ({ processus, onClose, onEdit, onShowRelations, onNavigate }) => {
     const { data } = useDataContext();
     const { settings } = useAppContext();
     const parent = (data.processus as Processus[]).find(p => p.id === processus.parentId);
@@ -29,7 +31,7 @@ const ProcessusDetailPanel: React.FC<ProcessusDetailPanelProps> = ({ processus, 
     const hasCustomFields = customFieldDefs.length > 0 && processus.champsLibres && Object.keys(processus.champsLibres).some(key => processus.champsLibres[key]);
 
     return (
-        <div className="w-full max-w-lg bg-white border-l shadow-lg flex flex-col h-full absolute right-0 top-0 md:relative animate-slide-in-right">
+        <div className="w-full max-w-lg bg-white border-l shadow-lg flex flex-col h-full">
             <div className="p-4 border-b flex items-center justify-between bg-gray-50">
                 <div>
                     <h2 className="text-lg font-semibold text-gray-800 truncate" title={processus.nom}>{processus.nom}</h2>
@@ -54,13 +56,15 @@ const ProcessusDetailPanel: React.FC<ProcessusDetailPanelProps> = ({ processus, 
                     ) : 'Aucune'
                 } />
                 <DetailItem label="Propriétaire" value={proprietaire?.intitule} />
-                <DetailItem label="Parent" value={parent?.nom || 'Aucun'} />
+                <DetailItem label="Parent" value={parent ? <button onClick={() => onNavigate(parent)} className="text-blue-600 hover:underline">{parent.nom}</button> : 'Aucun'} />
                 
                 <div>
                     <h4 className="font-semibold text-gray-800 mb-2">Sous-processus ({children.length})</h4>
                     <div className="space-y-1">
                         {children.map(child => (
-                            <div key={child.id} className="p-2 bg-white border rounded-md text-sm">{child.nom}</div>
+                            <div key={child.id} className="p-2 bg-white border rounded-md text-sm">
+                                <button onClick={() => onNavigate(child)} className="text-blue-600 hover:underline">{child.nom}</button>
+                            </div>
                         ))}
                     </div>
                 </div>

@@ -1,11 +1,14 @@
+
 import React, { useState, useMemo, useEffect } from 'react';
 import { useDataContext } from '../context/AppContext';
 import type { Processus } from '../types';
-import { Target, Plus } from 'lucide-react';
+import { Target, Plus, Search, Filter } from 'lucide-react';
 import ProcessusDetailPanel from './ProcessusDetailPanel';
 import { ProcessusFormModal } from './ProcessusFormModal';
 import { ReactFlowProvider } from 'reactflow';
 import ProcessusMap from './ProcessusMap';
+import PageHeader from './PageHeader';
+import Button from './ui/Button';
 
 interface ProcessusPageProps {
     onShowRelations: (entity: any, entityType: string) => void;
@@ -18,7 +21,19 @@ const ProcessusPage: React.FC<ProcessusPageProps> = ({ onShowRelations }) => {
     const [selectedProcessus, setSelectedProcessus] = useState<Processus | null>(null);
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editingProcessus, setEditingProcessus] = useState<Partial<Processus> | null>(null);
+    const [searchTerm, setSearchTerm] = useState('');
+    const [filterType, setFilterType] = useState('all');
     
+    useEffect(() => {
+        const handleKeyDown = (event: KeyboardEvent) => {
+            if (event.key === 'Escape') {
+                setSelectedProcessus(null);
+            }
+        };
+        window.addEventListener('keydown', handleKeyDown);
+        return () => window.removeEventListener('keydown', handleKeyDown);
+    }, []);
+
     const handleOpenModal = (proc?: Partial<Processus>) => {
         setEditingProcessus(proc || { niveau: 'L0', type: 'Métier' });
         setIsModalOpen(true);
@@ -26,15 +41,20 @@ const ProcessusPage: React.FC<ProcessusPageProps> = ({ onShowRelations }) => {
 
     const handleAddSub = (parent: Processus) => {
         const nextLevel = `L${parseInt(parent.niveau.substring(1)) + 1}` as Processus['niveau'];
-        setEditingProcessus({ parentId: parent.id, niveau: nextLevel, type: parent.type });
+        setEditingProcessus({ 
+            parentId: parent.id, 
+            niveau: nextLevel, 
+            type: parent.type,
+            missionId: parent.missionId // Inherit mission from parent
+        });
         setIsModalOpen(true);
     };
 
     const handleSave = (proc: Processus) => {
         actions.saveProcessus(proc).then(() => {
+            const savedProc = (data.processus as Processus[]).find(p => p.id === proc.id) || proc;
             if (proc.id && selectedProcessus?.id === proc.id) {
-                 // FIX: Corrected logic to update the selected process. The object from the form (`proc`) is the most up-to-date version.
-                 setSelectedProcessus(proc);
+                setSelectedProcessus(savedProc);
             }
         });
         setIsModalOpen(false);
@@ -52,7 +72,6 @@ const ProcessusPage: React.FC<ProcessusPageProps> = ({ onShowRelations }) => {
         }
     };
     
-    // Select the first root node on initial load if none is selected
     useEffect(() => {
         if (!selectedProcessus && processus.length > 0) {
             const rootNode = processus.find(p => !p.parentId);
@@ -61,20 +80,46 @@ const ProcessusPage: React.FC<ProcessusPageProps> = ({ onShowRelations }) => {
     }, [processus, selectedProcessus]);
 
     return (
-        <div className="flex h-[calc(100vh-150px)]">
-            <div className="flex-1 flex flex-col min-w-0">
-                <div className="p-4 border-b bg-white flex flex-wrap items-center justify-between gap-2">
-                    <div className="flex items-center space-x-3">
-                        <Target className="h-8 w-8 text-gray-600" />
-                        <h1 className="text-2xl font-bold text-gray-900">Cartographie des Processus</h1>
-                    </div>
-                    <div className="flex items-center gap-2">
-                        <button onClick={() => handleOpenModal()} className="flex items-center space-x-2 bg-blue-600 text-white px-3 py-1.5 rounded-lg hover:bg-blue-700 text-sm font-medium">
-                            <Plus className="h-4 w-4" /><span>Nouveau Processus (Racine)</span>
-                        </button>
-                    </div>
+        <div className="flex flex-col h-full bg-gray-50 rounded-lg border">
+             <PageHeader
+                title="Cartographie des Processus"
+                icon={Target}
+                description="Visualisez, modifiez et explorez la hiérarchie de vos processus."
+                actions={[{
+                    label: "Nouveau Processus Racine",
+                    icon: Plus,
+                    onClick: () => handleOpenModal(),
+                    variant: 'primary'
+                }]}
+            />
+            <div className="p-2 border-b bg-white flex items-center gap-4">
+                 <div className="relative flex-grow max-w-xs">
+                    <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+                    <input 
+                        type="text" 
+                        placeholder="Rechercher un processus..." 
+                        value={searchTerm} 
+                        onChange={e => setSearchTerm(e.target.value)} 
+                        className="pl-8 w-full border rounded-md py-1.5 text-sm"
+                    />
                 </div>
-                <div className="flex-1 overflow-auto bg-gray-50 relative">
+                <div className="flex items-center gap-2">
+                    <Filter className="h-4 w-4 text-gray-500" />
+                    <select 
+                        value={filterType} 
+                        onChange={e => setFilterType(e.target.value)} 
+                        className="border rounded-md py-1.5 px-2 text-sm bg-white"
+                    >
+                        <option value="all">Tous les types</option>
+                        <option value="Métier">Métier</option>
+                        <option value="Support">Support</option>
+                        <option value="Management">Management</option>
+                    </select>
+                </div>
+            </div>
+            <div className="flex-1 flex min-w-0 relative">
+                 {selectedProcessus && <div className="absolute inset-0 bg-black/10 z-10" onClick={() => setSelectedProcessus(null)} />}
+                <div className="flex-1 h-full">
                    <ReactFlowProvider>
                        <ProcessusMap
                            processus={processus}
@@ -84,18 +129,23 @@ const ProcessusPage: React.FC<ProcessusPageProps> = ({ onShowRelations }) => {
                            onDeleteNode={handleDelete}
                            onShowRelations={onShowRelations}
                            selectedNodeId={selectedProcessus?.id}
+                           searchTerm={searchTerm}
+                           filterType={filterType}
                        />
                    </ReactFlowProvider>
                 </div>
+                 <div className={`absolute top-0 right-0 h-full transition-transform duration-300 ease-in-out z-20 ${selectedProcessus ? 'translate-x-0' : 'translate-x-full'}`}>
+                    {selectedProcessus && (
+                        <ProcessusDetailPanel 
+                            processus={selectedProcessus} 
+                            onClose={() => setSelectedProcessus(null)} 
+                            onEdit={handleOpenModal} 
+                            onShowRelations={onShowRelations}
+                            onNavigate={setSelectedProcessus}
+                        />
+                    )}
+                </div>
             </div>
-            {selectedProcessus && (
-                <ProcessusDetailPanel 
-                    processus={selectedProcessus} 
-                    onClose={() => setSelectedProcessus(null)} 
-                    onEdit={handleOpenModal} 
-                    onShowRelations={onShowRelations}
-                />
-            )}
             <ProcessusFormModal 
                 isOpen={isModalOpen} 
                 onClose={() => setIsModalOpen(false)} 

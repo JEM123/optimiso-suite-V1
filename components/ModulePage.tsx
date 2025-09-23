@@ -23,6 +23,7 @@ import ProcessusPage from './ProcessusPage';
 import NewsPage from './NewsPage';
 import SettingsModule from './SettingsModule';
 import PageHeader from './PageHeader'; // Importation générique pour les placeholders
+import OrganigrammePage from './OrganigrammePage';
 
 // --- PROPS INTERFACES ---
 
@@ -62,6 +63,7 @@ const ModulePage: React.FC<ModulePageProps> = ({ moduleId, onShowRelations, onSh
             case 'roles': return <RolesPage />;
             case 'entites': return <EntitiesPage />;
             case 'postes': return <PostesPage onShowRelations={onShowRelations} />;
+            case 'organigramme': return <OrganigrammePage />;
             case 'missions': return <MissionsPage onShowRelations={onShowRelations} />;
             case 'processus': return <ProcessusPage onShowRelations={onShowRelations} />;
             case 'risques': return <RisksPage onShowRelations={onShowRelations} notifiedItemId={notifiedItemId} />;

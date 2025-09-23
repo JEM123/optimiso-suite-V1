@@ -1,8 +1,9 @@
+
 import React from 'react';
 import { Handle, Position, type NodeProps } from 'reactflow';
 import type { EtapeProcedure } from '../types';
 import { mockData } from '../constants';
-import { Briefcase, AlertTriangle, CheckCircle, Play, StopCircle } from 'lucide-react';
+import { Briefcase, AlertTriangle, CheckCircle, Play, StopCircle, FileText } from 'lucide-react';
 
 const nodeStyles = {
     padding: '12px 16px',
@@ -23,6 +24,7 @@ export const StepNode = ({ data, selected }: NodeProps<EtapeProcedure>) => {
 
     const hasRisks = data.risqueIds && data.risqueIds.length > 0;
     const hasControls = data.controleIds && data.controleIds.length > 0;
+    const hasDocuments = data.documentIds && data.documentIds.length > 0;
 
     return (
         <div style={nodeStyles} className={`border-slate-300 ${selected ? 'ring-2 ring-blue-500' : ''}`}>
@@ -36,10 +38,11 @@ export const StepNode = ({ data, selected }: NodeProps<EtapeProcedure>) => {
                 )}
             </div>
             {responsable && <p className="text-xs text-gray-500 mt-1 flex items-center"><Briefcase className="h-3 w-3 mr-1.5"/>{responsable.intitule}</p>}
-            {(hasRisks || hasControls) && (
+            {(hasRisks || hasControls || hasDocuments) && (
                 <div className="flex items-center space-x-3 mt-2 pt-2 border-t text-xs">
                     {hasRisks && <div className="flex items-center text-red-600" title={`${data.risqueIds?.length} risque(s)`}><AlertTriangle className="h-4 w-4 mr-1"/>{data.risqueIds?.length}</div>}
                     {hasControls && <div className="flex items-center text-green-600" title={`${data.controleIds?.length} contrôle(s)`}><CheckCircle className="h-4 w-4 mr-1"/>{data.controleIds?.length}</div>}
+                    {hasDocuments && <div className="flex items-center text-blue-600" title={`${data.documentIds?.length} document(s)`}><FileText className="h-4 w-4 mr-1"/>{data.documentIds?.length}</div>}
                 </div>
             )}
             <Handle type="source" position={Position.Bottom} className="!bg-gray-400 !w-3 !h-3" />

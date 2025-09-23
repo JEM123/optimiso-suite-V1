@@ -1,7 +1,9 @@
+
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import ReactFlow, { Controls, Background, useNodesState, useEdgesState, useReactFlow, Node, Edge } from 'reactflow';
 import type { Processus } from '../types';
 import ProcessusNode from './ProcessusNode';
+import { Target } from 'lucide-react';
 
 const nodeTypes = { processus: ProcessusNode };
 
@@ -16,6 +18,8 @@ interface ProcessusMapProps {
     onDeleteNode: (proc: Processus) => void;
     onShowRelations: (entity: any, entityType: string) => void;
     selectedNodeId?: string | null;
+    searchTerm: string;
+    filterType: string;
 }
 
 const getLayoutedElements = (processusList: Processus[]) => {
@@ -55,41 +59,25 @@ const getLayoutedElements = (processusList: Processus[]) => {
 
 
 const ProcessusMap: React.FC<ProcessusMapProps> = (props) => {
-    const { processus, onNodeClick, onEditNode, onAddSubNode, onDeleteNode, onShowRelations, selectedNodeId } = props;
+    const { processus, onNodeClick, onEditNode, onAddSubNode, onDeleteNode, onShowRelations, selectedNodeId, searchTerm, filterType } = props;
     const { fitView } = useReactFlow();
 
     const [nodes, setNodes, onNodesChange] = useNodesState([]);
     const [edges, setEdges, onEdgesChange] = useEdgesState([]);
-    const [expandedNodes, setExpandedNodes] = useState<Record<string, boolean>>({});
-
-    const childrenMap = useMemo(() => processus.reduce((acc, p) => {
-            if (p.parentId) {
-            if (!acc[p.parentId]) acc[p.parentId] = [];
-            acc[p.parentId].push(p.id);
-        }
-        return acc;
-    }, {} as Record<string, string[]>), [processus]);
+    
+    const processusMap = useMemo(() => new Map(processus.map(p => [p.id, p])), [processus]);
 
     useEffect(() => {
         const { initialNodes, initialEdges } = getLayoutedElements(processus);
         
-        const allExpanded = Object.fromEntries(processus.map(p => [p.id, true]));
-        setExpandedNodes(allExpanded);
-
         const nodesWithData = initialNodes.map(node => ({
             ...node,
-            selected: node.id === selectedNodeId,
             data: {
                 ...node.data,
                 onEdit: onEditNode,
                 onAddSub: onAddSubNode,
                 onDelete: onDeleteNode,
                 onShowRelations: onShowRelations,
-                childrenCount: childrenMap[node.id]?.length || 0,
-                isExpanded: true,
-                onExpandCollapse: (id: string) => {
-                     setExpandedNodes(prev => ({ ...prev, [id]: !prev[id] }));
-                }
             }
         }));
 
@@ -97,7 +85,47 @@ const ProcessusMap: React.FC<ProcessusMapProps> = (props) => {
         setEdges(initialEdges);
         
         setTimeout(() => fitView({ padding: 0.2 }), 100);
-    }, [processus, fitView, setNodes, setEdges, onEditNode, onAddSubNode, onDeleteNode, onShowRelations, childrenMap]);
+    }, [processus, fitView, setNodes, setEdges, onEditNode, onAddSubNode, onDeleteNode, onShowRelations]);
+    
+    const getAncestors = useCallback((nodeId: string): Set<string> => {
+        const ancestors = new Set<string>();
+        let current = processusMap.get(nodeId);
+        while (current?.parentId) {
+            ancestors.add(current.parentId);
+            current = processusMap.get(current.parentId);
+        }
+        return ancestors;
+    }, [processusMap]);
+
+    const filteredNodes = useMemo(() => {
+        if (!searchTerm && filterType === 'all') {
+            return nodes.map(n => ({...n, data: { ...n.data, isDimmed: false }}));
+        }
+
+        const lowerSearchTerm = searchTerm.toLowerCase();
+        
+        const matchingNodes = new Set<string>();
+        processus.forEach(p => {
+            const matchesSearch = !searchTerm || p.nom.toLowerCase().includes(lowerSearchTerm) || p.reference.toLowerCase().includes(lowerSearchTerm);
+            const matchesFilter = filterType === 'all' || p.type === filterType;
+            if (matchesSearch && matchesFilter) {
+                matchingNodes.add(p.id);
+            }
+        });
+        
+        const visibleAncestors = new Set<string>();
+        matchingNodes.forEach(nodeId => {
+            getAncestors(nodeId).forEach(ancestorId => visibleAncestors.add(ancestorId));
+        });
+
+        return nodes.map(n => {
+            const isMatch = matchingNodes.has(n.id);
+            const isAncestor = visibleAncestors.has(n.id);
+            const isDimmed = !(isMatch || isAncestor);
+            return {...n, data: {...n.data, isDimmed}};
+        });
+    }, [nodes, searchTerm, filterType, processus, getAncestors]);
+
 
     useEffect(() => {
         setNodes(nds => nds.map(node => ({...node, selected: node.id === selectedNodeId})));
@@ -108,48 +136,29 @@ const ProcessusMap: React.FC<ProcessusMapProps> = (props) => {
         onNodeClick(node.data);
     }, [onNodeClick]);
     
-    const getDescendants = useCallback((nodeId: string, procList: Processus[]): string[] => {
-        const children = procList.filter(p => p.parentId === nodeId).map(p => p.id);
-        if (children.length === 0) return [];
-        return [...children, ...children.flatMap(cId => getDescendants(cId, procList))];
-    }, []);
-
-    const visibleNodesAndEdges = useMemo(() => {
-        const hiddenNodeIds = new Set<string>();
-
-        Object.keys(expandedNodes).forEach(nodeId => {
-            if (!expandedNodes[nodeId]) {
-                const descendants = getDescendants(nodeId, processus);
-                descendants.forEach(id => hiddenNodeIds.add(id));
-            }
-        });
-        
-        const visibleNodes = nodes.map(n => ({
-            ...n,
-            hidden: hiddenNodeIds.has(n.id),
-            data: {
-                ...n.data,
-                isExpanded: expandedNodes[n.id] ?? true
-            }
-        }));
-        
-        const visibleEdges = edges.filter(e => !hiddenNodeIds.has(e.source) && !hiddenNodeIds.has(e.target));
-        
-        return { nodes: visibleNodes, edges: visibleEdges };
-
-    }, [nodes, edges, expandedNodes, processus, getDescendants]);
-
+    if (processus.length === 0) {
+        return (
+            <div className="flex h-full items-center justify-center text-center p-4">
+                <div>
+                    <Target className="mx-auto h-12 w-12 text-gray-400" />
+                    <h3 className="mt-2 text-sm font-medium text-gray-900">Aucun processus défini</h3>
+                    <p className="mt-1 text-sm text-gray-500">Commencez par créer un processus racine.</p>
+                </div>
+            </div>
+        );
+    }
 
     return (
         <ReactFlow
-            nodes={visibleNodesAndEdges.nodes}
-            edges={visibleNodesAndEdges.edges}
+            nodes={filteredNodes}
+            edges={edges}
             onNodesChange={onNodesChange}
             onEdgesChange={onEdgesChange}
             onNodeClick={handleNodeClick}
             nodeTypes={nodeTypes}
             fitView
             className="bg-gray-100"
+            nodesDraggable={false}
         >
             <Controls />
             <Background />

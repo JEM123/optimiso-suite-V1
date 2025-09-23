@@ -1,4 +1,5 @@
 
+
 import React, { useState, useMemo, useCallback, useEffect, useRef } from 'react';
 import { useDataContext } from '../context/AppContext';
 import type { Procedure, EtapeProcedure, ProcedureLien } from '../types';
@@ -8,6 +9,7 @@ import ProcedureFormModal from './ProcedureFormModal';
 import ProcedureFlow from './ProcedureFlow';
 import PageHeader from './PageHeader';
 import ProcedureStepDetailPanel from './ProcedureStepDetailPanel';
+import ObjectPalette from './ObjectPalette';
 
 const PROC_STATUS_COLORS: Record<Procedure['statut'], string> = {
     'brouillon': 'bg-gray-200 text-gray-800', 'en_cours': 'bg-yellow-100 text-yellow-800',
@@ -160,7 +162,7 @@ const ProceduresPageContent: React.FC<ProceduresPageProps> = ({ onShowRelations,
     const [validationIssues, setValidationIssues] = useState<string[] | null>(null);
     
     const prevProcIdRef = useRef<string | null>(null);
-    const { screenToFlowPosition, fitView } = useReactFlow();
+    const { project, fitView, getNodes } = useReactFlow();
 
     const [nodes, setNodes, onNodesChange] = useNodesState([]);
     const [edges, setEdges, onEdgesChange] = useEdgesState([]);
@@ -216,6 +218,36 @@ const ProceduresPageContent: React.FC<ProceduresPageProps> = ({ onShowRelations,
             });
         }
     }, [onNodesChange, selectedProcedureId, updateProcedureState]);
+    
+    const handleNodeDragStop = useCallback((event: React.MouseEvent, draggedNode: Node<EtapeProcedure>) => {
+        if (!selectedProcedureId || !selectedProcedure) return;
+
+        const currentNodes = getNodes();
+
+        // Sort nodes by their Y position to determine the new visual order.
+        const sortedNodes = [...currentNodes].sort((a, b) => a.position.y - b.position.y);
+
+        const etapesMap = new Map(selectedProcedure.etapes.map(e => [e.id, e]));
+
+        // Rebuild the etapes array with updated 'ordre' and 'position'.
+        const updatedEtapes = sortedNodes.map((node, index) => {
+            const originalEtape = etapesMap.get(node.id);
+            if (originalEtape) {
+                return {
+                    ...originalEtape,
+                    ordre: index + 1, // Re-index order based on vertical position.
+                    position: node.position, // Persist the final dragged position.
+                };
+            }
+            return null;
+        }).filter((e): e is EtapeProcedure => e !== null);
+
+        // Save the updated procedure state.
+        updateProcedureState(selectedProcedureId, proc => ({
+            ...proc,
+            etapes: updatedEtapes,
+        }));
+    }, [selectedProcedureId, selectedProcedure, getNodes, updateProcedureState]);
 
     const onConnect = useCallback((params: Connection) => {
         if (!selectedProcedureId) return;
@@ -227,19 +259,63 @@ const ProceduresPageContent: React.FC<ProceduresPageProps> = ({ onShowRelations,
     
     const onDrop = useCallback((event: React.DragEvent) => {
         event.preventDefault();
-        const type = event.dataTransfer.getData('application/reactflow');
-        if (!type || !selectedProcedureId || !selectedProcedure) return;
-
-        const position = screenToFlowPosition({ x: event.clientX, y: event.clientY });
-        const newStep: EtapeProcedure = {
-            id: `${type}-${Date.now()}`,
-            ordre: (selectedProcedure.etapes.length || 0) + 1,
-            libelle: `Nouvelle ${type}`,
-            position,
-            type: type as EtapeProcedure['type'],
-        };
-        updateProcedureState(selectedProcedureId, p => ({ ...p, etapes: [...p.etapes, newStep] }));
-    }, [screenToFlowPosition, selectedProcedureId, selectedProcedure, updateProcedureState]);
+        if (!selectedProcedureId || !selectedProcedure) return;
+        const position = project({ x: event.clientX, y: event.clientY });
+    
+        // Handle toolbox drop (new step)
+        const toolboxType = event.dataTransfer.getData('application/reactflow');
+        if (toolboxType) {
+            const newStep: EtapeProcedure = {
+                id: `${toolboxType}-${Date.now()}`,
+                ordre: (selectedProcedure.etapes.length || 0) + 1,
+                libelle: `Nouvelle ${toolboxType}`,
+                position,
+                type: toolboxType as EtapeProcedure['type'],
+            };
+            updateProcedureState(selectedProcedureId, p => ({ ...p, etapes: [...p.etapes, newStep] }));
+            return;
+        }
+    
+        // Handle object palette drop (linking)
+        const objectPayload = event.dataTransfer.getData('application/optimiso-object');
+        if (objectPayload) {
+            try {
+                const { type: objectType, id: objectId } = JSON.parse(objectPayload);
+                const reactFlowNodes = getNodes();
+                const targetNode = reactFlowNodes.find(node =>
+                    node.positionAbsolute && node.width && node.height &&
+                    position.x >= node.positionAbsolute.x &&
+                    position.x <= node.positionAbsolute.x + node.width &&
+                    position.y >= node.positionAbsolute.y &&
+                    position.y <= node.positionAbsolute.y + node.height
+                );
+    
+                if (targetNode) {
+                    updateProcedureState(selectedProcedureId, proc => {
+                        const updatedEtapes = proc.etapes.map(etape => {
+                            if (etape.id === targetNode.id) {
+                                const newEtape = { ...etape };
+                                if (objectType === 'document') {
+                                    const docIds = new Set(newEtape.documentIds || []);
+                                    docIds.add(objectId);
+                                    newEtape.documentIds = Array.from(docIds);
+                                } else if (objectType === 'risk') {
+                                    const riskIds = new Set(newEtape.risqueIds || []);
+                                    riskIds.add(objectId);
+                                    newEtape.risqueIds = Array.from(riskIds);
+                                }
+                                return newEtape;
+                            }
+                            return etape;
+                        });
+                        return { ...proc, etapes: updatedEtapes };
+                    });
+                }
+            } catch (e) {
+                console.error("Failed to parse dropped object payload", e);
+            }
+        }
+    }, [project, getNodes, selectedProcedureId, selectedProcedure, updateProcedureState]);
 
     const handleSaveStep = useCallback((updatedStep: EtapeProcedure) => {
         if (!selectedProcedureId) return;
@@ -321,7 +397,7 @@ const ProceduresPageContent: React.FC<ProceduresPageProps> = ({ onShowRelations,
             </div>
             
             <div className="flex-1 flex flex-col min-w-0">
-                <div className="flex-1 flex min-w-0">
+                <div className="flex-1 flex min-w-0 relative">
                     <div className="flex-1 flex flex-col relative">
                          {selectedProcedure && (
                             <div className="p-2 border-b bg-white flex items-center justify-between">
@@ -335,7 +411,7 @@ const ProceduresPageContent: React.FC<ProceduresPageProps> = ({ onShowRelations,
                         )}
                         <div className="flex-grow">
                             {selectedProcedure ? (
-                                <ProcedureFlow nodes={nodes} edges={edges} onNodesChange={handleNodesChange} onEdgesChange={onEdgesChange} onConnect={onConnect} onNodeClick={(evt, node) => setSelectedStepId(node.id)} onPaneClick={() => setSelectedStepId(null)} onDrop={onDrop} />
+                                <ProcedureFlow nodes={nodes} edges={edges} onNodesChange={handleNodesChange} onEdgesChange={onEdgesChange} onConnect={onConnect} onNodeClick={(evt, node) => setSelectedStepId(node.id)} onPaneClick={() => setSelectedStepId(null)} onDrop={onDrop} onNodeDragStop={handleNodeDragStop} />
                             ) : (
                                 <div className="flex h-full items-center justify-center text-center p-4 bg-gray-50">
                                     <div>
@@ -350,27 +426,30 @@ const ProceduresPageContent: React.FC<ProceduresPageProps> = ({ onShowRelations,
                             <ValidationResultsPanel issues={validationIssues} onClose={() => setValidationIssues(null)} />
                         )}
                     </div>
+                    {selectedProcedure && <ObjectPalette />}
                     {selectedProcedure && selectedStep && (
-                        <ProcedureStepDetailPanel key={selectedStep.id} etape={selectedStep} procedure={selectedProcedure} onClose={() => setSelectedStepId(null)} onShowRelations={onShowRelations} onSave={handleSaveStep} />
+                        <ProcedureStepDetailPanel 
+                          key={selectedStep.id} 
+                          etape={selectedStep} 
+                          procedure={selectedProcedure} 
+                          onClose={() => setSelectedStepId(null)}
+                          onShowRelations={onShowRelations}
+                          onSave={handleSaveStep}
+                        />
                     )}
                 </div>
             </div>
+            
             <ProcedureFormModal isOpen={isProcModalOpen} onClose={() => setProcModalOpen(false)} onSave={handleSaveProcedure} procedure={editingProcedure} />
         </div>
     );
-}
-
-const ProceduresPage: React.FC<ProceduresPageProps> = ({ onShowRelations, onShowValidation, onShowImpactAnalysis }) => {
-    return (
-        <div className="flex flex-col h-full bg-gray-50 rounded-lg border">
-            <PageHeader title="Procédures" icon={Workflow} description="Modélisez et visualisez les flux de travail de votre organisation."/>
-            <div className="flex-grow h-[calc(100%-80px)]">
-                 <ReactFlowProvider>
-                    <ProceduresPageContent onShowRelations={onShowRelations} onShowValidation={onShowValidation} onShowImpactAnalysis={onShowImpactAnalysis} />
-                 </ReactFlowProvider>
-            </div>
-        </div>
-    );
 };
+
+
+const ProceduresPage: React.FC<ProceduresPageProps> = (props) => (
+    <ReactFlowProvider>
+        <ProceduresPageContent {...props} />
+    </ReactFlowProvider>
+);
 
 export default ProceduresPage;

@@ -1,12 +1,15 @@
+
 import type { Personne, Processus, Document, Procedure, Controle, Risque, Actualite, CategorieActualite, Indicateur, Tache, Entite, Poste, Role, Competence, OccupationHistory, RACI, CategorieRisque, CategorieControle, ExecutionControle, CategorieDocument, Incident, Amelioration, Actif, ActifCategorie, MaintenanceLog, AccueilPage, CategorieIndicateur, FluxDefinition, ValidationInstance, SyncConnector, SyncLogEntry, NormeLoiCadre, NormeLoiExigence, EvaluationCompetence, PlanFormation, CampagneEvaluation, Mission, Notification } from './types';
 import { 
   Users, FileText, Settings, AlertTriangle, CheckCircle, BarChart3, 
   Building2, Briefcase, Target, Shield, TrendingUp, Calendar, 
-  Bell, Home, Workflow, CheckSquare, Scale
+  Bell, Home, Workflow, CheckSquare, Scale, Network
 } from 'lucide-react';
 
 export const modules = [
   { id: 'accueil', nom: 'Accueil', icon: Home },
+  // FIX: Replaced non-existent Sitemap icon with Network icon.
+  { id: 'organigramme', nom: 'Organigramme', icon: Network },
   { id: 'mes-validations', nom: 'Mes Validations', icon: CheckSquare },
   { id: 'personnes', nom: 'Personnes', icon: Users },
   { id: 'roles', nom: 'Rôles', icon: Users },
