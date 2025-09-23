@@ -1,5 +1,5 @@
+
 import React from 'react';
-// FIX: Import Link as LinkIcon from lucide-react.
 import { X, Users, Briefcase, FileText, Workflow, Target, AlertTriangle, CheckCircle, TrendingUp, Shield, Link as LinkIcon } from 'lucide-react';
 import { modules } from '../constants';
 import { useDataContext } from '../context/AppContext';

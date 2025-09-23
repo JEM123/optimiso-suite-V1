@@ -1,10 +1,10 @@
+
 import type { Entite, Poste, Personne } from '../types';
 import type { Node, Edge } from 'reactflow';
 import { hierarchy, tree } from 'd3-hierarchy';
 
-// Configuration des dimensions et espacements
-const NODE_WIDTH = 224; // 56 * 4 (w-56)
-const NODE_HEIGHT = 120; // Ajusté pour la nouvelle carte
+const NODE_WIDTH = 224; // w-56
+const NODE_HEIGHT = 120;
 const HORIZONTAL_SPACING = 50;
 const VERTICAL_SPACING = 80;
 
@@ -83,7 +83,7 @@ export const buildOrganigrammeLayout = (
 
     if (layoutDirection === 'TB') {
         treeLayout.nodeSize([NODE_WIDTH + HORIZONTAL_SPACING, NODE_HEIGHT + VERTICAL_SPACING]);
-    } else { // 'LR'
+    } else {
         treeLayout.nodeSize([NODE_HEIGHT + VERTICAL_SPACING, NODE_WIDTH + HORIZONTAL_SPACING]);
     }
     

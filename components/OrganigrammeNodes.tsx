@@ -1,4 +1,5 @@
-import React, { useMemo } from 'react';
+
+import React from 'react';
 import { Handle, Position, type NodeProps } from 'reactflow';
 import type { Entite, Poste, Personne } from '../types';
 import { Users, User, PlusCircle, MinusCircle } from 'lucide-react';
@@ -23,7 +24,6 @@ const CollapseButton: React.FC<{ nodeId: string; isCollapsed: boolean; onToggle:
     </button>
 );
 
-// EntiteNode: Blue-green background, white text
 export const EntiteNode: React.FC<NodeProps<NodeData>> = ({ data }) => {
     const { item, peopleCount, responsable, isCollapsed, hasChildren, onToggleCollapse } = data;
     const entite = item as Entite;
@@ -54,7 +54,6 @@ export const EntiteNode: React.FC<NodeProps<NodeData>> = ({ data }) => {
     );
 };
 
-// PosteNode: White background, green border, with tooltip
 export const PosteNode: React.FC<NodeProps<NodeData>> = ({ data }) => {
     const { item, peopleCount, occupants, isCollapsed, hasChildren, onToggleCollapse } = data;
     const poste = item as Poste;

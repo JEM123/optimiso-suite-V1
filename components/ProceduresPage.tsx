@@ -1,3 +1,5 @@
+
+
 import React, { useState, useMemo, useCallback, useEffect, useRef } from 'react';
 import { useDataContext } from '../context/AppContext';
 import type { Procedure, EtapeProcedure, ProcedureLien } from '../types';
@@ -183,7 +185,7 @@ const ProceduresPageContent: React.FC<ProceduresPageProps> = ({ onShowRelations,
             
             if (prevProcIdRef.current !== selectedProcedure.id) {
                 setSelectedStepId(null);
-                setValidationIssues(null); // Clear validation on procedure change
+                setValidationIssues(null);
                 setTimeout(() => fitView({ padding: 0.2 }), 100);
             }
         } else {
@@ -221,26 +223,20 @@ const ProceduresPageContent: React.FC<ProceduresPageProps> = ({ onShowRelations,
         if (!selectedProcedureId || !selectedProcedure) return;
 
         const currentNodes = getNodes();
-
-        // Sort nodes by their Y position to determine the new visual order.
         const sortedNodes = [...currentNodes].sort((a, b) => a.position.y - b.position.y);
-
         const etapesMap = new Map(selectedProcedure.etapes.map(e => [e.id, e]));
-
-        // Rebuild the etapes array with updated 'ordre' and 'position'.
         const updatedEtapes = sortedNodes.map((node, index) => {
             const originalEtape = etapesMap.get(node.id);
             if (originalEtape) {
                 return {
                     ...originalEtape,
-                    ordre: index + 1, // Re-index order based on vertical position.
-                    position: node.position, // Persist the final dragged position.
+                    ordre: index + 1,
+                    position: node.position,
                 };
             }
             return null;
         }).filter((e): e is EtapeProcedure => e !== null);
 
-        // Save the updated procedure state.
         updateProcedureState(selectedProcedureId, proc => ({
             ...proc,
             etapes: updatedEtapes,
@@ -258,7 +254,6 @@ const ProceduresPageContent: React.FC<ProceduresPageProps> = ({ onShowRelations,
         };
         if (params.sourceHandle === 'yes') newLink.label = 'Oui';
         if (params.sourceHandle === 'no') newLink.label = 'Non';
-        // FIX: Defensively guard against p.liens being undefined in case a partial object was saved.
         updateProcedureState(selectedProcedureId, p => ({...p, liens: [...(p.liens || []), newLink]}));
     }, [selectedProcedureId, updateProcedureState]);
     
@@ -267,7 +262,6 @@ const ProceduresPageContent: React.FC<ProceduresPageProps> = ({ onShowRelations,
         if (!selectedProcedureId || !selectedProcedure) return;
         const position = project({ x: event.clientX, y: event.clientY });
     
-        // Handle toolbox drop (new step)
         const toolboxType = event.dataTransfer.getData('application/reactflow');
         if (toolboxType) {
             const newStep: EtapeProcedure = {
@@ -277,12 +271,10 @@ const ProceduresPageContent: React.FC<ProceduresPageProps> = ({ onShowRelations,
                 position,
                 type: toolboxType as EtapeProcedure['type'],
             };
-            // FIX: Defensively guard against p.etapes being undefined by using `|| []` to prevent spreading a non-object.
             updateProcedureState(selectedProcedureId, p => ({ ...p, etapes: [...(p.etapes || []), newStep] }));
             return;
         }
     
-        // Handle object palette drop (linking)
         const objectPayload = event.dataTransfer.getData('application/optimiso-object');
         if (objectPayload) {
             try {
@@ -325,8 +317,8 @@ const ProceduresPageContent: React.FC<ProceduresPageProps> = ({ onShowRelations,
 
     const handleSaveStep = useCallback((updatedStep: EtapeProcedure) => {
         if (!selectedProcedureId) return;
-        updateProcedureState(selectedProcedureId, p => ({ ...p, etapes: p.etapes.map(e => e.id === updatedStep.id ? updatedStep : e) }));
-        setSelectedStepId(updatedStep.id); // Keep panel open
+        updateProcedureState(selectedProcedureId, p => ({ ...p, etapes: (p.etapes || []).map(e => e.id === updatedStep.id ? updatedStep : e) }));
+        setSelectedStepId(updatedStep.id);
     }, [selectedProcedureId, updateProcedureState]);
 
     const handleOpenProcModal = (proc?: Procedure) => { setEditingProcedure(proc || newProcedureTemplate()); setProcModalOpen(true); };
@@ -334,9 +326,7 @@ const ProceduresPageContent: React.FC<ProceduresPageProps> = ({ onShowRelations,
     const handleSaveProcedure = (procToSave: Procedure) => {
         actions.saveProcedure(procToSave).then(() => {
             if (!procToSave.id) {
-                // This is a new procedure, we need to find its new ID to select it.
-                // A better approach would be for the action to return the new item.
-                // For now, we'll just not select it.
+                // Future logic to select the newly created procedure
             } else {
                 setSelectedProcedureId(procToSave.id);
             }
@@ -454,7 +444,12 @@ const ProceduresPageContent: React.FC<ProceduresPageProps> = ({ onShowRelations,
 
 const ProceduresPage: React.FC<ProceduresPageProps> = (props) => (
     <ReactFlowProvider>
-        <ProceduresPageContent {...props} />
+        {/* FIX: Avoid spreading props to prevent "Spread types may only be created from object types" error. Pass props explicitly. */}
+        <ProceduresPageContent 
+            onShowRelations={props.onShowRelations}
+            onShowValidation={props.onShowValidation}
+            onShowImpactAnalysis={props.onShowImpactAnalysis}
+        />
     </ReactFlowProvider>
 );
 

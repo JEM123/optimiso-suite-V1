@@ -1,3 +1,4 @@
+
 import React, { useEffect } from 'react';
 import ReactFlow, { Controls, Background, useNodesState, useEdgesState, useReactFlow, Node, Edge } from 'reactflow';
 import { EntiteNode, PosteNode } from './OrganigrammeNodes';
@@ -21,11 +22,12 @@ const OrganigrammeFlow: React.FC<OrganigrammeFlowProps> = ({ nodes: propNodes, e
     useEffect(() => {
         setNodes(propNodes);
         setEdges(propEdges);
-    }, [propNodes, propEdges, setNodes, setEdges]);
-    
-    useEffect(() => {
-        fitView({ padding: 0.1, duration: 300 });
-    }, [propNodes, propEdges, fitView]);
+        // Delay fitView slightly to allow layout to settle
+        const timer = setTimeout(() => {
+            fitView({ padding: 0.1, duration: 300 });
+        }, 50);
+        return () => clearTimeout(timer);
+    }, [propNodes, propEdges, setNodes, setEdges, fitView]);
 
     return (
         <ReactFlow
@@ -35,12 +37,12 @@ const OrganigrammeFlow: React.FC<OrganigrammeFlowProps> = ({ nodes: propNodes, e
             onEdgesChange={onEdgesChange}
             onNodeClick={onNodeClick}
             nodeTypes={nodeTypes}
-            fitView
             nodesDraggable={false}
             nodesConnectable={false}
             className="bg-gray-100"
             proOptions={{ hideAttribution: true }}
             zoomOnDoubleClick={false}
+            fitView
         >
             <Controls showInteractive={false} />
             <Background />
