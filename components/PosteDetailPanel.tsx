@@ -1,6 +1,7 @@
+
 import React, { useState } from 'react';
 import type { Poste, Entite, Personne, Competence, Role, RACI, OccupationHistory, Processus, Controle } from '../types';
-import { Users, Edit, Briefcase, Info, BookOpen, UserCheck, Link as LinkIcon, X } from 'lucide-react';
+import { Users, Edit, Briefcase, Info, BookOpen, UserCheck, Link as LinkIcon, X, BarChart } from 'lucide-react';
 import { useAppContext, useDataContext } from '../context/AppContext';
 
 const POST_STATUS_COLORS: Record<Poste['statut'], string> = {
@@ -28,9 +29,10 @@ interface PosteDetailPanelProps {
     onClose: () => void;
     onEdit: (p: Poste) => void;
     onShowRelations: (entity: any, entityType: string) => void;
+    onShowImpactAnalysis: (entity: any, entityType: string) => void;
 }
 
-const PosteDetailPanel: React.FC<PosteDetailPanelProps> = ({ poste, onClose, onEdit, onShowRelations }) => {
+const PosteDetailPanel: React.FC<PosteDetailPanelProps> = ({ poste, onClose, onEdit, onShowRelations, onShowImpactAnalysis }) => {
     const [activeTab, setActiveTab] = useState('details');
     const { settings } = useAppContext();
     const { data } = useDataContext();
@@ -64,7 +66,7 @@ const PosteDetailPanel: React.FC<PosteDetailPanelProps> = ({ poste, onClose, onE
             <div className="p-4 border-b flex items-center justify-between bg-gray-50">
                 <div><h2 className="text-lg font-semibold text-gray-800">{poste.intitule}</h2><p className="text-sm text-gray-500">{poste.reference}</p></div>
                 <div className="flex space-x-1">
-                    <button onClick={() => onShowRelations(poste, 'postes')} className="p-2 text-gray-500 hover:text-gray-800 hover:bg-gray-200 rounded-md"><LinkIcon className="h-4 w-4"/></button>
+                    <button onClick={() => onShowImpactAnalysis(poste, 'postes')} title="Analyser l'impact" className="p-2 text-gray-500 hover:text-gray-800 hover:bg-gray-200 rounded-md"><BarChart className="h-4 w-4"/></button>
                     <button onClick={() => onEdit(poste)} className="p-2 text-gray-500 hover:text-gray-800 hover:bg-gray-200 rounded-md"><Edit className="h-4 w-4"/></button>
                     <button onClick={onClose} className="p-2 text-gray-500 hover:text-gray-800 hover:bg-gray-200 rounded-md"><X className="h-5 w-5" /></button>
                 </div>

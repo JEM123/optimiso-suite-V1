@@ -86,6 +86,7 @@ const newPostTemplate = (parentId?: string, entiteId?: string): Partial<Poste> =
 
 interface PostesPageProps {
     onShowRelations: (entity: any, entityType: string) => void;
+    onShowImpactAnalysis: (entity: any, entityType: string) => void;
 }
 
 // --- SUB-COMPONENTS ---
@@ -115,7 +116,7 @@ const PosteNode: React.FC<{ node: Poste & { children: any[] }; onSelect: (p: Pos
 
 // --- MAIN PAGE COMPONENT ---
 
-export const PostesPage: React.FC<PostesPageProps> = ({ onShowRelations }) => {
+export const PostesPage: React.FC<PostesPageProps> = ({ onShowRelations, onShowImpactAnalysis }) => {
     const [view, setView] = useState<'list' | 'organigram'>('list');
     const [selectedPoste, setSelectedPoste] = useState<Poste | null>(null);
     const [postes, setPostes] = useState<Poste[]>(mockData.postes);
@@ -237,7 +238,7 @@ export const PostesPage: React.FC<PostesPageProps> = ({ onShowRelations }) => {
                     )}
                 </div>
             </div>
-            {selectedPoste && <PosteDetailPanel poste={selectedPoste} onClose={() => setSelectedPoste(null)} onEdit={handleOpenModal} onShowRelations={onShowRelations} />}
+            {selectedPoste && <PosteDetailPanel poste={selectedPoste} onClose={() => setSelectedPoste(null)} onEdit={handleOpenModal} onShowRelations={onShowRelations} onShowImpactAnalysis={onShowImpactAnalysis} />}
             <PosteFormModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} onSave={handleSavePoste} poste={editingPoste} />
         </div>
     );

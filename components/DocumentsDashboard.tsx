@@ -9,8 +9,17 @@ interface DocumentsDashboardProps {
 
 const DocumentsDashboard: React.FC<DocumentsDashboardProps> = ({ onShowValidation }) => {
   const { data } = useDataContext();
-  const dashboardStats = data.dashboardStats as any;
   const documents = data.documents as Document[];
+
+  const stats = React.useMemo(() => {
+    return {
+      total: documents.length,
+      publies: documents.filter(d => d.statut === 'publie' || d.statut === 'valide').length,
+      enCours: documents.filter(d => d.statut === 'en_validation').length,
+      archives: documents.filter(d => d.statut === 'archive').length,
+    };
+  }, [documents]);
+
 
   return (
   <div className="space-y-6">
@@ -22,10 +31,10 @@ const DocumentsDashboard: React.FC<DocumentsDashboardProps> = ({ onShowValidatio
     </div>
 
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-      <div className="bg-white p-4 rounded-lg shadow-sm border"><div className="text-3xl font-bold text-blue-600">{dashboardStats.documents.total}</div><div className="text-sm text-gray-600">Total documents</div></div>
-      <div className="bg-white p-4 rounded-lg shadow-sm border"><div className="text-3xl font-bold text-green-600">{dashboardStats.documents.publies}</div><div className="text-sm text-gray-600">Publiés</div></div>
-      <div className="bg-white p-4 rounded-lg shadow-sm border"><div className="text-3xl font-bold text-orange-600">{dashboardStats.documents.enCours}</div><div className="text-sm text-gray-600">En cours validation</div></div>
-      <div className="bg-white p-4 rounded-lg shadow-sm border"><div className="text-3xl font-bold text-gray-600">{dashboardStats.documents.archives}</div><div className="text-sm text-gray-600">Archivés</div></div>
+      <div className="bg-white p-4 rounded-lg shadow-sm border"><div className="text-3xl font-bold text-blue-600">{stats.total}</div><div className="text-sm text-gray-600">Total documents</div></div>
+      <div className="bg-white p-4 rounded-lg shadow-sm border"><div className="text-3xl font-bold text-green-600">{stats.publies}</div><div className="text-sm text-gray-600">Publiés</div></div>
+      <div className="bg-white p-4 rounded-lg shadow-sm border"><div className="text-3xl font-bold text-orange-600">{stats.enCours}</div><div className="text-sm text-gray-600">En cours validation</div></div>
+      <div className="bg-white p-4 rounded-lg shadow-sm border"><div className="text-3xl font-bold text-gray-600">{stats.archives}</div><div className="text-sm text-gray-600">Archivés</div></div>
     </div>
 
     <div className="bg-white p-4 rounded-lg shadow-sm border">
@@ -42,22 +51,6 @@ const DocumentsDashboard: React.FC<DocumentsDashboardProps> = ({ onShowValidatio
               <button onClick={() => onShowValidation(doc)} className="text-blue-600 hover:text-blue-800" title="Voir flux de validation">
                 <CheckCircle className="h-5 w-5" />
               </button>
-            </div>
-          </div>
-        ))}
-      </div>
-    </div>
-
-    <div className="bg-white p-4 rounded-lg shadow-sm border">
-      <h3 className="font-semibold mb-4">Répartition par type</h3>
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        {dashboardStats.documents.parType.map((type: any) => (
-          <div key={type.type} className="text-center p-3 bg-gray-50 rounded-lg">
-            <div className="text-2xl font-bold text-gray-800">{type.count}</div>
-            <div className="text-sm text-gray-600">
-              {type.type === 'REG' ? 'Règlements' :
-               type.type === 'INS' ? 'Instructions' :
-               type.type === 'MOD' ? 'Modèles' : 'Formulaires'}
             </div>
           </div>
         ))}

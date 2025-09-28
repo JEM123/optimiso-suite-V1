@@ -85,7 +85,7 @@ const OrganigrammePageContent: React.FC<OrganigrammePageProps> = ({ onShowRelati
             return;
         }
 
-        htmlToImage.toPng(flowElement as HTMLElement, { backgroundColor: '#f1f5f9' })
+        htmlToImage.toPng(flowElement as HTMLElement, { backgroundColor: '#f9fafb' })
             .then((dataUrl) => {
                 if (format === 'png') {
                     const link = document.createElement('a');

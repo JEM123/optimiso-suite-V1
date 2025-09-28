@@ -1,4 +1,5 @@
-import React, { useState, useMemo } from 'react';
+
+import React, { useState, useMemo, useCallback } from 'react';
 import type { Tache, TacheStatut } from '../types';
 import TaskCard from './TaskCard';
 
@@ -29,10 +30,10 @@ const TaskKanbanBoard: React.FC<TaskKanbanBoardProps> = ({ tasks, onSelectTask, 
         }, {} as Record<TacheStatut, Tache[]>);
     }, [tasks]);
 
-    const handleDragStart = (e: React.DragEvent<HTMLDivElement>, taskId: string) => {
+    const handleDragStart = useCallback((e: React.DragEvent<HTMLDivElement>, taskId: string) => {
         setDraggedTaskId(taskId);
         e.dataTransfer.effectAllowed = 'move';
-    };
+    }, []);
 
     const handleDrop = (e: React.DragEvent<HTMLDivElement>, newStatus: TacheStatut) => {
         e.preventDefault();

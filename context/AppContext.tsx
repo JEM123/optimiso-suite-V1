@@ -100,6 +100,7 @@ interface IDataState {
 interface IDataContext {
     data: IDataState;
     loading: boolean;
+    error: string | null;
     actions: {
         [key: string]: (...args: any[]) => Promise<void>;
     };
@@ -109,7 +110,9 @@ interface IDataContext {
 
 type DataAction =
   | { type: 'SAVE_ITEM', payload: { key: keyof IDataState, item: any } }
-  | { type: 'DELETE_ITEM', payload: { key: keyof IDataState, id: string } };
+  | { type: 'DELETE_ITEM', payload: { key: keyof IDataState, id: string } }
+  | { type: 'APPROVE_VALIDATION', payload: { validationId: string, userId: string } }
+  | { type: 'REJECT_VALIDATION', payload: { validationId: string, userId: string, comment: string } };
   
 // --- CONTEXT CREATION ---
 
@@ -129,7 +132,6 @@ const dataReducer = (state: IDataState, action: DataAction): IDataState => {
             let isNew = !itemToSave.id;
             
             if (isNew) {
-                // FIX: Corrected logic to ensure `slice` is called on a string.
                 const prefix = String(key).slice(0, 4);
                 itemToSave.id = `${prefix}-${Date.now()}`;
             } else {
@@ -203,6 +205,50 @@ const dataReducer = (state: IDataState, action: DataAction): IDataState => {
             saveDataToLocalStorage(newState);
             return newState;
         }
+        case 'APPROVE_VALIDATION':
+        case 'REJECT_VALIDATION': {
+            const { validationId, userId } = action.payload;
+            const isApproval = action.type === 'APPROVE_VALIDATION';
+            const comment = (action.type === 'REJECT_VALIDATION') ? action.payload.comment : 'Approuvé';
+
+            const validation = (state.validationInstances as ValidationInstance[]).find(v => v.id === validationId);
+            if (!validation) return state;
+
+            // Update validation instance
+            const updatedValidation = {
+                ...validation,
+                statut: isApproval ? 'Approuvé' : 'Rejeté',
+                historique: [
+                    ...validation.historique,
+                    {
+                        id: `hist-${Date.now()}`,
+                        etapeId: 'etape-flux-1', // Mock: assume first step
+                        decideurId: userId,
+                        decision: isApproval ? 'Approuvé' : 'Rejeté',
+                        commentaire: comment,
+                        dateDecision: new Date(),
+                    },
+                ],
+            };
+
+            // Update the element (document, procedure...)
+            const elementModuleKey = (validation.elementModule.toLowerCase()) as keyof IDataState;
+            const collection = state[elementModuleKey] as any[];
+            const updatedCollection = collection.map(item => {
+                if (item.id === validation.elementId) {
+                    return { ...item, statut: isApproval ? 'publie' : 'rejete' };
+                }
+                return item;
+            });
+            
+            const newState = {
+                ...state,
+                validationInstances: (state.validationInstances as ValidationInstance[]).map(v => v.id === validationId ? updatedValidation : v),
+                [elementModuleKey]: updatedCollection,
+            };
+            saveDataToLocalStorage(newState);
+            return newState;
+        }
         default:
             return state;
     }
@@ -223,6 +269,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     // Data State Management
     const [data, dispatch] = useReducer(dataReducer, loadDataFromLocalStorage());
     const [loading, setLoading] = useState(false);
+    const [error, setError] = useState<string | null>(null);
 
     // Notification Actions
     const handleNotificationClick = useCallback((notification: Notification) => {
@@ -239,17 +286,24 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         setNotifiedTarget(null);
     }, []);
 
-    // Memoized async action creators
+    // Memoized async action creator wrapper
     const createAndDispatch = useCallback(async (action: DataAction) => {
         setLoading(true);
-        await new Promise(resolve => setTimeout(resolve, 300)); // Simulate network delay
-        dispatch(action);
-        setLoading(false);
+        setError(null);
+        try {
+            // Simulate network delay. Replace with Supabase call.
+            await new Promise(resolve => setTimeout(resolve, 300));
+            dispatch(action);
+        } catch (e: any) {
+            setError(e.message || "Une erreur est survenue.");
+            console.error("Data action failed:", e);
+        } finally {
+            setLoading(false);
+        }
     }, []);
 
     const actions = useMemo(() => {
         const createActions = <T extends { id: string }>(key: keyof IDataState) => {
-            // FIX: Corrected logic to ensure `slice` and `charAt` are called on a string.
             const keyStr = String(key);
             const capitalizedKey = keyStr.charAt(0).toUpperCase() + keyStr.slice(1, -1);
             return {
@@ -284,8 +338,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
             ...createActions<SyncConnector>('syncConnectors'),
             // Actions that don't fit the simple pattern
             saveEvaluationCompetence: (item: EvaluationCompetence) => createAndDispatch({ type: 'SAVE_ITEM', payload: { key: 'evaluationsCompetences', item } }),
+            approveValidation: (validationId: string) => createAndDispatch({ type: 'APPROVE_VALIDATION', payload: { validationId, userId: user.id } }),
+            rejectValidation: (validationId: string, comment: string) => createAndDispatch({ type: 'REJECT_VALIDATION', payload: { validationId, userId: user.id, comment } }),
         };
-    }, [createAndDispatch]);
+    }, [createAndDispatch, user.id]);
 
 
     const appContextValue = useMemo(() => ({
@@ -301,8 +357,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }), [activeModule, sidebarOpen, user, data.notifications, readNotificationIds, handleNotificationClick, markAllNotificationsAsRead, notifiedTarget, clearNotifiedTarget, settings]);
     
     const dataContextValue = useMemo(() => ({
-        data, loading, actions
-    }), [data, loading, actions]);
+        data, loading, error, actions
+    }), [data, loading, error, actions]);
 
     return (
         <AppContext.Provider value={appContextValue}>
@@ -329,4 +385,43 @@ export const useDataContext = () => {
         throw new Error('useDataContext must be used within an AppProvider');
     }
     return context;
+};
+
+type Action = 'C' | 'R' | 'U' | 'D';
+type ModuleId = string;
+
+export const usePermissions = () => {
+    const { user } = useAppContext();
+    const { data } = useDataContext();
+
+    const permissions = useMemo(() => {
+        const currentUser = (data.personnes as Personne[]).find(p => p.id === user.id);
+        if (!currentUser) {
+            return {};
+        }
+
+        const userRoles = (data.roles as Role[]).filter(r => currentUser.roleIds.includes(r.id));
+        
+        const aggregatedPermissions: Record<ModuleId, { [key in Action]: boolean }> = {};
+
+        userRoles.forEach(role => {
+            for (const moduleId in role.permissions) {
+                if (!aggregatedPermissions[moduleId]) {
+                    aggregatedPermissions[moduleId] = { C: false, R: false, U: false, D: false };
+                }
+                aggregatedPermissions[moduleId].C = aggregatedPermissions[moduleId].C || role.permissions[moduleId].C;
+                aggregatedPermissions[moduleId].R = aggregatedPermissions[moduleId].R || role.permissions[moduleId].R;
+                aggregatedPermissions[moduleId].U = aggregatedPermissions[moduleId].U || role.permissions[moduleId].U;
+                aggregatedPermissions[moduleId].D = aggregatedPermissions[moduleId].D || role.permissions[moduleId].D;
+            }
+        });
+
+        return aggregatedPermissions;
+    }, [user.id, data.personnes, data.roles]);
+
+    const can = useCallback((action: Action, moduleId: ModuleId): boolean => {
+        return permissions[moduleId]?.[action] ?? false;
+    }, [permissions]);
+
+    return { can, permissions };
 };

@@ -425,7 +425,7 @@ export const mockData = {
   ] as ExecutionControle[],
   
   // -- FLUX & SYNCHRO --
-  fluxDefinitions: [ { id: 'flux-doc-simple', nom: 'Validation Document Simple (1 étape)', statut: 'valide', dateCreation: new Date(), dateModification: new Date(), auteurId: 'system', reference: 'FLUX-01', modulesCibles: ['Documents'], evenementsCouverts: ['Publication'], etapes: [{id: 'etape-flux-1', ordre: 1, nom: 'Validation N+1', type: 'Finale', modeAppro: 'Individu', approbateursIds: ['pers-1'], regleDecision: 'Tous', SLA_Heures: 48}] } ] as FluxDefinition[],
+  fluxDefinitions: [ { id: 'flux-doc-simple', nom: 'Validation Document Simple (1 étape)', statut: 'valide', dateCreation: new Date(), dateModification: new Date(), auteurId: 'system', reference: 'FLUX-01', modulesCibles: ['Documents'], evenementsCouverts: ['Publication'], etapes: [{id: 'etape-flux-1', ordre: 1, nom: 'Validation N+1', type: 'Finale', modeAppro: 'Individu', approbateursIds: ['pers-2'], regleDecision: 'Tous', SLA_Heures: 48}] } ] as FluxDefinition[],
   validationInstances: [
     { id: 'val-1', fluxDefinitionId: 'flux-doc-simple', elementId: 'doc-1', elementModule: 'Documents', statut: 'Approuvé', etapeActuelle: 1, demandeurId: 'pers-4', dateDemande: new Date('2024-05-18'), historique: [{id: 'hist-1', etapeId: 'etape-flux-1', decideurId: 'pers-1', decision: 'Approuvé', dateDecision: new Date('2024-05-20'), commentaire: 'OK pour moi.'}] },
     { id: 'val-2', fluxDefinitionId: 'flux-doc-simple', elementId: 'doc-2', elementModule: 'Documents', statut: 'En cours', etapeActuelle: 1, demandeurId: 'pers-2', dateDemande: new Date(), historique: [] },
@@ -460,19 +460,11 @@ export const mockData = {
     }
   ] as AccueilPage[],
   
-  // -- DASHBOARDS --
-  dashboardStats: {
-    risques: { total: 3, parNiveau: { critique: 1, eleve: 1, moyen: 1 }, parProcessus: [{nom: 'Recrutement', count: 1, couleur: 'bg-blue-500'}, {nom: 'Finance', count: 2, couleur: 'bg-green-500'}] },
-    documents: { total: 4, publies: 2, enCours: 1, archives: 1, parType: [{type: 'REG', count: 2}, {type: 'FORM', count: 1}, {type: 'MOD', count: 1}] },
-    incidents: { total: 1, nouveau: 1, enCours: 0, slaDepasse: 0, cloture: 0, parCategorie: [{categorie: 'SI', count: 1, color: 'bg-red-500'}]},
-    ameliorations: { total: 1, nouveau: 0, enCours: 1, cloture: 0, parOrigine: [{origine: 'Suggestion', count: 1, color: 'bg-purple-500'}]}
-  },
-
   notifications: [
     { id: 'notif-1', type: 'mention', title: 'Nouvelle mention dans un risque', description: 'Jean Dupont vous a mentionné dans le risque RSK-002: "Fraude comptable".', date: new Date(new Date().getTime() - 3600000), userId: 'pers-2', targetModule: 'risques', targetId: 'RSK-002' },
     { id: 'notif-2', type: 'tache', title: 'Nouvelle tâche assignée', description: 'La tâche "Exécuter le contrôle mensuel des comptes" vous a été assignée.', date: new Date(new Date().getTime() - 2 * 3600000), userId: 'pers-2', targetModule: 'todo', targetId: 'task-2' },
     { id: 'notif-3', type: 'alerte', title: 'Incident critique déclaré', description: 'Un incident critique "Accès impossible au serveur de fichiers" a été déclaré.', date: new Date(new Date().getTime() - 5 * 3600000), targetModule: 'incidents', targetId: 'inc-1' },
     { id: 'notif-4', type: 'evaluation', title: 'Évaluation de compétence requise', description: 'Vous devez évaluer Pierre Durand sur la compétence "Analyse Financière".', date: new Date(new Date().getTime() - 24 * 3600000), userId: 'pers-2', targetModule: 'competences', targetId: 'eval-6' },
-    { id: 'notif-5', type: 'validation', title: 'Demande de validation', description: 'Une nouvelle version du document "Procédure de clôture comptable" attend votre approbation.', date: new Date(new Date().getTime() - 2 * 24 * 3600000), userId: 'pers-1', targetModule: 'documents', targetId: 'doc-2' },
+    { id: 'notif-5', type: 'validation', title: 'Demande de validation', description: 'Une nouvelle version du document "Procédure de clôture comptable" attend votre approbation.', date: new Date(new Date().getTime() - 2 * 24 * 3600000), userId: 'pers-2', targetModule: 'documents', targetId: 'doc-2' },
   ] as Notification[],
 };

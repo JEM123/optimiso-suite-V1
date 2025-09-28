@@ -1,6 +1,7 @@
 import React from 'react';
 import { useDataContext } from '../context/AppContext';
 import { BarChart2, TrendingUp } from 'lucide-react';
+import type { Risque, Processus } from '../types';
 
 const StatCard: React.FC<{ title: string; value: string | number; children?: React.ReactNode }> = ({ title, value, children }) => (
     <div className="bg-white p-4 rounded-lg shadow-sm border">
@@ -12,39 +13,65 @@ const StatCard: React.FC<{ title: string; value: string | number; children?: Rea
 
 const RisksDashboard: React.FC = () => {
     const { data } = useDataContext();
-    const dashboardStats = data.dashboardStats as any;
+    const { risques, processus } = data as { risques: Risque[], processus: Processus[] };
+    
+    const stats = React.useMemo(() => {
+        const total = risques.length;
+        const parNiveau = risques.reduce((acc, r) => {
+            const level = r.analyseResiduelle.probabilite * r.analyseResiduelle.impact;
+            if (level >= 16) acc.critique++;
+            else if (level >= 10) acc.eleve++;
+            else if (level >= 5) acc.moyen++;
+            return acc;
+        }, { critique: 0, eleve: 0, moyen: 0 });
+
+        const parProcessus = risques.reduce((acc, r) => {
+            const proc = processus.find(p => p.id === r.processusId);
+            if (proc) {
+                const existing = acc.find(item => item.nom === proc.nom);
+                if (existing) {
+                    existing.count++;
+                } else {
+                    acc.push({ nom: proc.nom, count: 1, couleur: 'bg-blue-500' });
+                }
+            }
+            return acc;
+        }, [] as {nom: string, count: number, couleur: string}[]).sort((a,b) => b.count - a.count);
+
+        return { total, parNiveau, parProcessus };
+    }, [risques, processus]);
     
     return (
     <div className="space-y-6">
         <h2 className="text-xl font-semibold">Tableau de bord - Risques</h2>
         
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-            <StatCard title="Risques Totaux" value={dashboardStats.risques.total} />
-            <StatCard title="Risques Critiques" value={dashboardStats.risques.parNiveau.critique}>
+            <StatCard title="Risques Totaux" value={stats.total} />
+            <StatCard title="Risques Critiques" value={stats.parNiveau.critique}>
                 <div className="w-full bg-gray-200 rounded-full h-1.5 mt-2">
-                    <div className="bg-red-600 h-1.5 rounded-full" style={{ width: `${(dashboardStats.risques.parNiveau.critique / dashboardStats.risques.total) * 100}%` }}></div>
+                    <div className="bg-red-600 h-1.5 rounded-full" style={{ width: `${stats.total > 0 ? (stats.parNiveau.critique / stats.total) * 100 : 0}%` }}></div>
                 </div>
             </StatCard>
-            <StatCard title="Risques Élevés" value={dashboardStats.risques.parNiveau.eleve}>
+            <StatCard title="Risques Élevés" value={stats.parNiveau.eleve}>
                  <div className="w-full bg-gray-200 rounded-full h-1.5 mt-2">
-                    <div className="bg-orange-500 h-1.5 rounded-full" style={{ width: `${(dashboardStats.risques.parNiveau.eleve / dashboardStats.risques.total) * 100}%` }}></div>
+                    <div className="bg-orange-500 h-1.5 rounded-full" style={{ width: `${stats.total > 0 ? (stats.parNiveau.eleve / stats.total) * 100 : 0}%` }}></div>
                 </div>
             </StatCard>
-            <StatCard title="Risques Moyens" value={dashboardStats.risques.parNiveau.moyen} />
+            <StatCard title="Risques Moyens" value={stats.parNiveau.moyen} />
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             <div className="bg-white p-4 rounded-lg shadow-sm border">
                 <h3 className="font-semibold mb-4 flex items-center"><BarChart2 className="h-5 w-5 mr-2 text-blue-500" />Risques par processus</h3>
                 <div className="space-y-3">
-                    {dashboardStats.risques.parProcessus.map((p: any) => (
+                    {stats.parProcessus.map((p: any) => (
                         <div key={p.nom}>
                             <div className="flex justify-between text-sm mb-1">
                                 <span>{p.nom}</span>
                                 <span>{p.count}</span>
                             </div>
                             <div className="w-full bg-gray-200 rounded-full h-2.5">
-                                <div className={`${p.couleur} h-2.5 rounded-full`} style={{ width: `${(p.count / dashboardStats.risques.total) * 100}%` }}></div>
+                                <div className={`${p.couleur} h-2.5 rounded-full`} style={{ width: `${stats.total > 0 ? (p.count / stats.total) * 100 : 0}%` }}></div>
                             </div>
                         </div>
                     ))}

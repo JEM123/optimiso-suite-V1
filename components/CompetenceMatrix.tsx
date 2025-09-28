@@ -6,6 +6,20 @@ interface CompetenceMatrixProps {
     onSelectCompetence: (competence: Competence) => void;
 }
 
+const getGapInfo = (attendu: number, evalué?: number): { text: string; color: string } => {
+    if (evalué === undefined) return { text: '-', color: 'text-gray-500' };
+    const gap = evalué - attendu;
+    if (gap >= 0) return { text: `+${gap}`, color: 'text-green-600' };
+    return { text: `${gap}`, color: 'text-red-600' };
+};
+
+const getCellBgColor = (attendu: number, evalué?: number) => {
+    if (evalué === undefined) return 'bg-gray-100';
+    if (evalué >= attendu) return 'bg-green-100 border-green-300';
+    if (evalué === attendu - 1) return 'bg-yellow-100 border-yellow-300';
+    return 'bg-red-100 border-red-300';
+};
+
 const CompetenceMatrix: React.FC<CompetenceMatrixProps> = ({ onSelectCompetence }) => {
     const { data } = useDataContext();
     const { competences, postes, entites, evaluationsCompetences, personnes } = data as { competences: Competence[], postes: Poste[], entites: Entite[], evaluationsCompetences: EvaluationCompetence[], personnes: Personne[] };
@@ -22,13 +36,6 @@ const CompetenceMatrix: React.FC<CompetenceMatrixProps> = ({ onSelectCompetence 
         const occupant = personnes.find(p => p.id === occupantId);
         const evaluation = evaluationsCompetences.find(e => e.personneId === occupantId && e.competenceId === competenceId);
         return { evaluation, occupant };
-    };
-
-    const getGapColor = (attendu: number, evalué: number | null) => {
-        if (evalué === null) return 'bg-gray-100';
-        if (evalué >= attendu) return 'bg-green-100 border-green-300';
-        if (evalué === attendu - 1) return 'bg-yellow-100 border-yellow-300';
-        return 'bg-red-100 border-red-300';
     };
 
     return (
@@ -67,18 +74,18 @@ const CompetenceMatrix: React.FC<CompetenceMatrixProps> = ({ onSelectCompetence 
                                         return <td key={poste.id} className="p-2 border border-gray-200 bg-gray-50"></td>;
                                     }
                                     
-                                    const color = getGapColor(attendu, evalué ?? null);
-                                    const tooltip = occupant ? `Occupant: ${occupant.prenom} ${occupant.nom}\nÉvalué le: ${evaluation?.dateEvaluation.toLocaleDateString('fr-FR')}` : 'Poste vacant';
+                                    const color = getCellBgColor(attendu, evalué);
+                                    const { text: gapText, color: gapColor } = getGapInfo(attendu, evalué);
+                                    const tooltip = occupant ? `Occupant: ${occupant.prenom} ${occupant.nom}\nÉvalué le: ${evaluation?.dateEvaluation?.toLocaleDateString('fr-FR')}` : 'Poste vacant';
 
                                     return (
                                         <td key={poste.id} className={`p-2 border ${color} text-center group relative`} title={tooltip}>
                                             <div className="flex flex-col items-center justify-center">
-                                                <div>
-                                                    <span className="font-bold">Att. {attendu}</span>
+                                                <div className="text-gray-600">
+                                                    <span>{evalué ?? '-'} / {attendu}</span>
                                                 </div>
-                                                <div className="h-px w-8 bg-gray-300 my-1"></div>
-                                                <div>
-                                                    <span className={evalué === undefined ? 'text-gray-400' : ''}>Éval. {evalué ?? '-'}</span>
+                                                <div className={`mt-1 font-bold text-sm ${gapColor}`}>
+                                                    {gapText}
                                                 </div>
                                             </div>
                                         </td>

@@ -1,10 +1,10 @@
 import React, { useState, useMemo, useEffect } from 'react';
-import type { Document } from '../types';
+import type { Document, ValidationInstance } from '../types';
 import { Plus, Search, Trash2, Edit, FileText, Link as LinkIcon, Download, FileSpreadsheet } from 'lucide-react';
 import DocumentDetailPanel from './DocumentDetailPanel';
 import DocumentFormModal from './DocumentFormModal';
-import { useDataContext, useAppContext } from '../context/AppContext';
-import { v4 as uuidv4 } from 'uuid'; // Assuming uuid is available for unique IDs
+import { useDataContext, useAppContext, usePermissions } from '../context/AppContext';
+import { v4 as uuidv4 } from 'uuid';
 
 // --- UTILITY FUNCTIONS & CONSTANTS ---
 const exportToCsv = (filename: string, rows: object[]) => {
@@ -61,11 +61,11 @@ const DOC_STATUS_COLORS: Record<Document['statut'], string> = {
     'rejete': 'bg-red-100 text-red-800',
 };
 
-const newDocumentTemplate = (): Partial<Document> => ({
+const newDocumentTemplate = (user: any): Partial<Document> => ({
     nom: '', reference: '', statut: 'brouillon', source: 'Fichier',
     categorieIds: [], processusIds: [], entiteIds: [],
-    version: 'V1.0',
-    dateCreation: new Date(), dateModification: new Date(), auteurId: 'pers-1'
+    version: 'v1.0',
+    dateCreation: new Date(), dateModification: new Date(), auteurId: user.id
 });
 
 interface DocumentsPageProps {
@@ -78,6 +78,7 @@ interface DocumentsPageProps {
 const DocumentsPage: React.FC<DocumentsPageProps> = ({ onShowValidation, onShowRelations, notifiedItemId }) => {
     const { data, actions } = useDataContext();
     const { user, clearNotifiedTarget } = useAppContext();
+    const { can } = usePermissions();
     const { documents, categoriesDocuments } = data;
     
     const [selectedDocument, setSelectedDocument] = useState<Document | null>(null);
@@ -105,7 +106,7 @@ const DocumentsPage: React.FC<DocumentsPageProps> = ({ onShowValidation, onShowR
     }, [documents, searchTerm, filters]);
 
     const handleOpenModal = (doc?: Partial<Document>) => { 
-        setEditingDocument(doc || newDocumentTemplate()); 
+        setEditingDocument(doc || newDocumentTemplate(user)); 
         setIsModalOpen(true); 
     };
 
@@ -124,24 +125,51 @@ const DocumentsPage: React.FC<DocumentsPageProps> = ({ onShowValidation, onShowR
     
     const handleSubmitForValidation = (doc: Document) => {
         if (window.confirm("Êtes-vous sûr de vouloir soumettre ce document pour validation ? Il ne sera plus modifiable.")) {
-            actions.saveDocument({ ...doc, statut: 'en_validation' });
-            // In a real app, this would also create the validationInstance
+            const validationInstanceId = `val-${uuidv4()}`;
+            const newValidationInstance: ValidationInstance = {
+                id: validationInstanceId,
+                fluxDefinitionId: 'flux-doc-simple',
+                elementId: doc.id,
+                elementModule: 'Documents',
+                statut: 'En cours',
+                etapeActuelle: 1,
+                demandeurId: user.id,
+                dateDemande: new Date(),
+                historique: [],
+            };
+            actions.saveValidationInstance(newValidationInstance);
+    
+            const updatedDoc = { ...doc, statut: 'en_validation' as const, validationInstanceId: validationInstanceId };
+            actions.saveDocument(updatedDoc);
+            
+            if (selectedDocument?.id === doc.id) {
+                setSelectedDocument(updatedDoc);
+            }
         }
     };
     
     const handleCreateNewVersion = (doc: Document) => {
+        if (doc.statut !== 'publie' && doc.statut !== 'valide') {
+            alert("Vous ne pouvez créer une nouvelle version qu'à partir d'un document publié ou validé.");
+            return;
+        }
         const majorVersion = parseInt(doc.version.match(/(\d+)/)?.[0] || '1') + 1;
         const newVersion: Partial<Document> = {
             ...JSON.parse(JSON.stringify(doc)), // Deep copy
             id: undefined, // Will be assigned on save
             originalId: doc.originalId || doc.id,
+            nom: `${doc.nom.replace(/ \(v\d+\.\d+\)$/, '')}`,
+            reference: `${doc.reference}-V${majorVersion}`,
             version: `v${majorVersion}.0`,
             statut: 'brouillon',
             validationInstanceId: undefined,
             versionHistory: [
-                { version: doc.version, date: doc.dateModification, authorId: doc.auteurId },
+                { version: doc.version, date: new Date(), authorId: doc.auteurId, notes: 'Version précédente.' },
                 ...(doc.versionHistory || [])
-            ]
+            ],
+            dateCreation: new Date(),
+            dateModification: new Date(),
+            auteurId: user.id,
         };
         handleOpenModal(newVersion);
     };
@@ -168,7 +196,7 @@ const DocumentsPage: React.FC<DocumentsPageProps> = ({ onShowValidation, onShowR
                         <h1 className="text-2xl font-bold text-gray-900">Documents</h1>
                     </div>
                      <div className="flex items-center gap-2">
-                        <button onClick={() => handleOpenModal()} className="flex items-center space-x-2 bg-blue-600 text-white px-3 py-1.5 rounded-lg hover:bg-blue-700 text-sm font-medium"><Plus className="h-4 w-4" /><span>Nouveau Document</span></button>
+                        <button onClick={() => handleOpenModal()} disabled={!can('C', 'documents')} className="flex items-center space-x-2 bg-blue-600 text-white px-3 py-1.5 rounded-lg hover:bg-blue-700 text-sm font-medium disabled:bg-blue-300 disabled:cursor-not-allowed"><Plus className="h-4 w-4" /><span>Nouveau Document</span></button>
                          <div className="relative group">
                             <button className="flex items-center space-x-2 bg-white border border-gray-300 px-3 py-1.5 rounded-lg hover:bg-gray-50 text-sm"><Download className="h-4 w-4" /><span>Exporter</span></button>
                             <div className="absolute right-0 top-full mt-1 w-52 bg-white border rounded-lg shadow-lg opacity-0 group-hover:opacity-100 invisible group-hover:visible transition-opacity z-10">

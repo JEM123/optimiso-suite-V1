@@ -6,7 +6,7 @@ import { Plus, Search, Trash2, Edit, X, Info, ShieldCheck, TrendingUp, Link as L
 import RiskDetailPanel from './RiskDetailPanel';
 import RiskMatrix from './RiskMap';
 import PageHeader from './PageHeader';
-import { useDataContext, useAppContext } from '../context/AppContext';
+import { useDataContext, useAppContext, usePermissions } from '../context/AppContext';
 
 const exportToCsv = (filename: string, rows: object[]) => {
     if (!rows || rows.length === 0) {
@@ -134,6 +134,7 @@ const RiskCartography: React.FC<{
 const RisksPage: React.FC<RisksPageProps> = ({ onShowRelations, notifiedItemId }) => {
     const { data, actions } = useDataContext();
     const { user, clearNotifiedTarget } = useAppContext();
+    const { can } = usePermissions();
     const risques = data.risques as Risque[];
     const processus = data.processus as Processus[];
     const categoriesRisques = data.categoriesRisques as CategorieRisque[];
@@ -216,7 +217,7 @@ const RisksPage: React.FC<RisksPageProps> = ({ onShowRelations, notifiedItemId }
 
     const pageActions = [
         { label: "Exporter CSV", icon: FileSpreadsheet, onClick: handleExportCsv, variant: 'secondary' as const },
-        { label: "Nouveau Risque", icon: Plus, onClick: () => handleOpenModal(), variant: 'primary' as const }
+        { label: "Nouveau Risque", icon: Plus, onClick: () => handleOpenModal(), variant: 'primary' as const, disabled: !can('C', 'risques') }
     ];
 
     return (
@@ -237,16 +238,14 @@ const RisksPage: React.FC<RisksPageProps> = ({ onShowRelations, notifiedItemId }
                                 <button onClick={() => setView('map')} className={`px-3 py-1.5 rounded-md text-sm font-medium flex items-center gap-1.5 ${view === 'map' ? 'bg-white text-blue-600 shadow-sm' : 'text-gray-600'}`}><MapIcon className="h-4 w-4"/>Cartographie</button>
                             </div>
                             {(view === 'matrix' || view === 'map') && (
-                                <select value={analysisType} onChange={e => setAnalysisType(e.target.value as typeof analysisType)} className="border rounded-lg py-1.5 px-2 text-sm bg-white">
+                                <select value={analysisType} onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setAnalysisType(e.target.value as keyof Pick<Risque, 'analyseInherente' | 'analyseResiduelle' | 'analyseFuture'>)} className="border rounded-lg py-1.5 px-2 text-sm bg-white">
                                     <option value="analyseInherente">Analyse Inhérente</option><option value="analyseResiduelle">Analyse Résiduelle</option><option value="analyseFuture">Analyse Future</option>
                                 </select>
                             )}
                         </div>
                         <div className="flex items-center gap-2">
                              <div className="relative flex-grow max-w-xs"><Search className="absolute left-2 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" /><input type="text" placeholder="Rechercher..." value={searchTerm} onChange={e => setSearchTerm(e.target.value)} className="pl-8 pr-2 py-1.5 border rounded-lg w-full text-sm"/></div>
-                             {/* FIX: Explicitly type event object in onChange handler */}
                              <select onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setFilters(f => ({...f, categorieId: e.target.value}))} className="border rounded-lg py-1.5 px-2 text-sm"><option value="all">Toutes les catégories</option>{categoriesRisques.map((c: CategorieRisque)=><option key={c.id} value={c.id}>{c.nom}</option>)}</select>
-                             {/* FIX: Explicitly type event object in onChange handler */}
                              <select onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setFilters(f => ({...f, processusId: e.target.value}))} className="border rounded-lg py-1.5 px-2 text-sm"><option value="all">Tous les processus</option>{processus.map((p: Processus)=><option key={p.id} value={p.id}>{p.nom}</option>)}</select>
                         </div>
                     </div>

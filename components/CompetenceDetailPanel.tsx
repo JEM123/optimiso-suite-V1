@@ -191,7 +191,7 @@ const CompetenceDetailPanel: React.FC<CompetenceDetailPanelProps> = ({ competenc
                      <div className="space-y-3">
                          <div className="flex justify-between items-center">
                             <h3 className="font-semibold text-gray-800">Plans de formation ({plans.length})</h3>
-                            <button onClick={() => handleOpenPlanModal()} className="flex items-center gap-1 text-sm bg-blue-500 text-white px-2 py-1 rounded-md hover:bg-blue-600"><Plus className="h-4 w-4"/>Ajouter</button>
+                            <button onClick={() => handleOpenPlanModal()} className="flex items-center gap-1 text-sm bg-blue-500 text-white px-2 py-1 rounded-md hover:bg-blue-600"><Plus className="h-4 w-4"/>Ajouter un plan</button>
                          </div>
                          {plans.map(plan => (
                              <div key={plan.id} className="bg-white p-3 rounded-lg border group">

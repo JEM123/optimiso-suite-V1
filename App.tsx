@@ -10,6 +10,7 @@ import EntityRelations from './components/EntityRelations';
 import { AppProvider, useAppContext, useDataContext } from './context/AppContext';
 import type { Document, Procedure, ValidationInstance } from './types';
 import ImpactAnalysisModal from './components/ImpactAnalysisModal';
+import RejectionModal from './components/RejectionModal';
 
 const AppContent: React.FC = () => {
     const { activeModule, setActiveModule, sidebarOpen, setSidebarOpen, user, notifiedTarget } = useAppContext();
@@ -18,6 +19,7 @@ const AppContent: React.FC = () => {
     const [relationExplorerTarget, setRelationExplorerTarget] = React.useState<any>(null);
     const [validationModal, setValidationModal] = React.useState<{ show: boolean; document?: Document; procedure?: Procedure }>({ show: false });
     const [impactAnalysisTarget, setImpactAnalysisTarget] = React.useState<any>(null);
+    const [rejectionTarget, setRejectionTarget] = React.useState<Document | Procedure | null>(null);
 
     const handleShowRelations = (entity: any, entityType: string) => {
         setRelationExplorerTarget({ ...entity, type: entityType });
@@ -32,16 +34,22 @@ const AppContent: React.FC = () => {
     };
     
     const handleApproveValidation = async (element: Document | Procedure) => {
-        if ('source' in element) { // It's a Document
-            await actions.saveDocument({ ...element, statut: 'publie' });
-        } else { // It's a Procedure
-            await actions.saveProcedure({ ...element, statut: 'publie' });
+        if (element.validationInstanceId) {
+            await actions.approveValidation(element.validationInstanceId);
         }
-        
-        const validationInstance = (data.validationInstances as ValidationInstance[]).find(vi => vi.id === element.validationInstanceId);
-        if (validationInstance) {
-            await actions.saveValidationInstance({ ...validationInstance, statut: 'Approuvé' });
+        setValidationModal({ show: false });
+    };
+
+    const handleShowRejection = (element: Document | Procedure) => {
+        setValidationModal({ show: false }); // Fermer la modale de validation
+        setRejectionTarget(element); // Ouvrir la modale de rejet
+    };
+    
+    const handleConfirmRejection = async (comment: string) => {
+        if (rejectionTarget?.validationInstanceId) {
+            await actions.rejectValidation(rejectionTarget.validationInstanceId, comment);
         }
+        setRejectionTarget(null);
     };
     
     const renderContent = () => {
@@ -100,6 +108,13 @@ const AppContent: React.FC = () => {
               validationModal={validationModal}
               setValidationModal={setValidationModal} 
               onApprove={handleApproveValidation}
+              onReject={handleShowRejection}
+            />
+
+            <RejectionModal
+                isOpen={!!rejectionTarget}
+                onClose={() => setRejectionTarget(null)}
+                onConfirm={handleConfirmRejection}
             />
         </div>
     );

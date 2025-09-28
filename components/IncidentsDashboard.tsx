@@ -1,6 +1,6 @@
 import React from 'react';
-import type { Incident } from '../types';
-import { mockData } from '../constants';
+import type { Incident, IncidentCategorie } from '../types';
+import { useDataContext } from '../context/AppContext';
 import { AlertTriangle, Clock, Shield, CheckCircle } from 'lucide-react';
 
 interface IncidentsDashboardProps {
@@ -19,8 +19,34 @@ const StatCard: React.FC<{ title: string; value: number; icon: React.ElementType
     </div>
 );
 
+const CATEGORY_COLORS: Record<IncidentCategorie, string> = {
+    'SI': 'bg-red-500',
+    'Qualité': 'bg-blue-500',
+    'Sécurité': 'bg-purple-500',
+    'RH': 'bg-green-500',
+    'Environnement': 'bg-teal-500',
+};
+
 const IncidentsDashboard: React.FC<IncidentsDashboardProps> = ({ incidents }) => {
-    const stats = mockData.dashboardStats.incidents;
+    const stats = React.useMemo(() => {
+        const total = incidents.length;
+        const nouveau = incidents.filter(i => i.statut === 'Nouveau').length;
+        const enCours = incidents.filter(i => i.statut === 'En cours').length;
+        const slaDepasse = incidents.filter(i => i.statut !== 'Clôturé' && new Date(i.echeanceSLA) < new Date()).length;
+        const cloture = incidents.filter(i => i.statut === 'Clôturé').length;
+
+        const parCategorie = incidents.reduce((acc, i) => {
+            const existing = acc.find(item => item.categorie === i.categorie);
+            if (existing) {
+                existing.count++;
+            } else {
+                acc.push({ categorie: i.categorie, count: 1, color: CATEGORY_COLORS[i.categorie] || 'bg-gray-500' });
+            }
+            return acc;
+        }, [] as {categorie: string, count: number, color: string}[]);
+
+        return { total, nouveau, enCours, slaDepasse, cloture, parCategorie };
+    }, [incidents]);
 
     return (
         <div className="space-y-6">

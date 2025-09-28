@@ -323,16 +323,26 @@ const ProceduresPageContent: React.FC<ProceduresPageProps> = ({ onShowRelations,
 
     const handleOpenProcModal = (proc?: Procedure) => { setEditingProcedure(proc || newProcedureTemplate()); setProcModalOpen(true); };
     
-    const handleSaveProcedure = (procToSave: Procedure) => {
-        actions.saveProcedure(procToSave).then(() => {
-            if (!procToSave.id) {
-                // Future logic to select the newly created procedure
-            } else {
-                setSelectedProcedureId(procToSave.id);
-            }
-        });
-        setProcModalOpen(false);
+// FIX: Ensure new procedures have default empty arrays to prevent spread errors on non-objects.
+const handleSaveProcedure = (procToSave: Procedure) => {
+    const fullProc = {
+        etapes: [],
+        liens: [],
+        acteursPosteIds: [],
+        documentIds: [],
+        risqueIds: [],
+        controleIds: [],
+        ...procToSave,
     };
+    actions.saveProcedure(fullProc as Procedure).then(() => {
+        if (!procToSave.id) {
+            // Future logic to select the newly created procedure
+        } else {
+            setSelectedProcedureId(procToSave.id);
+        }
+    });
+    setProcModalOpen(false);
+};
 
     const handleDeleteProcedure = (procId: string) => {
         if (window.confirm("Êtes-vous sûr de vouloir supprimer cette procédure ?")) {
@@ -444,7 +454,6 @@ const ProceduresPageContent: React.FC<ProceduresPageProps> = ({ onShowRelations,
 
 const ProceduresPage: React.FC<ProceduresPageProps> = (props) => (
     <ReactFlowProvider>
-        {/* FIX: Avoid spreading props to prevent "Spread types may only be created from object types" error. Pass props explicitly. */}
         <ProceduresPageContent 
             onShowRelations={props.onShowRelations}
             onShowValidation={props.onShowValidation}
