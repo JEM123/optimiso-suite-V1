@@ -1,4 +1,5 @@
 
+
 import React, { useState } from 'react';
 import type { Poste, Entite, Personne, Competence, Role, RACI, OccupationHistory, Processus, Controle } from '../types';
 import { Users, Edit, Briefcase, Info, BookOpen, UserCheck, Link as LinkIcon, X, BarChart } from 'lucide-react';

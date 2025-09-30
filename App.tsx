@@ -8,7 +8,7 @@ import DocumentsDashboard from './components/DocumentsDashboard';
 import ValidationModal from './components/ValidationModal';
 import EntityRelations from './components/EntityRelations';
 import { AppProvider, useAppContext, useDataContext } from './context/AppContext';
-import type { Document, Procedure, ValidationInstance } from './types';
+import type { Document, Procedure, ValidationInstance, Entite } from './types';
 import ImpactAnalysisModal from './components/ImpactAnalysisModal';
 import RejectionModal from './components/RejectionModal';
 
@@ -32,7 +32,7 @@ const AppContent: React.FC = () => {
     const handleShowImpactAnalysis = (element: any, type: string) => {
         setImpactAnalysisTarget({ ...element, type });
     };
-    
+
     const handleApproveValidation = async (element: Document | Procedure) => {
         if (element.validationInstanceId) {
             await actions.approveValidation(element.validationInstanceId);

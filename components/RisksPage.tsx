@@ -79,7 +79,8 @@ const RiskCartography: React.FC<{
             if (!evalData) return;
             const level = evalData.probabilite * evalData.impact;
             const uniqueEntityIds = new Set(risk.entiteIds);
-            uniqueEntityIds.forEach(entiteId => {
+            // FIX: Explicitly type `entiteId` as a string in the forEach callback to prevent it from being inferred as `unknown`.
+            uniqueEntityIds.forEach((entiteId: string) => {
                 if (byEntity.has(entiteId)) {
                     const current = byEntity.get(entiteId)!;
                     current.risks.push(risk);

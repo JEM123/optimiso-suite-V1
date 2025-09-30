@@ -323,23 +323,29 @@ const ProceduresPageContent: React.FC<ProceduresPageProps> = ({ onShowRelations,
 
     const handleOpenProcModal = (proc?: Procedure) => { setEditingProcedure(proc || newProcedureTemplate()); setProcModalOpen(true); };
     
-// FIX: Ensure new procedures have default empty arrays to prevent spread errors on non-objects.
-const handleSaveProcedure = (procToSave: Procedure) => {
-    const fullProc = {
-        etapes: [],
-        liens: [],
-        acteursPosteIds: [],
-        documentIds: [],
-        risqueIds: [],
-        controleIds: [],
-        ...procToSave,
-    };
-    actions.saveProcedure(fullProc as Procedure).then(() => {
-        if (!procToSave.id) {
-            // Future logic to select the newly created procedure
-        } else {
-            setSelectedProcedureId(procToSave.id);
+const handleSaveProcedure = (procToSave: Partial<Procedure>) => {
+    // This creates a complete procedure object by taking defaults from the template
+    // and overwriting them with any values provided from the form modal.
+    const fullProc: Procedure = {
+        ...newProcedureTemplate(),
+        // FIX: Ensure procToSave is an object before spreading to prevent "Spread types may only be created from object types" error.
+        ...(procToSave || {}),
+    } as Procedure;
+    
+    // Ensure array properties are not null or undefined, which can happen with Partial types.
+    fullProc.etapes = fullProc.etapes ?? [];
+    fullProc.liens = fullProc.liens ?? [];
+    fullProc.acteursPosteIds = fullProc.acteursPosteIds ?? [];
+    fullProc.documentIds = fullProc.documentIds ?? [];
+    fullProc.risqueIds = fullProc.risqueIds ?? [];
+    fullProc.controleIds = fullProc.controleIds ?? [];
+    
+    actions.saveProcedure(fullProc).then(() => {
+        const savedId = procToSave?.id; // We can only know the ID if it was an edit
+        if (savedId) {
+             setSelectedProcedureId(savedId);
         }
+        // If it was a new procedure, we can't know the new ID from the action currently.
     });
     setProcModalOpen(false);
 };
@@ -446,7 +452,7 @@ const handleSaveProcedure = (procToSave: Procedure) => {
                 </div>
             </div>
             
-            <ProcedureFormModal isOpen={isProcModalOpen} onClose={() => setProcModalOpen(false)} onSave={handleSaveProcedure} procedure={editingProcedure} />
+            <ProcedureFormModal isOpen={isProcModalOpen} onClose={() => setProcModalOpen(false)} onSave={handleSaveProcedure as (p: Procedure) => void} procedure={editingProcedure} />
         </div>
     );
 };
