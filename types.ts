@@ -656,7 +656,7 @@ export interface Mission extends BaseEntity {
     documentIds: string[];
     risqueIds: string[];
     controleIds: string[];
-    exigenceIds: string[];
+    exigenceIds?: string[];
     actif: boolean;
     confidentialite: 'publique' | 'restreinte';
 }
@@ -689,8 +689,19 @@ export interface ReferenceFormat {
     digits: number;
 }
 
+export interface FicheTab {
+    id: string;
+    label: string;
+}
+
+export interface FicheLayout {
+    tabs: FicheTab[];
+    sections: Record<string, string[]>; // { tabId: sectionId[] }
+}
+
 export interface ISettings {
     modules: Record<string, { visible: boolean }>;
     references: Record<string, ReferenceFormat>;
     customFields: Record<string, CustomFieldDef[]>;
+    ficheLayouts: Record<string, FicheLayout>;
 }

@@ -2,9 +2,10 @@ import React, { useState } from 'react';
 import { useAppContext } from '../context/AppContext';
 import type { ISettings, CustomFieldDef, CustomFieldType, ReferenceFormat } from '../types';
 import { modules } from '../constants';
-import { Save, Package, FileText, FolderOpen, AlertTriangle, X, Plus, Trash2 } from 'lucide-react';
+import { Save, Package, FileText, FolderOpen, AlertTriangle, X, Plus, Trash2, LayoutTemplate } from 'lucide-react';
 import PageHeader from './PageHeader';
 import Button from './ui/Button';
+import FicheLayoutSettings from './FicheLayoutSettings';
 
 const formInputClasses = "block w-full text-sm text-gray-800 bg-white border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-300 focus:border-transparent transition-colors";
 const modulesWithCustomFields = ['personnes', 'postes', 'processus', 'competences', 'risques', 'entites'];
@@ -158,6 +159,7 @@ const SettingsModule: React.FC = () => {
         { id: 'modules', name: 'Modules', icon: Package, content: renderModulesTab() },
         { id: 'references', name: 'Références', icon: FileText, content: renderReferencesTab() },
         { id: 'customfields', name: 'Champs Libres', icon: FolderOpen, content: renderCustomFieldsTab() },
+        { id: 'layout', name: 'Mise en Page', icon: LayoutTemplate, content: <FicheLayoutSettings localSettings={localSettings} setLocalSettings={setLocalSettings} /> },
     ];
     
     return (

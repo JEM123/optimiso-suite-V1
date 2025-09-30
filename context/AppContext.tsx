@@ -70,6 +70,208 @@ const initialSettings: ISettings = {
         competences: [],
         entites: [],
     },
+    ficheLayouts: {
+        documents: {
+            tabs: [
+                { id: 'tab1', label: 'Métadonnées' },
+                { id: 'tab2', label: 'Contenu' },
+                { id: 'tab3', label: 'Relations' },
+                { id: 'tab4', label: 'Historique' },
+            ],
+            sections: {
+                tab1: ['validationSection', 'metadataSection'],
+                tab2: ['contentSection'],
+                tab3: ['relationsSection'],
+                tab4: ['historySection'],
+            },
+        },
+        personnes: {
+            tabs: [
+                { id: 'tab1', label: 'Informations' },
+                { id: 'tab2', label: 'Affectations' },
+                { id: 'tab3', label: 'Compétences' },
+                { id: 'tab4', label: 'Accès' },
+                { id: 'tab5', label: 'Historique' },
+            ],
+            sections: {
+                tab1: ['personne-generalInfoSection'],
+                tab2: ['affectationsSection'],
+                tab3: ['competencesSection'],
+                tab4: ['accessSection'],
+                tab5: ['personne-historySection'],
+            },
+        },
+        postes: {
+            tabs: [
+                { id: 'tab1', label: 'Détails' },
+                { id: 'tab2', label: 'Mission' },
+                { id: 'tab3', label: 'Compétences' },
+                { id: 'tab4', label: 'Occupants' },
+                { id: 'tab5', label: 'RACI' },
+            ],
+            sections: {
+                tab1: ['poste-detailsSection'],
+                tab2: ['poste-missionSection'],
+                tab3: ['poste-skillsSection'],
+                tab4: ['poste-occupantsSection'],
+                tab5: ['poste-raciSection'],
+            },
+        },
+        risques: {
+            tabs: [
+                { id: 'tab1', label: 'Identification' },
+                { id: 'tab2', label: 'Évaluation' },
+                { id: 'tab3', label: 'Maîtrise' },
+                { id: 'tab4', label: 'Actions' },
+                { id: 'tab5', label: 'Historique' },
+            ],
+            sections: {
+                tab1: ['identificationSection'],
+                tab2: ['evaluationSection'],
+                tab3: ['masterySection'],
+                tab4: ['actionsSection'],
+                tab5: ['risque-historySection'],
+            },
+        },
+        controles: {
+            tabs: [
+                { id: 'tab1', label: 'Détails' },
+                { id: 'tab2', label: 'Planification' },
+                { id: 'tab3', label: 'Maîtrise' },
+                { id: 'tab4', label: 'Exécutions' },
+            ],
+            sections: {
+                tab1: ['controle-detailsSection'],
+                tab2: ['planningSection'],
+                tab3: ['controle-masterySection'],
+                tab4: ['executionsSection'],
+            },
+        },
+        entites: {
+            tabs: [
+                { id: 'tab1', label: 'Organisation' },
+                { id: 'tab2', label: 'Informations' },
+            ],
+            sections: {
+                tab1: ['hierarchySection', 'entite-relationsSection'],
+                tab2: ['entite-generalInfoSection'],
+            }
+        },
+        roles: {
+            tabs: [
+                { id: 'tab1', label: 'Détails' },
+                { id: 'tab2', label: 'Permissions' },
+                { id: 'tab3', label: 'Assignations' },
+            ],
+            sections: {
+                tab1: ['role-detailsSection'],
+                tab2: ['permissionsSection'],
+                tab3: ['assignmentsSection'],
+            },
+        },
+        missions: {
+            tabs: [
+                { id: 'tab1', label: 'Détails' },
+                { id: 'tab2', label: 'KPI' },
+                { id: 'tab3', label: 'Liens & Interfaces' },
+            ],
+            sections: {
+                tab1: ['mission-detailsSection'],
+                tab2: ['kpiSection'],
+                tab3: ['mission-linksSection'],
+            },
+        },
+        actifs: {
+            tabs: [
+                { id: 'tab1', label: 'Détails' },
+                { id: 'tab2', label: 'Arborescence' },
+                { id: 'tab3', label: 'Maintenance' },
+                { id: 'tab4', label: 'Liens' },
+            ],
+            sections: {
+                tab1: ['actif-detailsSection'],
+                tab2: ['treeSection'],
+                tab3: ['maintenanceSection'],
+                tab4: ['actif-linksSection'],
+            },
+        },
+        incidents: {
+            tabs: [
+                { id: 'tab1', label: 'Détails' },
+                { id: 'tab2', label: 'Tâches' },
+                { id: 'tab3', label: 'Liens' },
+            ],
+            sections: {
+                tab1: ['incident-detailsSection'],
+                tab2: ['tasksSection'],
+                tab3: ['incident-linksSection'],
+            },
+        },
+        ameliorations: {
+            tabs: [
+                { id: 'tab1', label: 'Détails' },
+                { id: 'tab2', label: 'Plan d\'actions' },
+                { id: 'tab3', label: 'Liens' },
+            ],
+            sections: {
+                tab1: ['amelioration-detailsSection'],
+                tab2: ['amelioration-actionsSection'],
+                tab3: ['amelioration-linksSection'],
+            },
+        },
+        processus: {
+            tabs: [
+                { id: 'tab1', label: 'Détails' },
+                { id: 'tab2', label: 'SIPOC' },
+                { id: 'tab3', label: 'Liens' },
+            ],
+            sections: {
+                tab1: ['processus-detailsSection'],
+                tab2: ['sipocSection'],
+                tab3: ['processus-linksSection'],
+            },
+        },
+         competences: {
+            tabs: [
+                { id: 'tab1', label: 'Détails' },
+            ],
+            sections: {
+                tab1: [],
+            },
+        },
+         indicateurs: {
+            tabs: [
+                { id: 'tab1', label: 'Graphique' },
+            ],
+            sections: {
+                tab1: [],
+            },
+        },
+        'normes-lois': {
+            tabs: [
+                { id: 'tab1', label: 'Exigences' },
+            ],
+            sections: {
+                tab1: [],
+            },
+        },
+        actualites: {
+            tabs: [
+                { id: 'tab1', label: 'Contenu' },
+            ],
+            sections: {
+                tab1: [],
+            },
+        },
+        todo: {
+             tabs: [
+                { id: 'tab1', label: 'Détails' },
+            ],
+            sections: {
+                tab1: [],
+            },
+        }
+    }
 };
 
 // --- STATE & CONTEXT TYPES ---

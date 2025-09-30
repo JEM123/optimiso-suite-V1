@@ -53,7 +53,7 @@ export const EntitiesPage: React.FC<EntitiesPageProps> = ({ onShowRelations }) =
     const { entites } = data as { entites: Entite[] };
 
     const [viewMode, setViewMode] = useState<'list' | 'list-fiche'>('list-fiche');
-    const [displayMode, setDisplayMode] = useState<'flat' | 'tree'>('tree');
+    const [displayMode, setDisplayMode] = useState<'tree' | 'flat'>('tree');
     const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');
     const [expandedNodes, setExpandedNodes] = useState<Set<string>>(new Set(entites.filter(e => !e.parentId).map(e => e.id)));
     
@@ -67,7 +67,7 @@ export const EntitiesPage: React.FC<EntitiesPageProps> = ({ onShowRelations }) =
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editingEntity, setEditingEntity] = useState<Partial<Entite> | null>(null);
 
-    const [dividerPosition, setDividerPosition] = useState(40);
+    const [dividerPosition, setDividerPosition] = useState(35);
     const [isResizing, setIsResizing] = useState(false);
     const containerRef = useRef<HTMLDivElement>(null);
     const viewModeRef = useRef<HTMLDivElement>(null);
@@ -92,14 +92,17 @@ export const EntitiesPage: React.FC<EntitiesPageProps> = ({ onShowRelations }) =
         });
     };
 
-    const renderableEntities = useMemo(() => {
-        const filtered = entites.filter(e =>
+    const filteredEntities = useMemo(() => {
+        return entites.filter(e =>
             (e.nom.toLowerCase().includes(searchTerm.toLowerCase()) || e.reference.toLowerCase().includes(searchTerm.toLowerCase())) &&
             (filters.type === 'all' || e.type === filters.type) &&
             (filters.statut === 'all' || e.statut === filters.statut)
         );
+    }, [entites, searchTerm, filters]);
 
-        const sorted = [...filtered].sort((a, b) => {
+
+    const renderableEntities = useMemo(() => {
+        const sorted = [...filteredEntities].sort((a, b) => {
             if (sortDirection === 'asc') return a.nom.localeCompare(b.nom);
             return b.nom.localeCompare(a.nom);
         });
@@ -111,7 +114,7 @@ export const EntitiesPage: React.FC<EntitiesPageProps> = ({ onShowRelations }) =
         const result: (Entite & { level: number })[] = [];
         const renderNode = (id: string, level: number) => {
             const entity = entites.find(e => e.id === id);
-            if (entity && filtered.some(f => f.id === id)) {
+            if (entity && filteredEntities.some(f => f.id === id)) {
                 result.push({ ...entity, level });
                 if (expandedNodes.has(id)) {
                     const children = entityChildrenMap.get(id) || [];
@@ -125,12 +128,12 @@ export const EntitiesPage: React.FC<EntitiesPageProps> = ({ onShowRelations }) =
             }
         };
         
-        const rootNodes = sorted.filter(e => !e.parentId || !filtered.some(f => f.id === e.parentId));
+        const rootNodes = sorted.filter(e => !e.parentId || !filteredEntities.some(f => f.id === e.parentId));
         rootNodes.forEach(node => renderNode(node.id, 0));
         
         return result;
 
-    }, [entites, searchTerm, filters, sortDirection, displayMode, expandedNodes, entityChildrenMap]);
+    }, [entites, filteredEntities, sortDirection, displayMode, expandedNodes, entityChildrenMap]);
 
     
     const handleRowClick = (entity: Entite) => {
@@ -156,7 +159,10 @@ export const EntitiesPage: React.FC<EntitiesPageProps> = ({ onShowRelations }) =
     const handleMouseMove = useCallback((e: MouseEvent) => {
         if (isResizing && containerRef.current) {
             const rect = containerRef.current.getBoundingClientRect();
-            setDividerPosition(((e.clientX - rect.left) / rect.width) * 100);
+            const newPos = ((e.clientX - rect.left) / rect.width) * 100;
+            if (newPos > 20 && newPos < 80) { // Constraint resizing
+                setDividerPosition(newPos);
+            }
         }
     }, [isResizing]);
     const handleMouseUp = useCallback(() => setIsResizing(false), []);
@@ -179,14 +185,14 @@ export const EntitiesPage: React.FC<EntitiesPageProps> = ({ onShowRelations }) =
     }, []);
 
     const listPanel = (
-        <div className="bg-white flex flex-col h-full">
+        <div className="bg-white flex flex-col h-full border-r">
             <div className="p-2 border-b space-y-2">
                 <div className="flex items-center gap-2">
                      <div className="flex bg-gray-100 rounded-lg p-0.5">
-                        <button onClick={() => setDisplayMode('flat')} className={`p-1 rounded-md ${displayMode === 'flat' ? 'bg-white shadow-sm' : ''}`}><List className="h-4 w-4"/></button>
-                        <button onClick={() => setDisplayMode('tree')} className={`p-1 rounded-md ${displayMode === 'tree' ? 'bg-white shadow-sm' : ''}`}><Network className="h-4 w-4"/></button>
+                        <button onClick={() => setDisplayMode('list')} className={`p-1 rounded-md ${displayMode === 'list' ? 'bg-white shadow-sm' : ''}`} title="Vue Liste"><List className="h-4 w-4"/></button>
+                        <button onClick={() => setDisplayMode('tree')} className={`p-1 rounded-md ${displayMode === 'tree' ? 'bg-white shadow-sm' : ''}`} title="Vue Arborescente"><Network className="h-4 w-4"/></button>
                     </div>
-                    <button onClick={() => setSortDirection(s => s === 'asc' ? 'desc' : 'asc')} className="p-1.5 border rounded-lg hover:bg-gray-50"><ArrowUpDown className="h-4 w-4"/></button>
+                    <button onClick={() => setSortDirection(s => s === 'asc' ? 'desc' : 'asc')} className="p-1.5 border rounded-lg hover:bg-gray-50" title="Trier A-Z"><ArrowUpDown className="h-4 w-4"/></button>
                     <div className="flex-grow" />
                     <button onClick={() => handleOpenModal()} className="px-3 py-1.5 border rounded-lg text-sm font-medium hover:bg-gray-50">Nouveau</button>
                     <button onClick={() => setIsFilterVisible(!isFilterVisible)} className={`p-2 border rounded-lg ${isFilterVisible ? 'bg-blue-50 text-blue-600' : 'bg-white hover:bg-gray-50'}`} aria-label="Filtrer"><Filter className="h-4 w-4" /></button>
@@ -204,10 +210,6 @@ export const EntitiesPage: React.FC<EntitiesPageProps> = ({ onShowRelations }) =
             )}
             <div className="flex-1 overflow-y-auto">
                 <table className="min-w-full">
-                    <thead className="bg-gray-100 sticky top-0 z-10"><tr>
-                        <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Nom</th>
-                        <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Référence</th>
-                    </tr></thead>
                     <tbody className="divide-y divide-gray-200">
                         {renderableEntities.map(entity => (
                              <EntityRow 
@@ -234,12 +236,11 @@ export const EntitiesPage: React.FC<EntitiesPageProps> = ({ onShowRelations }) =
         <div className="h-full flex flex-col bg-gray-50">
             <div className="p-4 border-b bg-white">
                 <div className="flex justify-between items-center">
-                    <h1 className="text-2xl font-bold text-gray-900 flex items-center">Entités <span className="ml-3 px-2.5 py-1 bg-gray-200 text-gray-700 rounded-full text-sm font-medium">{renderableEntities.length}</span></h1>
+                    <h1 className="text-2xl font-bold text-gray-900 flex items-center">Entités <span className="ml-3 px-2.5 py-1 bg-gray-100 text-gray-600 rounded-full text-sm font-medium">{entites.length}</span></h1>
                      <div className="flex items-center gap-4">
                         <button className="p-2 border rounded-lg hover:bg-gray-50" aria-label="Filtrer"><Filter className="h-4 w-4" /></button>
                         <div className="relative" ref={viewModeRef}>
                             <button onClick={() => setIsViewModeDropdownOpen(prev => !prev)} className="flex items-center gap-2 px-3 py-1.5 border rounded-lg bg-white hover:bg-gray-50 text-sm">
-                                <Eye className="h-4 w-4" />
                                 <span>{viewMode === 'list' ? 'Liste' : 'Liste + Fiche'}</span>
                                 <ChevronDown className="h-4 w-4" />
                             </button>
@@ -254,14 +255,14 @@ export const EntitiesPage: React.FC<EntitiesPageProps> = ({ onShowRelations }) =
                 </div>
             </div>
             <div ref={containerRef} className="flex-1 flex overflow-hidden">
-                {viewMode === 'list' && <div className="w-full overflow-y-auto">{listPanel}</div>}
+                {viewMode === 'list' && <div className="w-full h-full">{listPanel}</div>}
                 {viewMode === 'list-fiche' && (
                     <>
-                        <div style={{ width: `${dividerPosition}%` }} className="overflow-y-auto flex-shrink-0">{listPanel}</div>
+                        <div style={{ width: `${dividerPosition}%` }} className="h-full flex-shrink-0">{listPanel}</div>
                         <div onMouseDown={handleMouseDown} className="w-1.5 cursor-col-resize bg-gray-200 hover:bg-blue-500 transition-colors flex-shrink-0" />
-                        <div style={{ width: `${100 - dividerPosition}%` }} className="overflow-y-auto flex-shrink-0">
+                        <div style={{ width: `${100 - dividerPosition}%` }} className="h-full flex-shrink-0 overflow-y-auto">
                             {selectedEntity ? (
-                                <EntityDetailPanel entity={selectedEntity} allEntities={entites} onClose={() => setSelectedEntity(null)} onEdit={handleOpenModal} onAddSub={() => {}} onReorder={() => {}}/>
+                                <EntityDetailPanel entity={selectedEntity} onClose={() => setSelectedEntity(null)} onEdit={handleOpenModal} onAddSub={() => {}} onReorder={() => {}} allEntities={entites}/>
                             ) : (
                                 <div className="flex h-full items-center justify-center text-center text-gray-500 bg-white"><p>Sélectionnez une entité pour voir ses détails.</p></div>
                             )}

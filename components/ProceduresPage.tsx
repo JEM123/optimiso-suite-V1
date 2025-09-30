@@ -1,5 +1,4 @@
 
-
 import React, { useState, useMemo, useCallback, useEffect, useRef } from 'react';
 import { useDataContext } from '../context/AppContext';
 import type { Procedure, EtapeProcedure, ProcedureLien } from '../types';
@@ -11,35 +10,8 @@ import PageHeader from './PageHeader';
 import ProcedureStepDetailPanel from './ProcedureStepDetailPanel';
 import ObjectPalette from './ObjectPalette';
 
-const PROC_STATUS_COLORS: Record<Procedure['statut'], string> = {
-    'brouillon': 'bg-gray-200 text-gray-800', 'en_cours': 'bg-yellow-100 text-yellow-800',
-    'valide': 'bg-green-100 text-green-800', 'archive': 'bg-red-100 text-red-800',
-    'à_créer': 'bg-cyan-100 text-cyan-800', 'en_recrutement': 'bg-yellow-100 text-yellow-800',
-    'gelé': 'bg-purple-100 text-purple-800', 'figé': 'bg-indigo-100 text-indigo-800',
-    'planifié': 'bg-blue-100 text-blue-800', 'terminé': 'bg-green-100 text-green-800',
-    'non-conforme': 'bg-red-200 text-red-900', 'clôturé': 'bg-gray-300 text-gray-800',
-    'a_faire': 'bg-yellow-100 text-yellow-800', 'en_retard': 'bg-red-200 text-red-900',
-    'en_validation': 'bg-yellow-100 text-yellow-800',
-    'publie': 'bg-green-100 text-green-800',
-    'rejete': 'bg-red-100 text-red-800',
-};
-
-const newProcedureTemplate = (): Partial<Procedure> => ({
-    nom: 'Nouvelle Procédure',
-    reference: `PROC-${Date.now().toString().slice(-4)}`,
-    statut: 'brouillon',
-    version: '1.0',
-    actif: true,
-    etapes: [],
-    liens: [],
-    auteurId: 'pers-1',
-    dateCreation: new Date(),
-    dateModification: new Date(),
-    acteursPosteIds: [],
-    documentIds: [],
-    risqueIds: [],
-    controleIds: [],
-});
+const PROC_STATUS_COLORS: Record<Procedure['statut'], string> = { 'brouillon': 'bg-gray-200 text-gray-800', 'en_cours': 'bg-yellow-100 text-yellow-800', 'valide': 'bg-green-100 text-green-800', 'archive': 'bg-red-100 text-red-800', 'à_créer': 'bg-cyan-100 text-cyan-800', 'en_recrutement': 'bg-yellow-100 text-yellow-800', 'gelé': 'bg-purple-100 text-purple-800', 'figé': 'bg-indigo-100 text-indigo-800', 'planifié': 'bg-blue-100 text-blue-800', 'terminé': 'bg-green-100 text-green-800', 'non-conforme': 'bg-red-200 text-red-900', 'clôturé': 'bg-gray-300 text-gray-800', 'a_faire': 'bg-yellow-100 text-yellow-800', 'en_retard': 'bg-red-200 text-red-900', 'en_validation': 'bg-yellow-100 text-yellow-800', 'publie': 'bg-green-100 text-green-800', 'rejete': 'bg-red-100 text-red-800', };
+const newProcedureTemplate = (): Partial<Procedure> => ({ nom: 'Nouvelle Procédure', reference: `PROC-${Date.now().toString().slice(-4)}`, statut: 'brouillon', version: '1.0', actif: true, etapes: [], liens: [], auteurId: 'pers-1', dateCreation: new Date(), dateModification: new Date(), acteursPosteIds: [], documentIds: [], risqueIds: [], controleIds: [], });
 
 interface ProceduresPageProps {
     onShowRelations: (entity: any, entityType: string) => void;
@@ -51,67 +23,45 @@ const validateProcedure = (procedure: Procedure): string[] => {
     const issues: string[] = [];
     const { etapes, liens } = procedure;
 
-    if (etapes.length === 0) {
+    if (!etapes || etapes.length === 0) {
         issues.push("Alerte : Le diagramme est vide.");
         return issues;
     }
 
     const startNodes = etapes.filter(e => e.type === 'start');
-    if (startNodes.length === 0) {
-        issues.push("Erreur : Aucun point de départ ('start') n'a été trouvé.");
-    }
-    if (startNodes.length > 1) {
-        issues.push("Alerte : Plusieurs points de départ ('start') ont été trouvés.");
-    }
+    if (startNodes.length === 0) issues.push("Erreur : Aucun point de départ ('start') n'a été trouvé.");
+    if (startNodes.length > 1) issues.push("Alerte : Plusieurs points de départ ('start') ont été trouvés.");
 
     const endNodes = etapes.filter(e => e.type === 'end');
-    if (endNodes.length === 0) {
-        issues.push("Alerte : Aucun point de fin ('end') n'a été trouvé.");
-    }
+    if (endNodes.length === 0) issues.push("Alerte : Aucun point de fin ('end') n'a été trouvé.");
     
     etapes.forEach(etape => {
         const hasIncoming = liens.some(l => l.target === etape.id);
         const hasOutgoing = liens.some(l => l.source === etape.id);
 
-        if (etape.type === 'start' && hasIncoming) {
-             issues.push(`Alerte : Le point de départ '${etape.libelle}' ne devrait pas avoir de connexion entrante.`);
-        }
-        if (etape.type === 'start' && !hasOutgoing) {
-            issues.push(`Alerte : Le point de départ '${etape.libelle}' n'a pas de sortie.`);
-        }
+        if (etape.type === 'start' && hasIncoming) issues.push(`Alerte : Le point de départ '${etape.libelle}' ne devrait pas avoir de connexion entrante.`);
+        if (etape.type === 'start' && !hasOutgoing) issues.push(`Alerte : Le point de départ '${etape.libelle}' n'a pas de sortie.`);
 
-        if (etape.type === 'end' && hasOutgoing) {
-             issues.push(`Alerte : Le point de fin '${etape.libelle}' ne devrait pas avoir de connexion sortante.`);
-        }
-        if (etape.type === 'end' && !hasIncoming) {
-            issues.push(`Alerte : Le point de fin '${etape.libelle}' n'est jamais atteint.`);
-        }
+        if (etape.type === 'end' && hasOutgoing) issues.push(`Alerte : Le point de fin '${etape.libelle}' ne devrait pas avoir de connexion sortante.`);
+        if (etape.type === 'end' && !hasIncoming) issues.push(`Alerte : Le point de fin '${etape.libelle}' n'est jamais atteint.`);
         
-        if (etape.type === 'step' || etape.type === 'decision') {
-            if (!hasIncoming && !startNodes.some(start => liens.some(l => l.source === start.id && l.target === etape.id))) {
-                 if (!liens.some(l => l.target === etape.id)) {
-                    issues.push(`Alerte : L'étape '${etape.libelle}' n'a pas d'entrée.`);
-                 }
+        if ((etape.type === 'step' || etape.type === 'decision') && !hasIncoming) {
+            if (!startNodes.some(s => s.id === etape.id)) { // An un-connected start node is fine
+                issues.push(`Alerte : L'étape '${etape.libelle}' n'a pas d'entrée (orpheline).`);
             }
         }
         
-        if (etape.type === 'step') {
-            if (!hasOutgoing) {
+        if (etape.type === 'step' && !hasOutgoing) {
+             if (!endNodes.some(e => e.id === etape.id)) { // An un-connected end node is fine
                 issues.push(`Alerte : L'étape '${etape.libelle}' n'a pas de sortie.`);
             }
         }
         
         if (etape.type === 'decision') {
             const outgoing = liens.filter(l => l.source === etape.id);
-            if (outgoing.length === 0) {
-                 issues.push(`Alerte : La décision '${etape.libelle}' n'a pas de sortie.`);
-            }
-            if (!outgoing.some(l => l.sourceHandle === 'yes')) {
-                issues.push(`Alerte : La décision '${etape.libelle}' n'a pas de branche 'Oui'.`);
-            }
-            if (!outgoing.some(l => l.sourceHandle === 'no')) {
-                issues.push(`Alerte : La décision '${etape.libelle}' n'a pas de branche 'Non'.`);
-            }
+            if (outgoing.length === 0) issues.push(`Alerte : La décision '${etape.libelle}' n'a pas de sortie.`);
+            if (outgoing.length > 0 && !outgoing.some(l => l.sourceHandle === 'yes')) issues.push(`Alerte : La décision '${etape.libelle}' n'a pas de branche 'Oui'.`);
+            if (outgoing.length > 0 && !outgoing.some(l => l.sourceHandle === 'no')) issues.push(`Alerte : La décision '${etape.libelle}' n'a pas de branche 'Non'.`);
         }
     });
 
@@ -323,32 +273,22 @@ const ProceduresPageContent: React.FC<ProceduresPageProps> = ({ onShowRelations,
 
     const handleOpenProcModal = (proc?: Procedure) => { setEditingProcedure(proc || newProcedureTemplate()); setProcModalOpen(true); };
     
-const handleSaveProcedure = (procToSave: Partial<Procedure>) => {
-    // This creates a complete procedure object by taking defaults from the template
-    // and overwriting them with any values provided from the form modal.
-    const fullProc: Procedure = {
-        ...newProcedureTemplate(),
-        // FIX: Ensure procToSave is an object before spreading to prevent "Spread types may only be created from object types" error.
-        ...(procToSave || {}),
-    } as Procedure;
-    
-    // Ensure array properties are not null or undefined, which can happen with Partial types.
-    fullProc.etapes = fullProc.etapes ?? [];
-    fullProc.liens = fullProc.liens ?? [];
-    fullProc.acteursPosteIds = fullProc.acteursPosteIds ?? [];
-    fullProc.documentIds = fullProc.documentIds ?? [];
-    fullProc.risqueIds = fullProc.risqueIds ?? [];
-    fullProc.controleIds = fullProc.controleIds ?? [];
-    
-    actions.saveProcedure(fullProc).then(() => {
-        const savedId = procToSave?.id; // We can only know the ID if it was an edit
-        if (savedId) {
-             setSelectedProcedureId(savedId);
+    // FIX: Removed explicit type annotation from `fullProc` to avoid spread operator error with type-only imports.
+    // The type is checked via casting when calling the action.
+    const handleSaveProcedure = (procToSave: Procedure) => {
+        const fullProc = {
+            ...newProcedureTemplate(),
+            ...procToSave,
+            id: procToSave.id || `proc-${Date.now()}`,
+            etapes: procToSave.etapes || [],
+            liens: procToSave.liens || [],
+        };
+        actions.saveProcedure(fullProc as Procedure);
+        setProcModalOpen(false);
+        if (!selectedProcedureId) {
+             setSelectedProcedureId(fullProc.id);
         }
-        // If it was a new procedure, we can't know the new ID from the action currently.
-    });
-    setProcModalOpen(false);
-};
+    };
 
     const handleDeleteProcedure = (procId: string) => {
         if (window.confirm("Êtes-vous sûr de vouloir supprimer cette procédure ?")) {
@@ -452,19 +392,14 @@ const handleSaveProcedure = (procToSave: Partial<Procedure>) => {
                 </div>
             </div>
             
-            <ProcedureFormModal isOpen={isProcModalOpen} onClose={() => setProcModalOpen(false)} onSave={handleSaveProcedure as (p: Procedure) => void} procedure={editingProcedure} />
+            <ProcedureFormModal isOpen={isProcModalOpen} onClose={() => setProcModalOpen(false)} onSave={handleSaveProcedure} procedure={editingProcedure} />
         </div>
     );
 };
 
-
 const ProceduresPage: React.FC<ProceduresPageProps> = (props) => (
     <ReactFlowProvider>
-        <ProceduresPageContent 
-            onShowRelations={props.onShowRelations}
-            onShowValidation={props.onShowValidation}
-            onShowImpactAnalysis={props.onShowImpactAnalysis}
-        />
+        <ProceduresPageContent {...props} />
     </ReactFlowProvider>
 );
 

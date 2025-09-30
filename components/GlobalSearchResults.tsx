@@ -1,50 +1,39 @@
-
-
 import React from 'react';
 import { useAppContext } from '../context/AppContext';
 import { FileText, User, Briefcase, AlertTriangle, HelpCircle } from 'lucide-react';
 import type { Document, Personne, Poste, Risque } from '../types';
 
-interface SearchResult {
-    id: string;
-    type: 'document' | 'personne' | 'poste' | 'risque';
-    nom?: string;
-    intitule?: string;
-    prenom?: string;
-}
+type SearchResultItem = (Document | Personne | Poste | Risque) & { type: 'document' | 'personne' | 'poste' | 'risque' };
 
 interface GlobalSearchResultsProps {
-    results: SearchResult[];
+    results: SearchResultItem[];
     onResultClick: () => void;
 }
 
-const ICONS: Record<SearchResult['type'], React.ElementType> = {
+const ICONS: Record<SearchResultItem['type'], React.ElementType> = {
     document: FileText,
     personne: User,
     poste: Briefcase,
     risque: AlertTriangle
 };
 
-const MODULE_MAP: Record<SearchResult['type'], string> = {
+const MODULE_MAP: Record<SearchResultItem['type'], string> = {
     document: 'documents',
     personne: 'personnes',
     poste: 'postes',
     risque: 'risques'
 };
 
-const getName = (item: SearchResult) => {
+const getName = (item: SearchResultItem) => {
     switch(item.type) {
         case 'document':
         case 'risque':
-            // FIX: Use 'as unknown as ...' for type casting to avoid TS errors about insufficient overlap.
-            return (item as unknown as Document | Risque).nom;
+            return (item as Document | Risque).nom;
         case 'personne':
-            // FIX: Use 'as unknown as ...' for type casting to avoid TS errors about insufficient overlap.
-            const p = item as unknown as Personne;
+            const p = item as Personne;
             return `${p.prenom} ${p.nom}`;
         case 'poste':
-            // FIX: Use 'as unknown as ...' for type casting to avoid TS errors about insufficient overlap.
-            return (item as unknown as Poste).intitule;
+            return (item as Poste).intitule;
         default:
             return 'Résultat';
     }
@@ -53,8 +42,7 @@ const getName = (item: SearchResult) => {
 const GlobalSearchResults: React.FC<GlobalSearchResultsProps> = ({ results, onResultClick }) => {
     const { handleNotificationClick } = useAppContext();
 
-    const handleClick = (item: SearchResult) => {
-        // FIX: Corrected typo from 'constmoduleId' to 'const moduleId'.
+    const handleClick = (item: SearchResultItem) => {
         const moduleId = MODULE_MAP[item.type];
         // We can reuse the notification click logic for navigation
         handleNotificationClick({
@@ -63,7 +51,6 @@ const GlobalSearchResults: React.FC<GlobalSearchResultsProps> = ({ results, onRe
             title: '',
             description: '',
             date: new Date(),
-            // FIX: 'moduleId' is now correctly defined and in scope.
             targetModule: moduleId,
             targetId: item.id
         });

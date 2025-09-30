@@ -1,8 +1,11 @@
-import React, { useState, useMemo } from 'react';
-import type { Personne, Competence, Poste, Entite, Role, EvaluationCompetence } from '../types';
-import { useDataContext } from '../context/AppContext';
-import { X, Edit, Info, Briefcase, Building, KeyRound, History, TrendingUp, Link as LinkIcon } from 'lucide-react';
-import CompetenceRadarChart from './CompetenceRadarChart';
+import React, { useState } from 'react';
+import type { Personne } from '../types';
+import { X, Edit, Info, Briefcase, KeyRound, History, TrendingUp, Link as LinkIcon } from 'lucide-react';
+import PersonGeneralInfoSection from './sections/personne/PersonGeneralInfoSection';
+import PersonAffectationsSection from './sections/personne/PersonAffectationsSection';
+import PersonCompetencesSection from './sections/personne/PersonCompetencesSection';
+import PersonAccessSection from './sections/personne/PersonAccessSection';
+import PersonHistorySection from './sections/personne/PersonHistorySection';
 
 interface PersonDetailPanelProps {
     person: Personne;
@@ -12,55 +15,8 @@ interface PersonDetailPanelProps {
     onShowRelations: (entity: any, entityType: string) => void;
 }
 
-const DetailItem: React.FC<{ label: string; value: React.ReactNode }> = ({ label, value }) => (
-    <div>
-        <p className="text-sm font-semibold text-gray-700">{label}</p>
-        <div className="text-sm text-gray-900 mt-1">{value || '-'}</div>
-    </div>
-);
-
-const RelationItem: React.FC<{ item: any; icon: React.ElementType, onClick: () => void }> = ({ item, icon: Icon, onClick }) => (
-    <button onClick={onClick} className="w-full flex items-center space-x-3 p-2 bg-white border rounded-md hover:bg-gray-50 cursor-pointer text-left">
-        <Icon className="h-5 w-5 text-gray-500 flex-shrink-0" />
-        <div className="flex-1 min-w-0">
-            <p className="text-sm font-medium text-gray-800 truncate">{item.nom || item.intitule}</p>
-            <p className="text-xs text-gray-500">{item.reference}</p>
-        </div>
-    </button>
-);
-
-
 const PersonDetailPanel: React.FC<PersonDetailPanelProps> = ({ person, onClose, onEdit, onNavigate, onShowRelations }) => {
-    const { data } = useDataContext();
     const [activeTab, setActiveTab] = useState('info');
-    
-    const { postes: allPostes, entites, roles, competences: allCompetences, evaluationsCompetences } = data as {
-        postes: Poste[], entites: Entite[], roles: Role[], competences: Competence[], evaluationsCompetences: EvaluationCompetence[]
-    };
-
-    const postes = allPostes.filter(p => person.posteIds.includes(p.id));
-    
-    const personCompetences = useMemo(() => {
-        const required = new Map<string, { competence: Competence, niveauAttendu: number }>();
-        person.posteIds.forEach(posteId => {
-            const poste = allPostes.find(p => p.id === posteId);
-            
-            allCompetences.forEach(competence => {
-                const requis = competence.postesRequis.find(pr => pr.posteId === posteId);
-                if(requis && !required.has(competence.id)) {
-                    required.set(competence.id, { competence, niveauAttendu: requis.niveauAttendu });
-                }
-            });
-        });
-
-        return Array.from(required.values()).map(req => {
-            const evaluation = evaluationsCompetences.find(e => e.personneId === person.id && e.competenceId === req.competence.id);
-            return {
-                ...req,
-                niveauEvalue: evaluation?.niveauEvalue,
-            };
-        });
-    }, [person.id, person.posteIds, allPostes, allCompetences, evaluationsCompetences]);
     
     return (
         <div className="w-full max-w-md bg-white border-l shadow-lg flex flex-col h-full absolute right-0 top-0 md:relative animate-slide-in-right">
@@ -94,83 +50,11 @@ const PersonDetailPanel: React.FC<PersonDetailPanelProps> = ({ person, onClose, 
             </div>
 
             <div className="flex-grow p-4 overflow-y-auto bg-gray-50/50">
-                {activeTab === 'info' && (
-                    <div className="space-y-4">
-                        <DetailItem label="Profil" value={<span className="capitalize">{person.profil}</span>} />
-                        <DetailItem label="Statut" value={<span className="capitalize">{person.statut}</span>} />
-                        <DetailItem label="Synchronisé Azure AD" value={person.synchroniseAzureAD ? 'Oui' : 'Non'} />
-                        <DetailItem label="Description" value={person.description} />
-                        
-                        {person.champsLibres && Object.keys(person.champsLibres).length > 0 && (
-                            <div className="pt-4 mt-4 border-t">
-                                <h4 className="text-base font-semibold text-gray-800 mb-3">Informations complémentaires</h4>
-                                <div className="space-y-3">
-                                    {Object.entries(person.champsLibres).map(([key, value]) => (
-                                        <DetailItem key={key} label={key} value={String(value)} />
-                                    ))}
-                                </div>
-                            </div>
-                        )}
-                    </div>
-                )}
-                {activeTab === 'affectations' && (
-                     <div className="space-y-4">
-                        <div>
-                            <h4 className="font-medium text-gray-700 mb-2">Postes Occupés ({postes.length})</h4>
-                            <div className="space-y-2">{postes.map(p => <RelationItem key={p.id} item={p} icon={Briefcase} onClick={() => onShowRelations(p, 'postes')} />)}</div>
-                        </div>
-                         <div>
-                            <h4 className="font-medium text-gray-700 mb-2">Entités de Rattachement ({person.entiteIds.length})</h4>
-                            <div className="space-y-2">{entites.filter(e => person.entiteIds.includes(e.id)).map(e => <RelationItem key={e.id} item={e} icon={Building} onClick={() => onShowRelations(e, 'entites')} />)}</div>
-                        </div>
-                    </div>
-                )}
-                {activeTab === 'competences' && (
-                    <div className="space-y-4">
-                        {personCompetences.length > 0 ? (
-                            <>
-                                <div className="h-64 p-4 bg-white rounded-lg border">
-                                    <CompetenceRadarChart competenceData={personCompetences} />
-                                </div>
-                                <div className="bg-white border rounded-md">
-                                    {personCompetences.map(({ competence, niveauAttendu, niveauEvalue }) => {
-                                        const gap = (niveauEvalue ?? -1) - niveauAttendu;
-                                        let color = 'text-gray-500';
-                                        if (niveauEvalue !== undefined) {
-                                            color = gap >= 0 ? 'text-green-600' : gap === -1 ? 'text-yellow-600' : 'text-red-600';
-                                        }
-                                        
-                                        return (
-                                             <div key={competence.id} className="p-3 border-b last:border-0 flex justify-between items-center">
-                                                <div>
-                                                    <p className="font-medium text-sm">{competence.nom}</p>
-                                                    <p className="text-xs text-gray-500">{competence.domaine}</p>
-                                                </div>
-                                                <div className={`text-sm font-bold ${color}`}>
-                                                    {niveauEvalue ?? 'N/A'} / {niveauAttendu}
-                                                </div>
-                                            </div>
-                                        );
-                                    })}
-                                </div>
-                            </>
-                        ) : (
-                            <p className="text-center text-sm text-gray-500 pt-4">Aucune compétence requise pour les postes de cette personne.</p>
-                        )}
-                    </div>
-                )}
-                 {activeTab === 'access' && (
-                    <div className="space-y-2">
-                         <h4 className="font-medium text-gray-700 mb-2">Rôles ({person.roleIds.length})</h4>
-                         {roles.filter(r => person.roleIds.includes(r.id)).map(r => <RelationItem key={r.id} item={r} icon={KeyRound} onClick={() => onShowRelations(r, 'roles')} />)}
-                    </div>
-                )}
-                {activeTab === 'history' && (
-                     <div className="space-y-3 text-sm">
-                        <div className="flex items-start space-x-3"><Info className="h-4 w-4 mt-0.5 text-gray-500"/><p>Créé par <strong>{(data.personnes as Personne[]).find(p=>p.id === person.auteurId)?.nom || 'system'}</strong> le {new Date(person.dateCreation).toLocaleDateString('fr-FR')}</p></div>
-                        <div className="flex items-start space-x-3"><Edit className="h-4 w-4 mt-0.5 text-gray-500"/><p>Modifié le {new Date(person.dateModification).toLocaleDateString('fr-FR')}</p></div>
-                    </div>
-                )}
+                {activeTab === 'info' && <PersonGeneralInfoSection person={person} />}
+                {activeTab === 'affectations' && <PersonAffectationsSection person={person} onShowRelations={onShowRelations} />}
+                {activeTab === 'competences' && <PersonCompetencesSection person={person} />}
+                {activeTab === 'access' && <PersonAccessSection person={person} onShowRelations={onShowRelations} />}
+                {activeTab === 'history' && <PersonHistorySection person={person} />}
             </div>
         </div>
     );
