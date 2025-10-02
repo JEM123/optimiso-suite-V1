@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import type { Risque } from '../types';
-import { useDataContext } from '../context/AppContext';
+import { useDataContext, useAppContext } from '../context/AppContext';
 import { X, Edit, Info, ShieldCheck, TrendingUp, BookOpen, History, FileText, Settings, CheckCircle, BarChart3, Link as LinkIcon } from 'lucide-react';
 
 interface RiskDetailPanelProps {
@@ -42,18 +42,24 @@ const EvaluationView: React.FC<{ title: string; evaluation: Risque['analyseInher
     );
 };
 
-const MasteryItem: React.FC<{ item: any, icon: React.ElementType, onClick: () => void }> = ({ item, icon: Icon, onClick }) => (
-    <button onClick={onClick} className="w-full flex items-center space-x-3 p-2 bg-white border rounded-md hover:bg-gray-50 text-left">
-        <Icon className="h-5 w-5 text-gray-500 flex-shrink-0" />
-        <div className="flex-1 min-w-0">
-            <p className="text-sm font-medium text-gray-800 truncate">{item.nom}</p>
-            <p className="text-xs text-gray-500">{item.reference}</p>
-        </div>
-    </button>
+const MasteryItem: React.FC<{ item: any, icon: React.ElementType, onNavigate: () => void, onShowRelations: () => void }> = ({ item, icon: Icon, onNavigate, onShowRelations }) => (
+    <div className="w-full flex items-center space-x-1 p-2 bg-white border rounded-md group">
+        <button onClick={onNavigate} className="flex-1 flex items-center space-x-3 text-left">
+            <Icon className="h-5 w-5 text-gray-500 flex-shrink-0" />
+            <div className="flex-1 min-w-0">
+                <p className="text-sm font-medium text-gray-800 truncate group-hover:text-blue-600">{item.nom}</p>
+                <p className="text-xs text-gray-500">{item.reference}</p>
+            </div>
+        </button>
+        <button onClick={onShowRelations} title="Vue 360°" className="p-1.5 hover:bg-gray-100 rounded-full">
+            <LinkIcon className="h-4 w-4 text-gray-500"/>
+        </button>
+    </div>
 );
 
 const RiskDetailPanel: React.FC<RiskDetailPanelProps> = ({ risque, onClose, onEdit, onShowRelations }) => {
     const { data } = useDataContext();
+    const { handleNotificationClick } = useAppContext();
     const [activeTab, setActiveTab] = useState('identification');
     
     const processus = (data.processus as any[]).find(p => p.id === risque.processusId);
@@ -62,6 +68,14 @@ const RiskDetailPanel: React.FC<RiskDetailPanelProps> = ({ risque, onClose, onEd
     const documents = (data.documents as any[]).filter(d => risque.documentMaitriseIds.includes(d.id));
     const procedures = (data.procedures as any[]).filter(p => risque.procedureMaitriseIds.includes(p.id));
     const indicateurs = (data.indicateurs as any[]).filter(i => risque.indicateurIds?.includes(i.id));
+
+    const navigateToItem = (moduleId: string, itemId: string) => {
+        handleNotificationClick({
+            id: `nav-${itemId}`, type: 'tache', title: '', description: '', date: new Date(),
+            targetModule: moduleId, targetId: itemId
+        });
+        onClose();
+    };
 
     return (
         <div className="w-full max-w-md bg-white border-l shadow-lg flex flex-col h-full absolute right-0 top-0 md:relative animate-slide-in-right">
@@ -119,19 +133,19 @@ const RiskDetailPanel: React.FC<RiskDetailPanelProps> = ({ risque, onClose, onEd
                     <div className="space-y-4">
                         <div>
                             <h4 className="font-semibold text-gray-800 mb-2 pb-2 border-b">Contrôles ({controles.length})</h4>
-                            <div className="space-y-2">{controles.map(c => <MasteryItem key={c.id} item={c} icon={CheckCircle} onClick={() => onShowRelations(c, 'controles')} />)}</div>
+                            <div className="space-y-2">{controles.map(c => <MasteryItem key={c.id} item={c} icon={CheckCircle} onNavigate={() => navigateToItem('controles', c.id)} onShowRelations={() => onShowRelations(c, 'controles')} />)}</div>
                         </div>
                          <div>
                             <h4 className="font-semibold text-gray-800 mb-2 pb-2 border-b">Documents ({documents.length})</h4>
-                            <div className="space-y-2">{documents.map(d => <MasteryItem key={d.id} item={d} icon={FileText} onClick={() => onShowRelations(d, 'documents')} />)}</div>
+                            <div className="space-y-2">{documents.map(d => <MasteryItem key={d.id} item={d} icon={FileText} onNavigate={() => navigateToItem('documents', d.id)} onShowRelations={() => onShowRelations(d, 'documents')} />)}</div>
                         </div>
                          <div>
                             <h4 className="font-semibold text-gray-800 mb-2 pb-2 border-b">Procédures ({procedures.length})</h4>
-                            <div className="space-y-2">{procedures.map(p => <MasteryItem key={p.id} item={p} icon={Settings} onClick={() => onShowRelations(p, 'procedures')} />)}</div>
+                            <div className="space-y-2">{procedures.map(p => <MasteryItem key={p.id} item={p} icon={Settings} onNavigate={() => navigateToItem('procedures', p.id)} onShowRelations={() => onShowRelations(p, 'procedures')} />)}</div>
                         </div>
                         <div>
                             <h4 className="font-semibold text-gray-800 mb-2 pb-2 border-b">Indicateurs ({indicateurs.length})</h4>
-                            <div className="space-y-2">{indicateurs.map(i => <MasteryItem key={i.id} item={i} icon={BarChart3} onClick={() => onShowRelations(i, 'indicateurs')} />)}</div>
+                            <div className="space-y-2">{indicateurs.map(i => <MasteryItem key={i.id} item={i} icon={BarChart3} onNavigate={() => navigateToItem('indicateurs', i.id)} onShowRelations={() => onShowRelations(i, 'indicateurs')} />)}</div>
                         </div>
                     </div>
                 )}

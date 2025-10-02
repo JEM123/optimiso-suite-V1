@@ -1,8 +1,7 @@
-
 import React, { useState, useEffect } from 'react';
 import type { Procedure, EtapeProcedure, Document, Risque, Controle, Poste } from '../types';
-import { useDataContext } from '../context/AppContext';
-import { X, Briefcase, Edit, AlertTriangle, CheckCircle, Save, Ban, FileText } from 'lucide-react';
+import { useAppContext, useDataContext } from '../context/AppContext';
+import { X, Briefcase, Edit, AlertTriangle, CheckCircle, Save, Ban, FileText, Link as LinkIcon } from 'lucide-react';
 
 interface ProcedureStepDetailPanelProps {
     etape: EtapeProcedure;
@@ -12,15 +11,21 @@ interface ProcedureStepDetailPanelProps {
     onSave: (etape: EtapeProcedure) => void;
 }
 
-const RelationItem: React.FC<{ item: any; icon: React.ElementType, onClick: () => void }> = ({ item, icon: Icon, onClick }) => (
-    <button onClick={onClick} className="w-full flex items-center space-x-3 p-2 bg-white border rounded-md hover:bg-gray-50 text-left">
-        <Icon className="h-5 w-5 text-gray-500 flex-shrink-0" />
-        <div className="flex-1 min-w-0">
-            <p className="text-sm font-medium text-gray-800 truncate">{item.nom}</p>
-            <p className="text-xs text-gray-500">{item.reference}</p>
-        </div>
-    </button>
+const RelationItem: React.FC<{ item: any; icon: React.ElementType, onNavigate: () => void, onShowRelations: () => void }> = ({ item, icon: Icon, onNavigate, onShowRelations }) => (
+    <div className="w-full flex items-center space-x-1 p-2 bg-white border rounded-md group">
+        <button onClick={onNavigate} className="flex-1 flex items-center space-x-3 text-left">
+            <Icon className="h-5 w-5 text-gray-500 flex-shrink-0" />
+            <div className="flex-1 min-w-0">
+                <p className="text-sm font-medium text-gray-800 truncate group-hover:text-blue-600">{item.nom}</p>
+                <p className="text-xs text-gray-500">{item.reference}</p>
+            </div>
+        </button>
+        <button onClick={onShowRelations} title="Vue 360°" className="p-1.5 hover:bg-gray-100 rounded-full">
+            <LinkIcon className="h-4 w-4 text-gray-500"/>
+        </button>
+    </div>
 );
+
 
 const FormInputClasses = "block w-full text-sm text-gray-800 bg-white border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-300 focus:border-transparent transition-colors";
 
@@ -46,6 +51,7 @@ const MultiSelect: React.FC<{ items: any[], selectedIds: string[], onChange: (id
 
 const ProcedureStepDetailPanel: React.FC<ProcedureStepDetailPanelProps> = ({ etape, procedure, onClose, onShowRelations, onSave }) => {
     const { data } = useDataContext();
+    const { handleNotificationClick } = useAppContext();
     const [isEditing, setIsEditing] = useState(false);
     const [formData, setFormData] = useState<EtapeProcedure>(etape);
 
@@ -53,6 +59,14 @@ const ProcedureStepDetailPanel: React.FC<ProcedureStepDetailPanelProps> = ({ eta
         setFormData(etape);
         setIsEditing(false); // Reset editing state when step changes
     }, [etape]);
+
+    const navigateToItem = (moduleId: string, itemId: string) => {
+        handleNotificationClick({
+            id: `nav-${itemId}`, type: 'tache', title: '', description: '', date: new Date(),
+            targetModule: moduleId, targetId: itemId
+        });
+        onClose();
+    };
     
     const handleSave = () => {
         onSave(formData);
@@ -145,15 +159,15 @@ const ProcedureStepDetailPanel: React.FC<ProcedureStepDetailPanelProps> = ({ eta
                     <>
                         <div>
                             <h4 className="font-semibold text-gray-800 mb-2 flex items-center gap-2"><FileText className="h-4 w-4" />Documents de référence ({documents.length})</h4>
-                            <div className="space-y-2">{documents.map(doc => <RelationItem key={doc.id} item={doc} icon={FileText} onClick={() => onShowRelations(doc, 'documents')} />)}</div>
+                            <div className="space-y-2">{documents.map(doc => <RelationItem key={doc.id} item={doc} icon={FileText} onNavigate={() => navigateToItem('documents', doc.id)} onShowRelations={() => onShowRelations(doc, 'documents')} />)}</div>
                         </div>
                         <div>
                             <h4 className="font-semibold text-gray-800 mb-2 flex items-center gap-2"><AlertTriangle className="h-4 w-4" />Risques liés ({risques.length})</h4>
-                            <div className="space-y-2">{risques.map(risk => <RelationItem key={risk.id} item={risk} icon={AlertTriangle} onClick={() => onShowRelations(risk, 'risques')} />)}</div>
+                            <div className="space-y-2">{risques.map(risk => <RelationItem key={risk.id} item={risk} icon={AlertTriangle} onNavigate={() => navigateToItem('risques', risk.id)} onShowRelations={() => onShowRelations(risk, 'risques')} />)}</div>
                         </div>
                         <div>
                             <h4 className="font-semibold text-gray-800 mb-2 flex items-center gap-2"><CheckCircle className="h-4 w-4" />Contrôles ({controles.length})</h4>
-                            <div className="space-y-2">{controles.map(ctrl => <RelationItem key={ctrl.id} item={ctrl} icon={CheckCircle} onClick={() => onShowRelations(ctrl, 'controles')} />)}</div>
+                            <div className="space-y-2">{controles.map(ctrl => <RelationItem key={ctrl.id} item={ctrl} icon={CheckCircle} onNavigate={() => navigateToItem('controles', ctrl.id)} onShowRelations={() => onShowRelations(ctrl, 'controles')} />)}</div>
                         </div>
                     </>
                 )}
