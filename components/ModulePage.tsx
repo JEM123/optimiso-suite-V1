@@ -70,7 +70,7 @@ const ModulePage: React.FC<ModulePageProps> = ({ moduleId, onShowRelations, onSh
             case 'documents': return <DocumentsPage onShowValidation={onShowValidation} onShowRelations={onShowRelations} notifiedItemId={notifiedItemId} />;
             case 'controles': return <ControlsPage onShowRelations={onShowRelations} />;
             case 'procedures': return <ProceduresPage onShowRelations={onShowRelations} onShowValidation={onShowValidation} onShowImpactAnalysis={onShowImpactAnalysis} setActiveModule={setActiveModule} />;
-            case 'todo': return <ToDoPage notifiedItemId={notifiedItemId} />;
+            case 'todo': return <ToDoPage notifiedItemId={notifiedItemId} onShowRelations={onShowRelations} />;
             case 'incidents': return <IncidentsPage onShowRelations={onShowRelations} notifiedItemId={notifiedItemId} />;
             case 'ameliorations': return <AmeliorationsPage onShowRelations={onShowRelations} />;
             case 'actifs': return <ActifsPage />;
