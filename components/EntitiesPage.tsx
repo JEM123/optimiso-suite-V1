@@ -1,276 +1,199 @@
-
-import React, { useState, useMemo, useRef, useCallback, useEffect } from 'react';
-import type { Entite } from '../types';
-import { Users, Briefcase, Link as LinkIcon, Edit, Plus, Building, Search, Filter, Trash2, ChevronDown, List, Eye, ArrowUpDown, Network, ChevronRight } from 'lucide-react';
+import React, { useState, useMemo, useRef, useEffect } from 'react';
+import type { Entite, Processus } from '../types';
 import { useDataContext } from '../context/AppContext';
-import { EntiteFormModal } from './EntiteFormModal';
-import EntityDetailPanel from './EntityDetailPanel';
-import EntityFichePage from './EntityFichePage';
+import { Search, ChevronDown, ArrowUp, Filter, List, ListChecks } from 'lucide-react';
 
-const ENTITY_STATUS_COLORS: Record<Entite['statut'], string> = { 'brouillon': 'bg-gray-100 text-gray-800', 'en_cours': 'bg-yellow-100 text-yellow-800', 'valide': 'bg-green-100 text-green-800', 'archive': 'bg-red-100 text-red-800', 'à_créer': 'bg-blue-100 text-blue-800', 'en_recrutement': 'bg-yellow-100 text-yellow-800', 'gelé': 'bg-purple-100 text-purple-800', 'figé': 'bg-indigo-100 text-indigo-800', 'planifié': 'bg-cyan-100 text-cyan-800', 'terminé': 'bg-green-100 text-green-800', 'non-conforme': 'bg-red-200 text-red-900', 'clôturé': 'bg-gray-300 text-gray-800', 'a_faire': 'bg-yellow-100 text-yellow-800', 'en_retard': 'bg-red-200 text-red-900', 'en_validation': 'bg-yellow-100 text-yellow-800', 'publie': 'bg-green-100 text-green-800', 'rejete': 'bg-red-100 text-red-800', };
+type SortConfig = { key: keyof Entite; direction: 'ascending' | 'descending' };
+type ViewType = 'Liste' | 'Liste+Fiche';
 
-const ENTITY_TYPE_ICONS: Record<Entite['type'], React.ElementType> = { 'Direction': Building, 'Division': Building, 'Service': Building, 'Équipe': Users, 'Autre': Building };
 
-interface EntitiesPageProps {
-    onShowRelations: (entity: any, entityType: string) => void;
-}
-
-const EntityRow: React.FC<{
-    entity: Entite;
-    level: number;
-    onRowClick: (e: Entite) => void;
-    selectedEntityId: string | null;
-    hasChildren: boolean;
-    isExpanded: boolean;
-    onToggleExpand: (id: string) => void;
-    displayMode: 'flat' | 'tree';
-}> = ({ entity, level, onRowClick, selectedEntityId, hasChildren, isExpanded, onToggleExpand, displayMode }) => {
+const EntitiesPage: React.FC = () => {
+    const { data } = useDataContext();
+    const { entites, processus } = data as { entites: Entite[], processus: Processus[] };
     
-    const Icon = ENTITY_TYPE_ICONS[entity.type] || Building;
-
-    return (
-        <tr onClick={() => onRowClick(entity)} className={`cursor-pointer ${selectedEntityId === entity.id ? 'bg-blue-50 hover:bg-blue-100' : 'hover:bg-gray-50'}`}>
-            <td className="px-4 py-2 whitespace-nowrap text-sm font-medium text-gray-900">
-                <div className="flex items-center" style={{ paddingLeft: `${displayMode === 'tree' ? level * 24 : 0}px` }}>
-                    {displayMode === 'tree' && hasChildren && (
-                        <button onClick={(e) => { e.stopPropagation(); onToggleExpand(entity.id); }} className="mr-2 p-0.5 rounded hover:bg-gray-200">
-                            {isExpanded ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
-                        </button>
-                    )}
-                    {displayMode === 'tree' && !hasChildren && <div className="w-5 mr-2" />}
-                    <Icon className="h-4 w-4 mr-2 text-gray-500 flex-shrink-0" />
-                    <span>{entity.nom}</span>
-                </div>
-            </td>
-            <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-500">{entity.reference}</td>
-        </tr>
-    );
-};
-
-
-export const EntitiesPage: React.FC<EntitiesPageProps> = ({ onShowRelations }) => {
-    const { data, actions } = useDataContext();
-    const { entites } = data as { entites: Entite[] };
-
-    const [viewMode, setViewMode] = useState<'list' | 'list-fiche'>('list-fiche');
-    const [displayMode, setDisplayMode] = useState<'tree' | 'flat'>('tree');
-    const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');
-    const [expandedNodes, setExpandedNodes] = useState<Set<string>>(new Set(entites.filter(e => !e.parentId).map(e => e.id)));
-    
-    const [selectedEntity, setSelectedEntity] = useState<Entite | null>(null);
-    const [activeFiche, setActiveFiche] = useState<Entite | null>(null);
     const [searchTerm, setSearchTerm] = useState('');
-    const [isFilterVisible, setIsFilterVisible] = useState(false);
-    const [filters, setFilters] = useState<{ type: string, statut: string }>({ type: 'all', statut: 'all' });
-    const [isViewModeDropdownOpen, setIsViewModeDropdownOpen] = useState(false);
+    const [sortConfig, setSortConfig] = useState<SortConfig>({ key: 'reference', direction: 'ascending' });
+
+    const [showFilters, setShowFilters] = useState(false);
+    const [entityFilter, setEntityFilter] = useState('all');
+    const [processusFilter, setProcessusFilter] = useState('all');
+    const [currentView, setCurrentView] = useState<ViewType>('Liste');
+    const [isViewDropdownOpen, setViewDropdownOpen] = useState(false);
     
-    const [isModalOpen, setIsModalOpen] = useState(false);
-    const [editingEntity, setEditingEntity] = useState<Partial<Entite> | null>(null);
+    const viewDropdownRef = useRef<HTMLDivElement>(null);
 
-    const [dividerPosition, setDividerPosition] = useState(35);
-    const [isResizing, setIsResizing] = useState(false);
-    const containerRef = useRef<HTMLDivElement>(null);
-    const viewModeRef = useRef<HTMLDivElement>(null);
-    
-    const entityChildrenMap = useMemo(() => {
-        const map = new Map<string, string[]>();
-        entites.forEach(e => {
-            if (e.parentId) {
-                if (!map.has(e.parentId)) map.set(e.parentId, []);
-                map.get(e.parentId)!.push(e.id);
-            }
-        });
-        return map;
-    }, [entites]);
-
-    const handleToggleExpand = (nodeId: string) => {
-        setExpandedNodes(prev => {
-            const newSet = new Set(prev);
-            if (newSet.has(nodeId)) newSet.delete(nodeId);
-            else newSet.add(nodeId);
-            return newSet;
-        });
-    };
-
-    const filteredEntities = useMemo(() => {
-        return entites.filter(e =>
-            (e.nom.toLowerCase().includes(searchTerm.toLowerCase()) || e.reference.toLowerCase().includes(searchTerm.toLowerCase())) &&
-            (filters.type === 'all' || e.type === filters.type) &&
-            (filters.statut === 'all' || e.statut === filters.statut)
-        );
-    }, [entites, searchTerm, filters]);
-
-
-    const renderableEntities = useMemo(() => {
-        const sorted = [...filteredEntities].sort((a, b) => {
-            if (sortDirection === 'asc') return a.nom.localeCompare(b.nom);
-            return b.nom.localeCompare(a.nom);
-        });
-
-        if (displayMode === 'flat') {
-            return sorted.map(e => ({...e, level: 0}));
-        }
-
-        const result: (Entite & { level: number })[] = [];
-        const renderNode = (id: string, level: number) => {
-            const entity = entites.find(e => e.id === id);
-            if (entity && filteredEntities.some(f => f.id === id)) {
-                result.push({ ...entity, level });
-                if (expandedNodes.has(id)) {
-                    const children = entityChildrenMap.get(id) || [];
-                     const sortedChildren = [...children]
-                        .map(childId => entites.find(e => e.id === childId))
-                        .filter((e): e is Entite => !!e)
-                        .sort((a,b) => sortDirection === 'asc' ? a.nom.localeCompare(b.nom) : b.nom.localeCompare(a.nom));
-                    
-                    sortedChildren.forEach(child => renderNode(child.id, level + 1));
-                }
-            }
-        };
-        
-        const rootNodes = sorted.filter(e => !e.parentId || !filteredEntities.some(f => f.id === e.parentId));
-        rootNodes.forEach(node => renderNode(node.id, 0));
-        
-        return result;
-
-    }, [entites, filteredEntities, sortDirection, displayMode, expandedNodes, entityChildrenMap]);
-
-    
-    const handleRowClick = (entity: Entite) => {
-        if (viewMode === 'list') { setActiveFiche(entity); } 
-        else { setSelectedEntity(entity); }
-    };
-    const handleOpenModal = (entity?: Entite) => { setEditingEntity(entity || {}); setIsModalOpen(true); };
-    const handleSaveEntity = (entityToSave: Entite) => {
-        actions.saveEntite(entityToSave).then(() => {
-            if (activeFiche && activeFiche.id === entityToSave.id) setActiveFiche(entityToSave);
-            if (selectedEntity && selectedEntity.id === entityToSave.id) setSelectedEntity(entityToSave);
-        });
-        setIsModalOpen(false);
-    };
-    const handleDeleteEntity = (entityToDelete: Entite) => {
-        if (window.confirm(`Êtes-vous sûr de vouloir supprimer l'entité "${entityToDelete.nom}" ?`)) {
-            actions.deleteEntite(entityToDelete.id);
-            setActiveFiche(null);
-            setSelectedEntity(null);
-        }
-    };
-    const handleMouseDown = (e: React.MouseEvent) => { e.preventDefault(); setIsResizing(true); };
-    const handleMouseMove = useCallback((e: MouseEvent) => {
-        if (isResizing && containerRef.current) {
-            const rect = containerRef.current.getBoundingClientRect();
-            const newPos = ((e.clientX - rect.left) / rect.width) * 100;
-            if (newPos > 20 && newPos < 80) { // Constraint resizing
-                setDividerPosition(newPos);
-            }
-        }
-    }, [isResizing]);
-    const handleMouseUp = useCallback(() => setIsResizing(false), []);
-    useEffect(() => {
-        if (isResizing) {
-            window.addEventListener('mousemove', handleMouseMove);
-            window.addEventListener('mouseup', handleMouseUp);
-        }
-        return () => {
-            window.removeEventListener('mousemove', handleMouseMove);
-            window.removeEventListener('mouseup', handleMouseUp);
-        };
-    }, [isResizing, handleMouseMove, handleMouseUp]);
-    useEffect(() => {
+     useEffect(() => {
         const handleClickOutside = (event: MouseEvent) => {
-            if (viewModeRef.current && !viewModeRef.current.contains(event.target as Node)) setIsViewModeDropdownOpen(false);
+            if (viewDropdownRef.current && !viewDropdownRef.current.contains(event.target as Node)) {
+                setViewDropdownOpen(false);
+            }
         };
         document.addEventListener("mousedown", handleClickOutside);
-        return () => document.removeEventListener("mousedown", handleClickOutside);
-    }, []);
+        return () => {
+            document.removeEventListener("mousedown", handleClickOutside);
+        };
+    }, [viewDropdownRef]);
 
-    const listPanel = (
-        <div className="bg-white flex flex-col h-full border-r">
-            <div className="p-2 border-b space-y-2">
-                <div className="flex items-center gap-2">
-                     <div className="flex bg-gray-100 rounded-lg p-0.5">
-                        <button onClick={() => setDisplayMode('list')} className={`p-1 rounded-md ${displayMode === 'list' ? 'bg-white shadow-sm' : ''}`} title="Vue Liste"><List className="h-4 w-4"/></button>
-                        <button onClick={() => setDisplayMode('tree')} className={`p-1 rounded-md ${displayMode === 'tree' ? 'bg-white shadow-sm' : ''}`} title="Vue Arborescente"><Network className="h-4 w-4"/></button>
-                    </div>
-                    <button onClick={() => setSortDirection(s => s === 'asc' ? 'desc' : 'asc')} className="p-1.5 border rounded-lg hover:bg-gray-50" title="Trier A-Z"><ArrowUpDown className="h-4 w-4"/></button>
-                    <div className="flex-grow" />
-                    <button onClick={() => handleOpenModal()} className="px-3 py-1.5 border rounded-lg text-sm font-medium hover:bg-gray-50">Nouveau</button>
-                    <button onClick={() => setIsFilterVisible(!isFilterVisible)} className={`p-2 border rounded-lg ${isFilterVisible ? 'bg-blue-50 text-blue-600' : 'bg-white hover:bg-gray-50'}`} aria-label="Filtrer"><Filter className="h-4 w-4" /></button>
+    const sortedAndFilteredEntities = useMemo(() => {
+        let filteredItems = [...entites];
+
+        if (searchTerm) {
+            filteredItems = filteredItems.filter(item =>
+                item.nom.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                item.reference.toLowerCase().includes(searchTerm.toLowerCase())
+            );
+        }
+        
+        if (entityFilter !== 'all') {
+            filteredItems = filteredItems.filter(item => item.parentId === entityFilter);
+        }
+        
+        if (processusFilter !== 'all') {
+            const selectedProcessus = processus.find(p => p.id === processusFilter);
+            if (selectedProcessus) {
+                const relatedEntityIds = new Set(selectedProcessus.entitesConcerneesIds);
+                filteredItems = filteredItems.filter(item => relatedEntityIds.has(item.id));
+            } else {
+                filteredItems = []; 
+            }
+        }
+
+        filteredItems.sort((a, b) => {
+            const key = sortConfig.key as keyof Entite;
+            const valA = a[key] || '';
+            const valB = b[key] || '';
+            if (valA < valB) {
+                return sortConfig.direction === 'ascending' ? -1 : 1;
+            }
+            if (valA > valB) {
+                return sortConfig.direction === 'ascending' ? 1 : -1;
+            }
+            return 0;
+        });
+
+        return filteredItems;
+    }, [entites, processus, searchTerm, sortConfig, entityFilter, processusFilter]);
+
+    const requestSort = (key: keyof Entite) => {
+        let direction: 'ascending' | 'descending' = 'ascending';
+        if (sortConfig.key === key && sortConfig.direction === 'ascending') {
+            direction = 'descending';
+        }
+        setSortConfig({ key, direction });
+    };
+
+    const handleViewChange = (view: ViewType) => {
+        setCurrentView(view);
+        setViewDropdownOpen(false);
+    }
+
+    const totalEntities = entites.length;
+
+    return (
+        <div className="p-6 bg-white h-full flex flex-col">
+            <div className="flex justify-between items-center mb-4">
+                <div className="flex items-center space-x-3">
+                    <h1 className="text-2xl font-bold text-gray-800">Entités</h1>
+                    <span className="text-sm font-semibold text-blue-700 bg-blue-100 px-3 py-1 rounded-md">{totalEntities}</span>
                 </div>
-                <div className="relative">
-                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-                    <input type="text" placeholder="Rechercher..." value={searchTerm} onChange={e => setSearchTerm(e.target.value)} className="w-full pl-10 pr-4 py-1.5 border rounded-lg text-sm" />
+                <div className="flex items-center space-x-2">
+                    <button 
+                        onClick={() => setShowFilters(!showFilters)}
+                        className={`p-2 border rounded-md transition-colors ${showFilters ? 'bg-blue-100 border-blue-300' : 'hover:bg-gray-100'}`}
+                        aria-label="Toggle filters"
+                    >
+                        <Filter className={`h-5 w-5 ${showFilters ? 'text-blue-600' : 'text-gray-600'}`} />
+                    </button>
+                    <div className="relative">
+                        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                        <input
+                            type="text"
+                            placeholder="Recherche..."
+                            value={searchTerm}
+                            onChange={(e) => setSearchTerm(e.target.value)}
+                            className="pl-9 pr-4 py-2 w-64 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                            aria-label="Rechercher une entité"
+                        />
+                    </div>
+                     <div className="relative" ref={viewDropdownRef}>
+                        <button 
+                            onClick={() => setViewDropdownOpen(!isViewDropdownOpen)}
+                            className="flex items-center space-x-2 px-4 py-2 border rounded-md hover:bg-gray-100 text-gray-700 font-medium transition-colors bg-white shadow-sm"
+                        >
+                            {currentView === 'Liste' ? <List className="h-5 w-5"/> : <ListChecks className="h-5 w-5" />}
+                            <span>{currentView}</span>
+                            <ChevronDown className="h-4 w-4 text-gray-500"/>
+                        </button>
+                        {isViewDropdownOpen && (
+                            <div className="absolute right-0 mt-2 w-48 bg-white border rounded-md shadow-lg z-20">
+                                <button onClick={() => handleViewChange('Liste')} className="w-full flex items-center space-x-2 px-3 py-2 text-left hover:bg-gray-100 text-sm">
+                                    <List className="h-4 w-4"/>
+                                    <span>Liste</span>
+                                </button>
+                                <button onClick={() => handleViewChange('Liste+Fiche')} className="w-full flex items-center space-x-2 px-3 py-2 text-left hover:bg-gray-100 text-sm">
+                                    <ListChecks className="h-4 w-4"/>
+                                    <span>Liste+Fiche</span>
+                                </button>
+                            </div>
+                        )}
+                     </div>
                 </div>
             </div>
-            {isFilterVisible && (
-                    <div className="p-2 border-b flex gap-4 bg-gray-50 animate-fade-in-down">
-                        <div className="flex-1"><label className="block text-xs font-medium mb-1">Type</label><select onChange={e => setFilters(f => ({ ...f, type: e.target.value }))} className="w-full border rounded-lg py-1 px-2 text-sm"><option value="all">Tous</option>{Object.keys(ENTITY_TYPE_ICONS).map(t => <option key={t} value={t}>{t}</option>)}</select></div>
-                        <div className="flex-1"><label className="block text-xs font-medium mb-1">Statut</label><select onChange={e => setFilters(f => ({ ...f, statut: e.target.value }))} className="w-full border rounded-lg py-1 px-2 text-sm"><option value="all">Tous</option>{Object.keys(ENTITY_STATUS_COLORS).map(s => <option key={s} value={s}>{s.replace(/_/g, ' ')}</option>)}</select></div>
-                    </div>
+
+            {showFilters && (
+                <div className="flex space-x-4 mb-4 pb-4 border-b">
+                    <select
+                        value={entityFilter}
+                        onChange={(e) => setEntityFilter(e.target.value)}
+                        className="w-full border border-gray-300 rounded-md py-2 px-3 focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+                    >
+                        <option value="all">Filtrer par entité (parente)</option>
+                        {entites.map(e => <option key={e.id} value={e.id}>{e.nom}</option>)}
+                    </select>
+                    <select
+                        value={processusFilter}
+                        onChange={(e) => setProcessusFilter(e.target.value)}
+                        className="w-full border border-gray-300 rounded-md py-2 px-3 focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+                    >
+                        <option value="all">Filtrer par processus</option>
+                        {processus.map(p => <option key={p.id} value={p.id}>{p.nom}</option>)}
+                    </select>
+                </div>
             )}
-            <div className="flex-1 overflow-y-auto">
-                <table className="min-w-full">
+
+            <div className="flex-1 overflow-y-auto -mx-6">
+                <table className="w-full text-left">
+                    <thead className="sticky top-0 bg-white z-10">
+                        <tr className="border-b">
+                            <th scope="col" className="px-6 py-4 font-medium text-gray-600">
+                                <button onClick={() => requestSort('reference')} className="flex items-center space-x-1 hover:text-gray-900">
+                                    <span>Référence</span>
+                                    {sortConfig.key === 'reference' && <ArrowUp className={`h-4 w-4 transition-transform ${sortConfig.direction === 'descending' ? 'rotate-180' : ''}`} />}
+                                </button>
+                            </th>
+                            <th scope="col" className="px-6 py-4 font-medium text-gray-600">
+                                <button onClick={() => requestSort('nom')} className="flex items-center space-x-1 hover:text-gray-900">
+                                    <span>Titre</span>
+                                    {sortConfig.key === 'nom' && <ArrowUp className={`h-4 w-4 transition-transform ${sortConfig.direction === 'descending' ? 'rotate-180' : ''}`} />}
+                                </button>
+                            </th>
+                        </tr>
+                    </thead>
                     <tbody className="divide-y divide-gray-200">
-                        {renderableEntities.map(entity => (
-                             <EntityRow 
-                                key={entity.id}
-                                entity={entity}
-                                level={entity.level}
-                                onRowClick={handleRowClick}
-                                selectedEntityId={selectedEntity?.id || null}
-                                hasChildren={(entityChildrenMap.get(entity.id) || []).length > 0}
-                                isExpanded={expandedNodes.has(entity.id)}
-                                onToggleExpand={handleToggleExpand}
-                                displayMode={displayMode}
-                             />
+                        {sortedAndFilteredEntities.map(entity => (
+                            <tr key={entity.id} className="hover:bg-gray-50">
+                                <td className="px-6 py-4 text-gray-800">{entity.reference}</td>
+                                <td className="px-6 py-4 text-gray-800">{entity.nom}</td>
+                            </tr>
                         ))}
                     </tbody>
                 </table>
-            </div>
-        </div>
-    );
-
-    if (activeFiche) return <EntityFichePage entite={activeFiche} onClose={() => setActiveFiche(null)} onShowRelations={onShowRelations} onEdit={handleOpenModal} onDelete={handleDeleteEntity} />;
-
-    return (
-        <div className="h-full flex flex-col bg-gray-50">
-            <div className="p-4 border-b bg-white">
-                <div className="flex justify-between items-center">
-                    <h1 className="text-2xl font-bold text-gray-900 flex items-center">Entités <span className="ml-3 px-2.5 py-1 bg-gray-100 text-gray-600 rounded-full text-sm font-medium">{entites.length}</span></h1>
-                     <div className="flex items-center gap-4">
-                        <button className="p-2 border rounded-lg hover:bg-gray-50" aria-label="Filtrer"><Filter className="h-4 w-4" /></button>
-                        <div className="relative" ref={viewModeRef}>
-                            <button onClick={() => setIsViewModeDropdownOpen(prev => !prev)} className="flex items-center gap-2 px-3 py-1.5 border rounded-lg bg-white hover:bg-gray-50 text-sm">
-                                <span>{viewMode === 'list' ? 'Liste' : 'Liste + Fiche'}</span>
-                                <ChevronDown className="h-4 w-4" />
-                            </button>
-                            {isViewModeDropdownOpen && (
-                                <div className="absolute right-0 top-full mt-1 w-40 bg-white border rounded-lg shadow-lg z-10 animate-fade-in-down">
-                                    <button onClick={() => { setViewMode('list'); setSelectedEntity(null); setIsViewModeDropdownOpen(false); }} className="w-full text-left flex items-center gap-2 px-3 py-2 hover:bg-gray-100 text-sm">Liste</button>
-                                    <button onClick={() => { setViewMode('list-fiche'); setIsViewModeDropdownOpen(false); }} className="w-full text-left flex items-center gap-2 px-3 py-2 hover:bg-gray-100 text-sm">Liste + Fiche</button>
-                                </div>
-                            )}
-                        </div>
+                 {sortedAndFilteredEntities.length === 0 && (
+                    <div className="text-center py-16">
+                        <p className="text-gray-500">Aucune entité trouvée pour les filtres actuels.</p>
                     </div>
-                </div>
-            </div>
-            <div ref={containerRef} className="flex-1 flex overflow-hidden">
-                {viewMode === 'list' && <div className="w-full h-full">{listPanel}</div>}
-                {viewMode === 'list-fiche' && (
-                    <>
-                        <div style={{ width: `${dividerPosition}%` }} className="h-full flex-shrink-0">{listPanel}</div>
-                        <div onMouseDown={handleMouseDown} className="w-1.5 cursor-col-resize bg-gray-200 hover:bg-blue-500 transition-colors flex-shrink-0" />
-                        <div style={{ width: `${100 - dividerPosition}%` }} className="h-full flex-shrink-0 overflow-y-auto">
-                            {selectedEntity ? (
-                                <EntityDetailPanel entity={selectedEntity} onClose={() => setSelectedEntity(null)} onEdit={handleOpenModal} onAddSub={() => {}} onReorder={() => {}} allEntities={entites}/>
-                            ) : (
-                                <div className="flex h-full items-center justify-center text-center text-gray-500 bg-white"><p>Sélectionnez une entité pour voir ses détails.</p></div>
-                            )}
-                        </div>
-                    </>
                 )}
             </div>
-            <EntiteFormModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} onSave={handleSaveEntity} entite={editingEntity} />
         </div>
     );
 };

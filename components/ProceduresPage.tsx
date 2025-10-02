@@ -1,17 +1,47 @@
 
+
 import React, { useState, useMemo, useCallback, useEffect, useRef } from 'react';
-import { useDataContext } from '../context/AppContext';
-import type { Procedure, EtapeProcedure, ProcedureLien } from '../types';
-import { Plus, Search, Trash2, Edit, Workflow, ChevronLeft, Menu, CheckCircle, Link as LinkIcon, BarChart, AlertTriangle, X } from 'lucide-react';
+import { useDataContext, useAppContext } from '../context/AppContext';
+import type { Procedure, EtapeProcedure, ProcedureLien, Personne, Poste, Tache } from '../types';
+import { Plus, Search, Trash2, Edit, Workflow, ChevronLeft, Menu, CheckCircle, Link as LinkIcon, BarChart, AlertTriangle, X, Rocket } from 'lucide-react';
 import { ReactFlowProvider, useNodesState, useEdgesState, useReactFlow, applyNodeChanges, type OnNodesChange, type OnEdgesChange, type OnConnect, type Node, type Edge, type Connection, type NodePositionChange } from 'reactflow';
+import { v4 as uuidv4 } from 'uuid';
 import ProcedureFormModal from './ProcedureFormModal';
 import ProcedureFlow from './ProcedureFlow';
 import PageHeader from './PageHeader';
 import ProcedureStepDetailPanel from './ProcedureStepDetailPanel';
 import ObjectPalette from './ObjectPalette';
+import LaunchProcedureModal from './LaunchProcedureModal';
 
-const PROC_STATUS_COLORS: Record<Procedure['statut'], string> = { 'brouillon': 'bg-gray-200 text-gray-800', 'en_cours': 'bg-yellow-100 text-yellow-800', 'valide': 'bg-green-100 text-green-800', 'archive': 'bg-red-100 text-red-800', 'à_créer': 'bg-cyan-100 text-cyan-800', 'en_recrutement': 'bg-yellow-100 text-yellow-800', 'gelé': 'bg-purple-100 text-purple-800', 'figé': 'bg-indigo-100 text-indigo-800', 'planifié': 'bg-blue-100 text-blue-800', 'terminé': 'bg-green-100 text-green-800', 'non-conforme': 'bg-red-200 text-red-900', 'clôturé': 'bg-gray-300 text-gray-800', 'a_faire': 'bg-yellow-100 text-yellow-800', 'en_retard': 'bg-red-200 text-red-900', 'en_validation': 'bg-yellow-100 text-yellow-800', 'publie': 'bg-green-100 text-green-800', 'rejete': 'bg-red-100 text-red-800', };
-const newProcedureTemplate = (): Partial<Procedure> => ({ nom: 'Nouvelle Procédure', reference: `PROC-${Date.now().toString().slice(-4)}`, statut: 'brouillon', version: '1.0', actif: true, etapes: [], liens: [], auteurId: 'pers-1', dateCreation: new Date(), dateModification: new Date(), acteursPosteIds: [], documentIds: [], risqueIds: [], controleIds: [], });
+const PROC_STATUS_COLORS: Record<Procedure['statut'], string> = {
+    'brouillon': 'bg-gray-200 text-gray-800', 'en_cours': 'bg-yellow-100 text-yellow-800',
+    'valide': 'bg-green-100 text-green-800', 'archive': 'bg-red-100 text-red-800',
+    'à_créer': 'bg-cyan-100 text-cyan-800', 'en_recrutement': 'bg-yellow-100 text-yellow-800',
+    'gelé': 'bg-purple-100 text-purple-800', 'figé': 'bg-indigo-100 text-indigo-800',
+    'planifié': 'bg-blue-100 text-blue-800', 'terminé': 'bg-green-100 text-green-800',
+    'non-conforme': 'bg-red-200 text-red-900', 'clôturé': 'bg-gray-300 text-gray-800',
+    'a_faire': 'bg-yellow-100 text-yellow-800', 'en_retard': 'bg-red-200 text-red-900',
+    'en_validation': 'bg-yellow-100 text-yellow-800',
+    'publie': 'bg-green-100 text-green-800',
+    'rejete': 'bg-red-100 text-red-800',
+};
+
+const newProcedureTemplate = (): Partial<Procedure> => ({
+    nom: 'Nouvelle Procédure',
+    reference: `PROC-${Date.now().toString().slice(-4)}`,
+    statut: 'brouillon',
+    version: '1.0',
+    actif: true,
+    etapes: [],
+    liens: [],
+    auteurId: 'pers-1',
+    dateCreation: new Date(),
+    dateModification: new Date(),
+    acteursPosteIds: [],
+    documentIds: [],
+    risqueIds: [],
+    controleIds: [],
+});
 
 interface ProceduresPageProps {
     onShowRelations: (entity: any, entityType: string) => void;
@@ -23,45 +53,67 @@ const validateProcedure = (procedure: Procedure): string[] => {
     const issues: string[] = [];
     const { etapes, liens } = procedure;
 
-    if (!etapes || etapes.length === 0) {
+    if (etapes.length === 0) {
         issues.push("Alerte : Le diagramme est vide.");
         return issues;
     }
 
     const startNodes = etapes.filter(e => e.type === 'start');
-    if (startNodes.length === 0) issues.push("Erreur : Aucun point de départ ('start') n'a été trouvé.");
-    if (startNodes.length > 1) issues.push("Alerte : Plusieurs points de départ ('start') ont été trouvés.");
+    if (startNodes.length === 0) {
+        issues.push("Erreur : Aucun point de départ ('start') n'a été trouvé.");
+    }
+    if (startNodes.length > 1) {
+        issues.push("Alerte : Plusieurs points de départ ('start') ont été trouvés.");
+    }
 
     const endNodes = etapes.filter(e => e.type === 'end');
-    if (endNodes.length === 0) issues.push("Alerte : Aucun point de fin ('end') n'a été trouvé.");
+    if (endNodes.length === 0) {
+        issues.push("Alerte : Aucun point de fin ('end') n'a été trouvé.");
+    }
     
     etapes.forEach(etape => {
         const hasIncoming = liens.some(l => l.target === etape.id);
         const hasOutgoing = liens.some(l => l.source === etape.id);
 
-        if (etape.type === 'start' && hasIncoming) issues.push(`Alerte : Le point de départ '${etape.libelle}' ne devrait pas avoir de connexion entrante.`);
-        if (etape.type === 'start' && !hasOutgoing) issues.push(`Alerte : Le point de départ '${etape.libelle}' n'a pas de sortie.`);
+        if (etape.type === 'start' && hasIncoming) {
+             issues.push(`Alerte : Le point de départ '${etape.libelle}' ne devrait pas avoir de connexion entrante.`);
+        }
+        if (etape.type === 'start' && !hasOutgoing) {
+            issues.push(`Alerte : Le point de départ '${etape.libelle}' n'a pas de sortie.`);
+        }
 
-        if (etape.type === 'end' && hasOutgoing) issues.push(`Alerte : Le point de fin '${etape.libelle}' ne devrait pas avoir de connexion sortante.`);
-        if (etape.type === 'end' && !hasIncoming) issues.push(`Alerte : Le point de fin '${etape.libelle}' n'est jamais atteint.`);
+        if (etape.type === 'end' && hasOutgoing) {
+             issues.push(`Alerte : Le point de fin '${etape.libelle}' ne devrait pas avoir de connexion sortante.`);
+        }
+        if (etape.type === 'end' && !hasIncoming) {
+            issues.push(`Alerte : Le point de fin '${etape.libelle}' n'est jamais atteint.`);
+        }
         
-        if ((etape.type === 'step' || etape.type === 'decision') && !hasIncoming) {
-            if (!startNodes.some(s => s.id === etape.id)) { // An un-connected start node is fine
-                issues.push(`Alerte : L'étape '${etape.libelle}' n'a pas d'entrée (orpheline).`);
+        if (etape.type === 'step' || etape.type === 'decision') {
+            if (!hasIncoming && !startNodes.some(start => liens.some(l => l.source === start.id && l.target === etape.id))) {
+                 if (!liens.some(l => l.target === etape.id)) {
+                    issues.push(`Alerte : L'étape '${etape.libelle}' n'a pas d'entrée.`);
+                 }
             }
         }
         
-        if (etape.type === 'step' && !hasOutgoing) {
-             if (!endNodes.some(e => e.id === etape.id)) { // An un-connected end node is fine
+        if (etape.type === 'step') {
+            if (!hasOutgoing) {
                 issues.push(`Alerte : L'étape '${etape.libelle}' n'a pas de sortie.`);
             }
         }
         
         if (etape.type === 'decision') {
             const outgoing = liens.filter(l => l.source === etape.id);
-            if (outgoing.length === 0) issues.push(`Alerte : La décision '${etape.libelle}' n'a pas de sortie.`);
-            if (outgoing.length > 0 && !outgoing.some(l => l.sourceHandle === 'yes')) issues.push(`Alerte : La décision '${etape.libelle}' n'a pas de branche 'Oui'.`);
-            if (outgoing.length > 0 && !outgoing.some(l => l.sourceHandle === 'no')) issues.push(`Alerte : La décision '${etape.libelle}' n'a pas de branche 'Non'.`);
+            if (outgoing.length === 0) {
+                 issues.push(`Alerte : La décision '${etape.libelle}' n'a pas de sortie.`);
+            }
+            if (!outgoing.some(l => l.sourceHandle === 'yes')) {
+                issues.push(`Alerte : La décision '${etape.libelle}' n'a pas de branche 'Oui'.`);
+            }
+            if (!outgoing.some(l => l.sourceHandle === 'no')) {
+                issues.push(`Alerte : La décision '${etape.libelle}' n'a pas de branche 'Non'.`);
+            }
         }
     });
 
@@ -99,9 +151,10 @@ const ValidationResultsPanel: React.FC<{ issues: string[]; onClose: () => void }
 };
 
 
-const ProceduresPageContent: React.FC<ProceduresPageProps> = ({ onShowRelations, onShowValidation, onShowImpactAnalysis }) => {
+const ProceduresPageContent: React.FC<ProceduresPageProps & { setActiveModule: (id: string) => void }> = ({ onShowRelations, onShowValidation, onShowImpactAnalysis, setActiveModule }) => {
     const { data, actions } = useDataContext();
-    const { procedures } = data as { procedures: Procedure[] };
+    const { user } = useAppContext();
+    const { procedures, postes } = data as { procedures: Procedure[], postes: Poste[] };
 
     const [selectedProcedureId, setSelectedProcedureId] = useState<string | null>(procedures[0]?.id || null);
     const [selectedStepId, setSelectedStepId] = useState<string | null>(null);
@@ -110,6 +163,7 @@ const ProceduresPageContent: React.FC<ProceduresPageProps> = ({ onShowRelations,
     const [editingProcedure, setEditingProcedure] = useState<Partial<Procedure> | null>(null);
     const [isSidebarOpen, setIsSidebarOpen] = useState(true);
     const [validationIssues, setValidationIssues] = useState<string[] | null>(null);
+    const [launchingProc, setLaunchingProc] = useState<Procedure | null>(null);
     
     const prevProcIdRef = useRef<string | null>(null);
     const { project, fitView, getNodes } = useReactFlow();
@@ -135,7 +189,7 @@ const ProceduresPageContent: React.FC<ProceduresPageProps> = ({ onShowRelations,
             
             if (prevProcIdRef.current !== selectedProcedure.id) {
                 setSelectedStepId(null);
-                setValidationIssues(null);
+                setValidationIssues(null); // Clear validation on procedure change
                 setTimeout(() => fitView({ padding: 0.2 }), 100);
             }
         } else {
@@ -175,28 +229,22 @@ const ProceduresPageContent: React.FC<ProceduresPageProps> = ({ onShowRelations,
         const currentNodes = getNodes();
         const sortedNodes = [...currentNodes].sort((a, b) => a.position.y - b.position.y);
         const etapesMap = new Map(selectedProcedure.etapes.map(e => [e.id, e]));
+
         const updatedEtapes = sortedNodes.map((node, index) => {
             const originalEtape = etapesMap.get(node.id);
             if (originalEtape) {
-                return {
-                    ...originalEtape,
-                    ordre: index + 1,
-                    position: node.position,
-                };
+                return { ...originalEtape, ordre: index + 1, position: node.position };
             }
             return null;
         }).filter((e): e is EtapeProcedure => e !== null);
 
-        updateProcedureState(selectedProcedureId, proc => ({
-            ...proc,
-            etapes: updatedEtapes,
-        }));
+        updateProcedureState(selectedProcedureId, proc => ({ ...proc, etapes: updatedEtapes }));
     }, [selectedProcedureId, selectedProcedure, getNodes, updateProcedureState]);
-    
+
     const onConnect = useCallback((params: Connection) => {
         if (!selectedProcedureId || !params.source || !params.target) return;
         const newLink: ProcedureLien = {
-            id: `e${params.source}-${params.target}-${params.sourceHandle || ''}-${params.targetHandle || ''}`,
+            id: `e${params.source}-${params.target}`,
             source: params.source,
             target: params.target,
             sourceHandle: params.sourceHandle,
@@ -204,7 +252,7 @@ const ProceduresPageContent: React.FC<ProceduresPageProps> = ({ onShowRelations,
         };
         if (params.sourceHandle === 'yes') newLink.label = 'Oui';
         if (params.sourceHandle === 'no') newLink.label = 'Non';
-        updateProcedureState(selectedProcedureId, p => ({...p, liens: [...(p.liens || []), newLink]}));
+        updateProcedureState(selectedProcedureId, p => ({...p, liens: [...p.liens, newLink]}));
     }, [selectedProcedureId, updateProcedureState]);
     
     const onDrop = useCallback((event: React.DragEvent) => {
@@ -221,7 +269,7 @@ const ProceduresPageContent: React.FC<ProceduresPageProps> = ({ onShowRelations,
                 position,
                 type: toolboxType as EtapeProcedure['type'],
             };
-            updateProcedureState(selectedProcedureId, p => ({ ...p, etapes: [...(p.etapes || []), newStep] }));
+            updateProcedureState(selectedProcedureId, p => ({ ...p, etapes: [...p.etapes, newStep] }));
             return;
         }
     
@@ -259,35 +307,24 @@ const ProceduresPageContent: React.FC<ProceduresPageProps> = ({ onShowRelations,
                         return { ...proc, etapes: updatedEtapes };
                     });
                 }
-            } catch (e) {
-                console.error("Failed to parse dropped object payload", e);
-            }
+            } catch (e) { console.error("Failed to parse dropped object payload", e); }
         }
     }, [project, getNodes, selectedProcedureId, selectedProcedure, updateProcedureState]);
 
     const handleSaveStep = useCallback((updatedStep: EtapeProcedure) => {
         if (!selectedProcedureId) return;
-        updateProcedureState(selectedProcedureId, p => ({ ...p, etapes: (p.etapes || []).map(e => e.id === updatedStep.id ? updatedStep : e) }));
+        updateProcedureState(selectedProcedureId, p => ({ ...p, etapes: p.etapes.map(e => e.id === updatedStep.id ? updatedStep : e) }));
         setSelectedStepId(updatedStep.id);
     }, [selectedProcedureId, updateProcedureState]);
 
     const handleOpenProcModal = (proc?: Procedure) => { setEditingProcedure(proc || newProcedureTemplate()); setProcModalOpen(true); };
     
-    // FIX: Removed explicit type annotation from `fullProc` to avoid spread operator error with type-only imports.
-    // The type is checked via casting when calling the action.
     const handleSaveProcedure = (procToSave: Procedure) => {
-        const fullProc = {
-            ...newProcedureTemplate(),
-            ...procToSave,
-            id: procToSave.id || `proc-${Date.now()}`,
-            etapes: procToSave.etapes || [],
-            liens: procToSave.liens || [],
-        };
-        actions.saveProcedure(fullProc as Procedure);
+        actions.saveProcedure(procToSave).then(() => {
+            if (!procToSave.id) { } 
+            else { setSelectedProcedureId(procToSave.id); }
+        });
         setProcModalOpen(false);
-        if (!selectedProcedureId) {
-             setSelectedProcedureId(fullProc.id);
-        }
     };
 
     const handleDeleteProcedure = (procId: string) => {
@@ -302,6 +339,74 @@ const ProceduresPageContent: React.FC<ProceduresPageProps> = ({ onShowRelations,
             const issues = validateProcedure(selectedProcedure);
             setValidationIssues(issues);
         }
+    };
+
+    const handleLaunch = async (proc: Procedure, instanceName: string, targetDate: Date) => {
+        const instanceId = uuidv4();
+        const mainResponsablePoste = proc.acteursPosteIds.length > 0 ? postes.find(p => p.id === proc.acteursPosteIds[0]) : null;
+        const defaultAssignee = mainResponsablePoste?.occupantsIds[0] || user.id;
+
+        const etapesToCreateTasksFor = proc.etapes.filter(etape => etape.type !== 'start' && etape.type !== 'end');
+        
+        // 1. Create a task for each step and map etape.id to task.id
+        const etapeIdToTaskIdMap = new Map<string, string>();
+        const tasksToCreate: Tache[] = etapesToCreateTasksFor.map(etape => {
+            const taskId = uuidv4();
+            etapeIdToTaskIdMap.set(etape.id, taskId);
+            return {
+                id: taskId,
+                titre: etape.libelle,
+                description: `Étape de la procédure "${proc.nom}". Instance: ${instanceName}.`,
+                sourceModule: 'Processus',
+                sourceId: proc.id,
+                assigneA: defaultAssignee,
+                createur: user.id,
+                priorite: 'Normale',
+                statut: 'A faire', // Default, will be updated
+                dateCreation: new Date(),
+                dateEcheance: targetDate,
+                procedureInstanceId: instanceId,
+                procedureInstanceName: instanceName,
+                predecessorIds: [],
+            };
+        });
+    
+        const taskIdToTaskMap = new Map(tasksToCreate.map(t => [t.id, t]));
+    
+        // 2. Build dependency graph from procedure links
+        proc.liens.forEach(lien => {
+            const sourceEtapeId = lien.source;
+            const targetEtapeId = lien.target;
+    
+            const targetTaskId = etapeIdToTaskIdMap.get(targetEtapeId);
+            if (targetTaskId) {
+                const targetTask = taskIdToTaskMap.get(targetTaskId);
+                if (targetTask) {
+                    const sourceTaskId = etapeIdToTaskIdMap.get(sourceEtapeId);
+                    if (sourceTaskId) {
+                        targetTask.predecessorIds?.push(sourceTaskId);
+                    }
+                }
+            }
+        });
+    
+        // 3. Set initial status based on dependencies
+        tasksToCreate.forEach(task => {
+            if (task.predecessorIds && task.predecessorIds.length > 0) {
+                task.statut = 'En attente';
+            } else {
+                task.statut = 'A faire';
+            }
+        });
+        
+        // 4. Save all created tasks
+        for (const task of tasksToCreate) {
+            await actions.saveTache(task);
+        }
+        
+        setLaunchingProc(null);
+        alert(`${tasksToCreate.length} tâches ont été créées avec leurs dépendances. Vous allez être redirigé vers le ToDo Manager.`);
+        setActiveModule('todo');
     };
 
     const filteredProcedures = useMemo(() => procedures.filter(p => p.nom.toLowerCase().includes(searchTerm.toLowerCase()) || p.reference.toLowerCase().includes(searchTerm.toLowerCase())), [procedures, searchTerm]);
@@ -330,13 +435,8 @@ const ProceduresPageContent: React.FC<ProceduresPageProps> = ({ onShowRelations,
                                     <p className="text-xs text-gray-500">{proc.reference}</p>
                                     <span className={`mt-1 inline-block px-2 py-0.5 text-xs rounded-full ${PROC_STATUS_COLORS[proc.statut]}`}>{proc.statut.replace(/_/g, ' ')}</span>
                                     <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 flex gap-1">
-                                        {proc.validationInstanceId && (
-                                            <button onClick={(e) => { e.stopPropagation(); onShowValidation(proc); }} className="p-1 hover:bg-gray-200 rounded-md" title="Voir flux de validation">
-                                                <CheckCircle className="h-4 w-4 text-green-600"/>
-                                            </button>
-                                        )}
+                                        <button onClick={(e) => { e.stopPropagation(); setLaunchingProc(proc); }} className="p-1 hover:bg-gray-200 rounded-md" title="Lancer la procédure"><Rocket className="h-4 w-4 text-green-600"/></button>
                                         <button onClick={(e) => { e.stopPropagation(); handleOpenProcModal(proc)}} className="p-1 hover:bg-gray-200 rounded-md"><Edit className="h-4 w-4 text-blue-600"/></button>
-                                        <button onClick={(e) => { e.stopPropagation(); handleDeleteProcedure(proc.id)}} className="p-1 hover:bg-gray-200 rounded-md"><Trash2 className="h-4 w-4 text-red-600"/></button>
                                     </div>
                                 </>
                             ) : (
@@ -357,7 +457,6 @@ const ProceduresPageContent: React.FC<ProceduresPageProps> = ({ onShowRelations,
                                 <div className="flex items-center gap-2">
                                     <button onClick={handleValidateDiagram} className="flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm bg-white border hover:bg-gray-50"><CheckCircle className="h-4 w-4 text-green-600"/>Valider le diagramme</button>
                                     <button onClick={() => onShowImpactAnalysis(selectedProcedure, 'procedures')} className="flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm bg-white border hover:bg-gray-50"><BarChart className="h-4 w-4"/>Analyser l'impact</button>
-                                    <button onClick={() => onShowRelations(selectedProcedure, 'procedures')} className="flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm bg-white border hover:bg-gray-50"><LinkIcon className="h-4 w-4"/>Explorer les relations</button>
                                 </div>
                             </div>
                         )}
@@ -393,13 +492,21 @@ const ProceduresPageContent: React.FC<ProceduresPageProps> = ({ onShowRelations,
             </div>
             
             <ProcedureFormModal isOpen={isProcModalOpen} onClose={() => setProcModalOpen(false)} onSave={handleSaveProcedure} procedure={editingProcedure} />
+            {launchingProc && <LaunchProcedureModal procedure={launchingProc} onClose={() => setLaunchingProc(null)} onLaunch={handleLaunch} />}
         </div>
     );
 };
 
-const ProceduresPage: React.FC<ProceduresPageProps> = (props) => (
+
+const ProceduresPage: React.FC<ProceduresPageProps & { setActiveModule: (id: string) => void }> = (props) => (
     <ReactFlowProvider>
-        <ProceduresPageContent {...props} />
+        {/* FIX: Replaced prop spreading with explicit prop passing to avoid TypeScript error. */}
+        <ProceduresPageContent
+            onShowRelations={props.onShowRelations}
+            onShowValidation={props.onShowValidation}
+            onShowImpactAnalysis={props.onShowImpactAnalysis}
+            setActiveModule={props.setActiveModule}
+        />
     </ReactFlowProvider>
 );
 

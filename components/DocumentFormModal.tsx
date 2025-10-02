@@ -1,3 +1,5 @@
+
+
 import React, { useState, useEffect } from 'react';
 import { useDataContext } from '../context/AppContext';
 import type { Document, Risque, Controle } from '../types';
@@ -101,30 +103,36 @@ const DocumentFormModal: React.FC<DocumentFormModalProps> = ({ isOpen, onClose, 
                            <div><label className="block text-sm font-medium text-gray-700 mb-1">Date d'échéance</label><input type="date" name="dateEcheance" value={formData.champsLibres?.dateEcheance || ''} onChange={handleDateChange} className={formInputClasses} /></div>
                         </div>
                          <div><label className="block text-sm font-medium text-gray-700 mb-1">Catégories</label>
-                            <select multiple value={formData.categorieIds} onChange={(e) => handleMultiSelectChange('categorieIds', Array.from(e.target.selectedOptions, (option: HTMLOptionElement) => option.value))} className={`${formInputClasses} h-20`}>
+                            {/* FIX: Explicitly type 'option' to HTMLOptionElement to resolve TS error */}
+                            <select multiple value={formData.categorieIds} onChange={(e) => handleMultiSelectChange('categorieIds', Array.from(e.target.selectedOptions, (option: HTMLOptionElement) => option.value))} className={`${formInputClasses} h-24`}>
                                 {(categoriesDocuments as any[]).map(c=><option key={c.id} value={c.id}>{c.nom}</option>)}
                             </select>
                         </div>
-                        <div className="flex items-center space-x-4 pt-2">
-                            <label className="flex items-center space-x-2"><input type="checkbox" name="miseEnAvant" checked={!!formData.miseEnAvant} onChange={handleCheckboxChange} className="rounded" /><span className="text-sm font-medium">Mettre en avant sur l'accueil</span></label>
-                            <label className="flex items-center space-x-2"><input type="checkbox" name="autoValidationGED" checked={!!formData.autoValidationGED} onChange={handleGedChange} className="rounded" /><span className="text-sm font-medium">Auto-validation (GED)</span></label>
+                        <div className="flex items-center space-x-2 pt-2">
+                            <input type="checkbox" id="miseEnAvant" name="miseEnAvant" checked={!!formData.miseEnAvant} onChange={handleCheckboxChange} className="rounded" />
+                            <label htmlFor="miseEnAvant" className="text-sm font-medium text-gray-700">Mettre en avant ce document</label>
                         </div>
-                    </div>}
-                    
-                    {activeTab === 'source' && <div className="space-y-4">
-                        <div><label className="block text-sm font-medium text-gray-700 mb-1">Source du document</label>
-                            <select name="source" value={formData.source} onChange={handleChange} className={formInputClasses}>
-                                <option value="Fichier">Fichier</option>
-                                <option value="Lien">Lien (GED/UNC)</option>
-                                <option value="Description">Description</option>
-                            </select>
+                        <div className="flex items-center space-x-2">
+                            <input type="checkbox" id="autoValidationGED" name="autoValidationGED" checked={!!formData.autoValidationGED} onChange={handleGedChange} className="rounded" />
+                            <label htmlFor="autoValidationGED" className="text-sm font-medium text-gray-700">Publication automatique (sans flux de validation)</label>
                         </div>
-                        {formData.source === 'Fichier' && <div><label className="block text-sm font-medium text-gray-700 mb-1">Fichier</label><input type="file" className={`${formInputClasses} p-2`} /></div>}
-                        {formData.source === 'Lien' && <div><label className="block text-sm font-medium text-gray-700 mb-1">URL du lien</label><input type="url" name="lien" value={formData.lien} onChange={handleChange} placeholder="file://serveur/partage/document.docx" className={formInputClasses} /></div>}
-                        {formData.source === 'Description' && <div><label className="block text-sm font-medium text-gray-700 mb-1">Contenu</label><textarea name="description" value={formData.description} onChange={handleChange} rows={8} className={formInputClasses}></textarea></div>}
                     </div>}
 
-                    {activeTab === 'relations' && <div className="space-y-4 bg-gray-50 p-4 rounded-lg">
+                    {activeTab === 'source' && <div className="space-y-4">
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">Source</label>
+                            <select name="source" value={formData.source} onChange={handleChange} className={formInputClasses}>
+                                <option value="Fichier">Fichier (ex: PDF, Word)</option>
+                                <option value="Lien">Lien externe (URL)</option>
+                                <option value="Description">Description riche (éditeur)</option>
+                            </select>
+                        </div>
+                        {formData.source === 'Fichier' && <div><label className="block text-sm font-medium text-gray-700 mb-1">Téléverser le fichier</label><input type="file" className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"/></div>}
+                        {formData.source === 'Lien' && <div><label className="block text-sm font-medium text-gray-700 mb-1">URL du lien</label><input type="url" name="lien" value={formData.lien || ''} onChange={handleChange} className={formInputClasses} placeholder="https://..." /></div>}
+                        {formData.source === 'Description' && <div><label className="block text-sm font-medium text-gray-700 mb-1">Contenu</label><textarea name="description" value={formData.description || ''} onChange={handleChange} rows={8} className={formInputClasses}></textarea></div>}
+                    </div>}
+
+                    {activeTab === 'relations' && <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <MultiSelect items={risques as Risque[]} selectedIds={formData.risqueIds || []} onChange={(ids) => handleMultiSelectChange('risqueIds', ids)} label="Risques liés" />
                         <MultiSelect items={controles as Controle[]} selectedIds={formData.controleIds || []} onChange={(ids) => handleMultiSelectChange('controleIds', ids)} label="Contrôles liés" />
                     </div>}

@@ -1,4 +1,3 @@
-
 import React from 'react';
 import type { Tache, Personne } from '../types';
 import { useDataContext } from '../context/AppContext';
@@ -50,4 +49,4 @@ const TaskCard: React.FC<TaskCardProps> = ({ task, onSelectTask, onDragStart }) 
     );
 };
 
-export default React.memo(TaskCard);
+export default TaskCard;

@@ -1,5 +1,6 @@
+
 import React, { useState, useEffect } from 'react';
-import type { Entite, CustomFieldDef } from '../types';
+import type { Entite, CustomFieldDef, Personne } from '../types';
 import { X } from 'lucide-react';
 import { useAppContext, useDataContext } from '../context/AppContext';
 
@@ -101,7 +102,7 @@ export const EntiteFormModal: React.FC<EntiteFormModalProps> = ({ isOpen, onClos
                             <div><label className="block text-sm font-semibold text-gray-700 mb-1">Code</label><input type="text" name="code" value={formData.code} onChange={handleChange} className={formInputClasses} /></div>
                             <div><label className="block text-sm font-semibold text-gray-700 mb-1">Type</label><select name="type" value={formData.type} onChange={handleChange} className={formInputClasses}>{['Direction', 'Division', 'Service', 'Équipe', 'Autre'].map(t => <option key={t} value={t}>{t}</option>)}</select></div>
                             <div><label className="block text-sm font-semibold text-gray-700 mb-1">Entité Parente</label><select name="parentId" value={formData.parentId || ''} onChange={handleChange} className={formInputClasses}><option value="">Aucune (racine)</option>{(data.entites as Entite[]).filter(e => e.id !== formData.id).map(e => <option key={e.id} value={e.id}>{e.nom}</option>)}</select></div>
-                            <div><label className="block text-sm font-semibold text-gray-700 mb-1">Responsable</label><select name="responsableId" value={formData.responsableId || ''} onChange={handleChange} className={formInputClasses}><option value="">Non assigné</option>{(data.personnes as any[]).map(p => <option key={p.id} value={p.id}>{p.prenom} {p.nom}</option>)}</select></div>
+                            <div><label className="block text-sm font-semibold text-gray-700 mb-1">Responsable</label><select name="responsableId" value={formData.responsableId || ''} onChange={handleChange} className={formInputClasses}><option value="">Non assigné</option>{(data.personnes as Personne[]).map(p => <option key={p.id} value={p.id}>{p.prenom} {p.nom}</option>)}</select></div>
                         </div>
                         
                         {customFieldDefs.length > 0 && (

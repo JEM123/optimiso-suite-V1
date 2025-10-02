@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { X, Users, Briefcase, FileText, Workflow, Target, AlertTriangle, CheckCircle, TrendingUp, Shield, Link as LinkIcon } from 'lucide-react';
 import { modules } from '../constants';

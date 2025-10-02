@@ -1,4 +1,5 @@
 
+
 import type { Personne, Processus, Document, Procedure, Controle, Risque, Actualite, CategorieActualite, Indicateur, Tache, Entite, Poste, Role, Competence, OccupationHistory, RACI, CategorieRisque, CategorieControle, ExecutionControle, CategorieDocument, Incident, Amelioration, Actif, ActifCategorie, MaintenanceLog, AccueilPage, CategorieIndicateur, FluxDefinition, ValidationInstance, SyncConnector, SyncLogEntry, NormeLoiCadre, NormeLoiExigence, EvaluationCompetence, PlanFormation, CampagneEvaluation, Mission, Notification } from './types';
 import { 
   Users, FileText, Settings, AlertTriangle, CheckCircle, BarChart3, 
@@ -227,14 +228,18 @@ export const mockData = {
   ] as Role[],
 
   entites: [
-    { id: 'ent-1', reference: 'DG', code: 'DG', nom: 'Direction Générale', type: 'Direction', parentId: undefined, ordre: 1, responsableId: 'pers-1', actif: true, statut: 'valide', dateCreation: new Date(), dateModification: new Date(), auteurId: 'pers-1', confidentialite: 'restreinte' },
-    { id: 'ent-2', reference: 'FIN', code: 'FIN', nom: 'Direction Financière', type: 'Direction', parentId: 'ent-1', ordre: 1, responsableId: 'pers-2', actif: true, statut: 'valide', dateCreation: new Date(), dateModification: new Date(), auteurId: 'pers-1', confidentialite: 'restreinte' },
-    { id: 'ent-3', reference: 'CTRL', code: 'CTRL', nom: 'Contrôle de Gestion', type: 'Service', parentId: 'ent-2', ordre: 1, responsableId: 'pers-2', actif: true, statut: 'valide', dateCreation: new Date(), dateModification: new Date(), auteurId: 'pers-1', confidentialite: 'restreinte' },
-    { id: 'ent-4', reference: 'COMPTA', code: 'COMPTA', nom: 'Comptabilité', type: 'Service', parentId: 'ent-2', ordre: 2, responsableId: 'pers-3', actif: true, statut: 'valide', dateCreation: new Date(), dateModification: new Date(), auteurId: 'pers-1', confidentialite: 'publique' },
-    { id: 'ent-5', reference: 'RH', code: 'RH', nom: 'Ressources Humaines', type: 'Direction', parentId: 'ent-1', ordre: 2, responsableId: 'pers-4', actif: true, statut: 'valide', dateCreation: new Date(), dateModification: new Date(), auteurId: 'pers-1', confidentialite: 'publique' },
-    { id: 'ent-6', reference: 'DSI', code: 'DSI', nom: 'Direction des Systèmes d\'Information', type: 'Direction', parentId: 'ent-1', ordre: 3, actif: true, statut: 'en_cours', dateCreation: new Date(), dateModification: new Date(), auteurId: 'pers-1', confidentialite: 'restreinte' },
-    { id: 'ent-7', reference: 'DEV', code: 'DEV', nom: 'Équipe Développement', type: 'Équipe', parentId: 'ent-6', ordre: 1, actif: true, statut: 'valide', dateCreation: new Date(), dateModification: new Date(), auteurId: 'pers-1', confidentialite: 'publique' },
-    { id: 'ent-8', reference: 'SUP', code: 'SUP', nom: 'Équipe Support', type: 'Équipe', parentId: 'ent-6', ordre: 2, actif: true, statut: 'brouillon', dateCreation: new Date(), dateModification: new Date(), auteurId: 'pers-1', confidentialite: 'publique' },
+    { id: 'ent-1', reference: 'Admin', code: 'Admin', nom: 'Administration et finance', type: 'Service', ordre: 1, actif: true, statut: 'valide', dateCreation: new Date(), dateModification: new Date(), auteurId: 'pers-1', confidentialite: 'publique' },
+    { id: 'ent-2', reference: 'Comm', code: 'Comm', nom: 'Commercial', type: 'Service', ordre: 2, actif: true, statut: 'valide', dateCreation: new Date(), dateModification: new Date(), auteurId: 'pers-1', confidentialite: 'publique' },
+    { id: 'ent-3', reference: 'DG', code: 'DG', nom: 'Direction générale', type: 'Direction', ordre: 3, actif: true, statut: 'valide', dateCreation: new Date(), dateModification: new Date(), auteurId: 'pers-1', confidentialite: 'restreinte' },
+    { id: 'ent-4', reference: 'Fin', code: 'Fin', nom: 'Comptabilité et Finance', type: 'Service', parentId: 'ent-3', ordre: 4, actif: true, statut: 'valide', dateCreation: new Date(), dateModification: new Date(), auteurId: 'pers-1', confidentialite: 'restreinte' },
+    { id: 'ent-5', reference: 'IT', code: 'IT', nom: 'Informatique', type: 'Service', ordre: 5, actif: true, statut: 'valide', dateCreation: new Date(), dateModification: new Date(), auteurId: 'pers-1', confidentialite: 'publique' },
+    { id: 'ent-6', reference: 'Mkg', code: 'Mkg', nom: 'Marketing', type: 'Service', ordre: 6, actif: true, statut: 'valide', dateCreation: new Date(), dateModification: new Date(), auteurId: 'pers-1', confidentialite: 'publique' },
+    { id: 'ent-7', reference: 'MkgVte', code: 'MkgVte', nom: 'Commercial et marketing', type: 'Service', ordre: 7, actif: true, statut: 'valide', dateCreation: new Date(), dateModification: new Date(), auteurId: 'pers-1', confidentialite: 'publique' },
+    { id: 'ent-8', reference: 'Prod', code: 'Prod', nom: 'Réalisation produits / services', type: 'Division', ordre: 8, actif: true, statut: 'valide', dateCreation: new Date(), dateModification: new Date(), auteurId: 'pers-1', confidentialite: 'publique' },
+    { id: 'ent-9', reference: 'ProdA', code: 'ProdA', nom: 'Produit / Service A', type: 'Service', parentId: 'ent-8', ordre: 9, actif: true, statut: 'valide', dateCreation: new Date(), dateModification: new Date(), auteurId: 'pers-1', confidentialite: 'publique' },
+    { id: 'ent-10', reference: 'ProdB', code: 'ProdB', nom: 'Produit / Service B', type: 'Service', parentId: 'ent-8', ordre: 10, actif: true, statut: 'valide', dateCreation: new Date(), dateModification: new Date(), auteurId: 'pers-1', confidentialite: 'publique' },
+    { id: 'ent-11', reference: 'QSE', code: 'QSE', nom: 'Qualité sécurité environnement', type: 'Service', ordre: 11, actif: true, statut: 'valide', dateCreation: new Date(), dateModification: new Date(), auteurId: 'pers-1', confidentialite: 'publique' },
+    { id: 'ent-12', reference: 'RH', code: 'RH', nom: 'Ressources humaines', type: 'Service', ordre: 12, actif: true, statut: 'valide', dateCreation: new Date(), dateModification: new Date(), auteurId: 'pers-1', confidentialite: 'publique' },
   ] as Entite[],
 
   documents: [
@@ -289,7 +294,7 @@ export const mockData = {
         { id: 'p2-decision', type: 'decision', ordre: 3, libelle: 'Écarts détectés ?', position: { x: 350, y: 275 } },
         { id: 'p2-step-yes', type: 'step', ordre: 4, libelle: 'Analyser et corriger', responsablePosteId: 'pos-3', position: { x: 150, y: 400 } },
         { id: 'p2-step-no', type: 'step', ordre: 5, libelle: 'Validation par le CFO', responsablePosteId: 'pos-2', position: { x: 550, y: 400 }, risqueIds: ['RSK-002'], controleIds: ['ctrl-1'] },
-        { id: 'p2-end', ordre: 6, libelle: 'Clôture mensuelle OK', position: { x: 350, y: 525 } }
+        { id: 'p2-end', type: 'end', ordre: 6, libelle: 'Clôture mensuelle OK', position: { x: 350, y: 525 } }
       ],
       liens: [
         { id: 'l-p2-start-s1', source: 'p2-start', target: 'p2-step1' },
@@ -425,7 +430,7 @@ export const mockData = {
   ] as ExecutionControle[],
   
   // -- FLUX & SYNCHRO --
-  fluxDefinitions: [ { id: 'flux-doc-simple', nom: 'Validation Document Simple (1 étape)', statut: 'valide', dateCreation: new Date(), dateModification: new Date(), auteurId: 'system', reference: 'FLUX-01', modulesCibles: ['Documents'], evenementsCouverts: ['Publication'], etapes: [{id: 'etape-flux-1', ordre: 1, nom: 'Validation N+1', type: 'Finale', modeAppro: 'Individu', approbateursIds: ['pers-2'], regleDecision: 'Tous', SLA_Heures: 48}] } ] as FluxDefinition[],
+  fluxDefinitions: [ { id: 'flux-doc-simple', nom: 'Validation Document Simple (1 étape)', statut: 'valide', dateCreation: new Date(), dateModification: new Date(), auteurId: 'system', reference: 'FLUX-01', modulesCibles: ['Documents'], evenementsCouverts: ['Publication'], etapes: [{id: 'etape-flux-1', ordre: 1, nom: 'Validation N+1', type: 'Finale', modeAppro: 'Individu', approbateursIds: ['pers-1'], regleDecision: 'Tous', SLA_Heures: 48}] } ] as FluxDefinition[],
   validationInstances: [
     { id: 'val-1', fluxDefinitionId: 'flux-doc-simple', elementId: 'doc-1', elementModule: 'Documents', statut: 'Approuvé', etapeActuelle: 1, demandeurId: 'pers-4', dateDemande: new Date('2024-05-18'), historique: [{id: 'hist-1', etapeId: 'etape-flux-1', decideurId: 'pers-1', decision: 'Approuvé', dateDecision: new Date('2024-05-20'), commentaire: 'OK pour moi.'}] },
     { id: 'val-2', fluxDefinitionId: 'flux-doc-simple', elementId: 'doc-2', elementModule: 'Documents', statut: 'En cours', etapeActuelle: 1, demandeurId: 'pers-2', dateDemande: new Date(), historique: [] },
@@ -460,11 +465,19 @@ export const mockData = {
     }
   ] as AccueilPage[],
   
+  // -- DASHBOARDS --
+  dashboardStats: {
+    risques: { total: 3, parNiveau: { critique: 1, eleve: 1, moyen: 1 }, parProcessus: [{nom: 'Recrutement', count: 1, couleur: 'bg-blue-500'}, {nom: 'Finance', count: 2, couleur: 'bg-green-500'}] },
+    documents: { total: 4, publies: 2, enCours: 1, archives: 1, parType: [{type: 'REG', count: 2}, {type: 'FORM', count: 1}, {type: 'MOD', count: 1}] },
+    incidents: { total: 1, nouveau: 1, enCours: 0, slaDepasse: 0, cloture: 0, parCategorie: [{categorie: 'SI', count: 1, color: 'bg-red-500'}]},
+    ameliorations: { total: 1, nouveau: 0, enCours: 1, cloture: 0, parOrigine: [{origine: 'Suggestion', count: 1, color: 'bg-purple-500'}]}
+  },
+
   notifications: [
     { id: 'notif-1', type: 'mention', title: 'Nouvelle mention dans un risque', description: 'Jean Dupont vous a mentionné dans le risque RSK-002: "Fraude comptable".', date: new Date(new Date().getTime() - 3600000), userId: 'pers-2', targetModule: 'risques', targetId: 'RSK-002' },
     { id: 'notif-2', type: 'tache', title: 'Nouvelle tâche assignée', description: 'La tâche "Exécuter le contrôle mensuel des comptes" vous a été assignée.', date: new Date(new Date().getTime() - 2 * 3600000), userId: 'pers-2', targetModule: 'todo', targetId: 'task-2' },
     { id: 'notif-3', type: 'alerte', title: 'Incident critique déclaré', description: 'Un incident critique "Accès impossible au serveur de fichiers" a été déclaré.', date: new Date(new Date().getTime() - 5 * 3600000), targetModule: 'incidents', targetId: 'inc-1' },
     { id: 'notif-4', type: 'evaluation', title: 'Évaluation de compétence requise', description: 'Vous devez évaluer Pierre Durand sur la compétence "Analyse Financière".', date: new Date(new Date().getTime() - 24 * 3600000), userId: 'pers-2', targetModule: 'competences', targetId: 'eval-6' },
-    { id: 'notif-5', type: 'validation', title: 'Demande de validation', description: 'Une nouvelle version du document "Procédure de clôture comptable" attend votre approbation.', date: new Date(new Date().getTime() - 2 * 24 * 3600000), userId: 'pers-2', targetModule: 'documents', targetId: 'doc-2' },
+    { id: 'notif-5', type: 'validation', title: 'Demande de validation', description: 'Une nouvelle version du document "Procédure de clôture comptable" attend votre approbation.', date: new Date(new Date().getTime() - 2 * 24 * 3600000), userId: 'pers-1', targetModule: 'documents', targetId: 'doc-2' },
   ] as Notification[],
 };

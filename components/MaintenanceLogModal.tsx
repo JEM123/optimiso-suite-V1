@@ -1,6 +1,7 @@
+
 import React, { useState } from 'react';
-import { mockData } from '../constants';
-import type { MaintenanceLog } from '../types';
+import { useDataContext } from '../context/AppContext';
+import type { MaintenanceLog, Actif, Personne } from '../types';
 import { X } from 'lucide-react';
 
 interface MaintenanceLogModalProps {
@@ -13,11 +14,13 @@ interface MaintenanceLogModalProps {
 const formInputClasses = "block w-full text-sm text-gray-800 bg-white border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-300 focus:border-transparent transition-colors";
 
 const MaintenanceLogModal: React.FC<MaintenanceLogModalProps> = ({ isOpen, onClose, onSave, actifId }) => {
+    const { data } = useDataContext();
+    const { actifs, personnes } = data as { actifs: Actif[], personnes: Personne[] };
     const [formData, setFormData] = useState<Partial<MaintenanceLog>>({ date: new Date() });
     
     if (!isOpen) return null;
     
-    const actif = mockData.actifs.find(a => a.id === actifId);
+    const actif = actifs.find(a => a.id === actifId);
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
         const { name, value } = e.target;
@@ -45,7 +48,7 @@ const MaintenanceLogModal: React.FC<MaintenanceLogModalProps> = ({ isOpen, onClo
                     <div><label className="block text-sm font-medium mb-1">Technicien</label>
                         <select name="technicien" value={formData.technicien || ''} onChange={handleChange} className={formInputClasses} required>
                             <option value="" disabled>Sélectionner...</option>
-                            {mockData.personnes.map(p => <option key={p.id} value={p.id}>{p.prenom} {p.nom}</option>)}
+                            {personnes.map(p => <option key={p.id} value={p.id}>{p.prenom} {p.nom}</option>)}
                         </select>
                     </div>
                     <div><label className="block text-sm font-medium mb-1">Description</label><textarea name="description" value={formData.description || ''} onChange={handleChange} rows={3} className={formInputClasses} required></textarea></div>

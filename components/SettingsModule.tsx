@@ -2,10 +2,9 @@ import React, { useState } from 'react';
 import { useAppContext } from '../context/AppContext';
 import type { ISettings, CustomFieldDef, CustomFieldType, ReferenceFormat } from '../types';
 import { modules } from '../constants';
-import { Save, Package, FileText, FolderOpen, AlertTriangle, X, Plus, Trash2, LayoutTemplate } from 'lucide-react';
+import { Save, Package, FileText, FolderOpen, AlertTriangle, X, Plus, Trash2 } from 'lucide-react';
 import PageHeader from './PageHeader';
 import Button from './ui/Button';
-import FicheLayoutSettings from './FicheLayoutSettings';
 
 const formInputClasses = "block w-full text-sm text-gray-800 bg-white border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-300 focus:border-transparent transition-colors";
 const modulesWithCustomFields = ['personnes', 'postes', 'processus', 'competences', 'risques', 'entites'];
@@ -56,7 +55,7 @@ const SettingsModule: React.FC = () => {
         const handleRefChange = (module: string, field: keyof ReferenceFormat, value: string | number) => {
             setLocalSettings(prev => ({
                 ...prev,
-                references: { ...prev.references, [module]: { ...prev.references[module], [field]: value } }
+                references: { ...prev.references, [module]: { ...prev.references[module]!, [field]: value } }
             }));
         };
         return (
@@ -65,18 +64,17 @@ const SettingsModule: React.FC = () => {
                     Configurez le formatage des références pour les nouveaux éléments.
                 </div>
                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    {Object.entries(localSettings.references).map(([module, format]) => {
-                        const refFormat = format as ReferenceFormat;
-                        return (
+                    {/* FIX: Explicitly type [module, format] to avoid 'unknown' type error */}
+                    {Object.entries(localSettings.references).map(([module, format]: [string, ReferenceFormat]) => (
                         <div key={module} className="p-4 bg-white border rounded-lg">
                             <h4 className="font-semibold text-gray-800 capitalize mb-3">{module}</h4>
                             <div className="space-y-3">
-                                <div><label className="block text-sm mb-1">Préfixe</label><input type="text" value={refFormat.prefix} onChange={e => handleRefChange(module, 'prefix', e.target.value)} className={formInputClasses}/></div>
-                                <div><label className="block text-sm mb-1">Nombre de chiffres</label><input type="number" min="2" max="8" value={refFormat.digits} onChange={e => handleRefChange(module, 'digits', parseInt(e.target.value))} className={formInputClasses}/></div>
-                                <div className="bg-gray-100 p-2 rounded text-sm">Exemple: <span className="font-mono">{`${refFormat.prefix}${String(1).padStart(refFormat.digits, '0')}`}</span></div>
+                                <div><label className="block text-sm mb-1">Préfixe</label><input type="text" value={format.prefix} onChange={e => handleRefChange(module, 'prefix', e.target.value)} className={formInputClasses}/></div>
+                                <div><label className="block text-sm mb-1">Nombre de chiffres</label><input type="number" min="2" max="8" value={format.digits} onChange={e => handleRefChange(module, 'digits', parseInt(e.target.value))} className={formInputClasses}/></div>
+                                <div className="bg-gray-100 p-2 rounded text-sm">Exemple: <span className="font-mono">{`${format.prefix}${String(1).padStart(format.digits, '0')}`}</span></div>
                             </div>
                         </div>
-                    )})}
+                    ))}
                  </div>
             </div>
         )
@@ -159,7 +157,6 @@ const SettingsModule: React.FC = () => {
         { id: 'modules', name: 'Modules', icon: Package, content: renderModulesTab() },
         { id: 'references', name: 'Références', icon: FileText, content: renderReferencesTab() },
         { id: 'customfields', name: 'Champs Libres', icon: FolderOpen, content: renderCustomFieldsTab() },
-        { id: 'layout', name: 'Mise en Page', icon: LayoutTemplate, content: <FicheLayoutSettings localSettings={localSettings} setLocalSettings={setLocalSettings} /> },
     ];
     
     return (

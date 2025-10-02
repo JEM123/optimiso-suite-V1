@@ -114,6 +114,7 @@ const ControlFormModal: React.FC<ControlFormModalProps> = ({ isOpen, onClose, on
                         <div><label className="block text-sm font-semibold text-gray-700 mb-1">Type de planification</label><select name="typePlanification" value={formData.typePlanification} onChange={handleChange} className={formInputClasses}>{['non_automatisé', 'a_la_demande', 'periodique'].map(t=><option key={t} value={t}>{t.replace('_', ' ')}</option>)}</select></div>
                         {formData.typePlanification === 'periodique' && <div><label className="block text-sm font-semibold text-gray-700 mb-1">Fréquence</label><select name="frequence" value={formData.frequence} onChange={handleChange} className={formInputClasses}>{['quotidienne', 'hebdomadaire', 'mensuelle', 'trimestrielle', 'annuelle'].map(f=><option key={f} value={f}>{f}</option>)}</select></div>}
                         <div><label className="block text-sm font-semibold text-gray-700 mb-1">Exécutants</label>
+                            {/* FIX: Explicitly type 'option' to HTMLOptionElement to resolve TS error */}
                             <select multiple value={formData.executantsIds} onChange={(e) => handleMultiSelectChange('executantsIds', Array.from(e.target.selectedOptions, (option: HTMLOptionElement) => option.value))} className={`${formInputClasses} h-24`}>
                                 {(personnes as Personne[]).map(p=><option key={p.id} value={p.id}>{p.prenom} {p.nom}</option>)}
                             </select>

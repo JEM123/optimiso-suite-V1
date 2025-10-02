@@ -430,7 +430,7 @@ export interface Indicateur extends BaseEntity {
 }
 
 
-export type TacheSourceModule = 'Controle' | 'Incident' | 'Amelioration' | 'Actif' | 'FluxValidation' | 'NormesLois' | 'AdHoc';
+export type TacheSourceModule = 'Controle' | 'Incident' | 'Amelioration' | 'Actif' | 'FluxValidation' | 'NormesLois' | 'AdHoc' | 'Processus';
 export type TachePriorite = 'Basse' | 'Normale' | 'Haute' | 'Critique';
 export type TacheStatut = 'A faire' | 'En cours' | 'En attente' | 'Bloquee' | 'Fait' | 'Annulee';
 
@@ -447,6 +447,9 @@ export interface Tache {
   dateCreation: Date;
   dateEcheance: Date;
   dateCloture?: Date;
+  procedureInstanceId?: string;
+  procedureInstanceName?: string;
+  predecessorIds?: string[];
 }
 
 // --- INCIDENTS MODULE TYPES ---
@@ -656,7 +659,7 @@ export interface Mission extends BaseEntity {
     documentIds: string[];
     risqueIds: string[];
     controleIds: string[];
-    exigenceIds?: string[];
+    exigenceIds: string[];
     actif: boolean;
     confidentialite: 'publique' | 'restreinte';
 }
@@ -689,19 +692,15 @@ export interface ReferenceFormat {
     digits: number;
 }
 
-export interface FicheTab {
-    id: string;
-    label: string;
-}
-
-export interface FicheLayout {
-    tabs: FicheTab[];
-    sections: Record<string, string[]>; // { tabId: sectionId[] }
-}
-
 export interface ISettings {
     modules: Record<string, { visible: boolean }>;
     references: Record<string, ReferenceFormat>;
     customFields: Record<string, CustomFieldDef[]>;
-    ficheLayouts: Record<string, FicheLayout>;
+}
+
+// --- IMPORT MODULE TYPES ---
+export interface ValidationError {
+    row: number;
+    column: string;
+    message: string;
 }

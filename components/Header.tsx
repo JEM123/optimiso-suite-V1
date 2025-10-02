@@ -1,97 +1,25 @@
-import React, { useState, useMemo, useEffect, useCallback } from 'react';
+import React, { useState, useMemo } from 'react';
 import { Search, Bell, Settings } from 'lucide-react';
 import { modules } from '../constants';
-import { useAppContext, useDataContext } from '../context/AppContext';
+import { useAppContext } from '../context/AppContext';
 import NotificationCenter from './NotificationCenter';
-import GlobalSearchResults from './GlobalSearchResults';
-import type { Document, Personne, Poste, Risque } from '../types';
 
 interface HeaderProps {
     activeModule: string;
 }
 
-const useDebounce = (value: string, delay: number) => {
-    const [debouncedValue, setDebouncedValue] = useState(value);
-    useEffect(() => {
-        const handler = setTimeout(() => {
-            setDebouncedValue(value);
-        }, delay);
-        return () => {
-            clearTimeout(handler);
-        };
-    }, [value, delay]);
-    return debouncedValue;
-};
-
 const Header: React.FC<HeaderProps> = ({ activeModule }) => {
     const { notifications, readNotificationIds } = useAppContext();
-    const { data } = useDataContext();
     const [isNotificationsOpen, setNotificationsOpen] = useState(false);
-    const [searchTerm, setSearchTerm] = useState('');
-    const [searchResults, setSearchResults] = useState<any[]>([]);
-    const [isSearchFocused, setIsSearchFocused] = useState(false);
-    
-    const debouncedSearchTerm = useDebounce(searchTerm, 300);
-
-    useEffect(() => {
-        if (debouncedSearchTerm.length < 2) {
-            setSearchResults([]);
-            return;
-        }
-
-        const lowerCaseTerm = debouncedSearchTerm.toLowerCase();
-        const results: any[] = [];
-
-        // Search documents
-        (data.documents as Document[]).forEach(doc => {
-            if (doc.nom.toLowerCase().includes(lowerCaseTerm) || doc.reference.toLowerCase().includes(lowerCaseTerm)) {
-                results.push({ ...doc, type: 'document' });
-            }
-        });
-
-        // Search people
-        (data.personnes as Personne[]).forEach(p => {
-            if (`${p.prenom} ${p.nom}`.toLowerCase().includes(lowerCaseTerm) || p.email.toLowerCase().includes(lowerCaseTerm)) {
-                results.push({ ...p, type: 'personne' });
-            }
-        });
-        
-        // Search postes
-        (data.postes as Poste[]).forEach(p => {
-             if (p.intitule.toLowerCase().includes(lowerCaseTerm) || p.reference.toLowerCase().includes(lowerCaseTerm)) {
-                results.push({ ...p, type: 'poste' });
-            }
-        });
-        
-        // Search risques
-        (data.risques as Risque[]).forEach(r => {
-             if (r.nom.toLowerCase().includes(lowerCaseTerm) || r.reference.toLowerCase().includes(lowerCaseTerm)) {
-                results.push({ ...r, type: 'risque' });
-            }
-        });
-
-
-        setSearchResults(results.slice(0, 10)); // Limit results
-
-    }, [debouncedSearchTerm, data]);
-
 
     const getModuleTitle = () => {
-        if (activeModule === 'accueil') return 'Page d\'Accueil';
-        if (activeModule === 'risques-dashboard') return 'Tableau de Bord - Risques';
-        if (activeModule === 'documents-dashboard') return 'Tableau de Bord - Documents';
+        if (activeModule === 'accueil') return 'Tableau de Bord Général';
         return modules.find(m => m.id === activeModule)?.nom || 'Module';
     };
 
     const unreadCount = useMemo(() => {
         return notifications.filter(n => !readNotificationIds.includes(n.id)).length;
     }, [notifications, readNotificationIds]);
-
-    const handleResultClick = () => {
-        setSearchTerm('');
-        setSearchResults([]);
-        setIsSearchFocused(false);
-    };
 
     return (
         <header className="bg-white border-b border-gray-200 px-6 py-4">
@@ -109,14 +37,7 @@ const Header: React.FC<HeaderProps> = ({ activeModule }) => {
                             placeholder="Rechercher..."
                             className="pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent w-48 sm:w-64"
                             aria-label="Recherche globale"
-                            value={searchTerm}
-                            onChange={(e) => setSearchTerm(e.target.value)}
-                            onFocus={() => setIsSearchFocused(true)}
-                            onBlur={() => setTimeout(() => setIsSearchFocused(false), 200)}
                         />
-                         {isSearchFocused && searchResults.length > 0 && (
-                            <GlobalSearchResults results={searchResults} onResultClick={handleResultClick} />
-                        )}
                     </div>
                     <div className="relative">
                         <button 

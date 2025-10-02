@@ -1,5 +1,5 @@
 {
-  "name": "optimiso-suite",
+  "name": "optimiso-suite-v2",
   "private": true,
   "version": "0.0.0",
   "type": "module",
@@ -14,9 +14,8 @@
     "lucide-react": "^0.542.0",
     "reactflow": "11.11.4",
     "uuid": "^13.0.0",
-    "html-to-image": "1.11.11",
-    "jspdf": "2.5.1",
-    "d3-hierarchy": "3"
+    "xlsx": "latest",
+    "papaparse": "^5.5.3"
   },
   "devDependencies": {
     "@types/node": "^22.14.0",

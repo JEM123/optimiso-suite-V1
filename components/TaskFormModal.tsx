@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useDataContext } from '../context/AppContext';
-import type { Tache, Personne } from '../types';
+import type { Tache, Personne, Procedure, Processus } from '../types';
 import { X } from 'lucide-react';
 
 interface TaskFormModalProps {
@@ -14,11 +14,32 @@ const formInputClasses = "block w-full text-sm text-gray-800 bg-white border bor
 
 const TaskFormModal: React.FC<TaskFormModalProps> = ({ isOpen, onClose, onSave, task }) => {
     const { data } = useDataContext();
+    const { personnes, procedures, processus } = data as { personnes: Personne[], procedures: Procedure[], processus: Processus[] };
+
     const [formData, setFormData] = useState<Partial<Tache>>(task || {});
 
     useEffect(() => {
         if (isOpen) setFormData(task || {});
     }, [task, isOpen]);
+
+    const assignablePeople = useMemo(() => {
+        if (formData.sourceModule === 'Processus' && formData.sourceId) {
+            const procedure = procedures.find(p => p.id === formData.sourceId);
+            if (!procedure) return personnes;
+
+            const parentProcessus = processus.find(p => p.procedureIds.includes(procedure.id));
+            if (!parentProcessus || !parentProcessus.entitesConcerneesIds || parentProcessus.entitesConcerneesIds.length === 0) {
+                return personnes;
+            }
+
+            const relevantEntiteIds = new Set(parentProcessus.entitesConcerneesIds);
+            return personnes.filter(personne => 
+                personne.entiteIds.some(entiteId => relevantEntiteIds.has(entiteId))
+            );
+        }
+        return personnes;
+    }, [formData, personnes, procedures, processus]);
+
 
     if (!isOpen) return null;
 
@@ -44,6 +65,11 @@ const TaskFormModal: React.FC<TaskFormModalProps> = ({ isOpen, onClose, onSave, 
                         <label className="block text-sm font-medium text-gray-700 mb-1">Titre</label>
                         <input type="text" name="titre" value={formData.titre || ''} onChange={handleChange} className={formInputClasses} required />
                     </div>
+                    {formData.procedureInstanceName && (
+                        <div className="text-sm bg-gray-50 p-2 rounded-md">
+                            Fait partie de : <span className="font-medium">{formData.procedureInstanceName}</span>
+                        </div>
+                    )}
                     <div>
                         <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
                         <textarea name="description" value={formData.description || ''} onChange={handleChange} rows={4} className={formInputClasses}></textarea>
@@ -53,7 +79,7 @@ const TaskFormModal: React.FC<TaskFormModalProps> = ({ isOpen, onClose, onSave, 
                             <label className="block text-sm font-medium text-gray-700 mb-1">Assigner à</label>
                             <select name="assigneA" value={formData.assigneA || ''} onChange={handleChange} className={formInputClasses} required>
                                 <option value="" disabled>Sélectionner une personne</option>
-                                {(data.personnes as Personne[]).map(p => <option key={p.id} value={p.id}>{p.prenom} {p.nom}</option>)}
+                                {assignablePeople.map(p => <option key={p.id} value={p.id}>{p.prenom} {p.nom}</option>)}
                             </select>
                         </div>
                         <div>

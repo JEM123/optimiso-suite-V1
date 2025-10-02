@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
-import type { Procedure, EtapeProcedure, Document, Risque, Controle } from '../types';
-import { mockData } from '../constants';
+import type { Procedure, EtapeProcedure, Document, Risque, Controle, Poste } from '../types';
+import { useDataContext } from '../context/AppContext';
 import { X, Briefcase, Edit, AlertTriangle, CheckCircle, Save, Ban, FileText } from 'lucide-react';
 
 interface ProcedureStepDetailPanelProps {
@@ -45,6 +45,7 @@ const MultiSelect: React.FC<{ items: any[], selectedIds: string[], onChange: (id
 }
 
 const ProcedureStepDetailPanel: React.FC<ProcedureStepDetailPanelProps> = ({ etape, procedure, onClose, onShowRelations, onSave }) => {
+    const { data } = useDataContext();
     const [isEditing, setIsEditing] = useState(false);
     const [formData, setFormData] = useState<EtapeProcedure>(etape);
 
@@ -72,10 +73,10 @@ const ProcedureStepDetailPanel: React.FC<ProcedureStepDetailPanelProps> = ({ eta
         setFormData(prev => ({...prev, [field]: ids as any}));
     }
 
-    const responsable = mockData.postes.find(p => p.id === formData.responsablePosteId);
-    const documents = mockData.documents.filter(r => formData.documentIds?.includes(r.id));
-    const risques = mockData.risques.filter(r => formData.risqueIds?.includes(r.id));
-    const controles = mockData.controles.filter(c => formData.controleIds?.includes(c.id));
+    const responsable = (data.postes as Poste[]).find(p => p.id === formData.responsablePosteId);
+    const documents = (data.documents as Document[]).filter(r => formData.documentIds?.includes(r.id));
+    const risques = (data.risques as Risque[]).filter(r => formData.risqueIds?.includes(r.id));
+    const controles = (data.controles as Controle[]).filter(c => formData.controleIds?.includes(c.id));
 
     return (
         <div className="w-full max-w-sm bg-white border-l shadow-lg flex flex-col h-full animate-slide-in-right z-10">
@@ -104,7 +105,7 @@ const ProcedureStepDetailPanel: React.FC<ProcedureStepDetailPanelProps> = ({ eta
                      {isEditing ? (
                         <select name="responsablePosteId" value={formData.responsablePosteId || ''} onChange={handleChange} className={FormInputClasses}>
                             <option value="">Non défini</option>
-                            {mockData.postes.map(p => <option key={p.id} value={p.id}>{p.intitule}</option>)}
+                            {(data.postes as Poste[]).map(p => <option key={p.id} value={p.id}>{p.intitule}</option>)}
                         </select>
                     ) : (
                         responsable ? <div className="p-2 bg-white border rounded-md text-sm">{responsable.intitule}</div> : <div className="p-2 bg-white border rounded-md text-sm text-gray-500">Non défini</div>
@@ -122,19 +123,19 @@ const ProcedureStepDetailPanel: React.FC<ProcedureStepDetailPanelProps> = ({ eta
                 {isEditing ? (
                     <>
                         <MultiSelect 
-                            items={mockData.documents} 
+                            items={data.documents as Document[]} 
                             selectedIds={formData.documentIds || []} 
                             onChange={(ids) => handleMultiSelectChange('documentIds', ids)}
                             label="Documents de référence"
                         />
                         <MultiSelect 
-                            items={mockData.risques} 
+                            items={data.risques as Risque[]} 
                             selectedIds={formData.risqueIds || []} 
                             onChange={(ids) => handleMultiSelectChange('risqueIds', ids)}
                             label="Risques liés"
                         />
                         <MultiSelect 
-                            items={mockData.controles} 
+                            items={data.controles as Controle[]} 
                             selectedIds={formData.controleIds || []} 
                             onChange={(ids) => handleMultiSelectChange('controleIds', ids)}
                             label="Contrôles de maîtrise"

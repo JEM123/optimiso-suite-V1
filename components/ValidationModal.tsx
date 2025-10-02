@@ -7,10 +7,9 @@ interface ValidationModalProps {
     validationModal: { show: boolean; document?: Document; procedure?: Procedure };
     setValidationModal: (modalState: { show: boolean; document?: Document; procedure?: Procedure }) => void;
     onApprove: (element: Document | Procedure) => void;
-    onReject: (element: Document | Procedure) => void;
 }
 
-const ValidationModal: React.FC<ValidationModalProps> = ({ validationModal, setValidationModal, onApprove, onReject }) => {
+const ValidationModal: React.FC<ValidationModalProps> = ({ validationModal, setValidationModal, onApprove }) => {
     const { data } = useDataContext();
     const { validationInstances, fluxDefinitions, personnes } = data;
 
@@ -27,10 +26,7 @@ const ValidationModal: React.FC<ValidationModalProps> = ({ validationModal, setV
 
     const handleApprove = () => {
         onApprove(element);
-    };
-
-    const handleReject = () => {
-        onReject(element);
+        setValidationModal({ show: false });
     };
 
     const getStatusText = (status: Document['statut'] | Procedure['statut']) => {
@@ -114,14 +110,9 @@ const ValidationModal: React.FC<ValidationModalProps> = ({ validationModal, setV
                             Fermer
                         </button>
                         {isEnCours && (
-                            <>
-                                <button onClick={handleReject} className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 font-medium">
-                                    Rejeter
-                                </button>
-                                <button onClick={handleApprove} className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 font-medium">
-                                    Approuver
-                                </button>
-                            </>
+                            <button onClick={handleApprove} className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 font-medium">
+                                Approuver
+                            </button>
                         )}
                     </div>
                 </div>

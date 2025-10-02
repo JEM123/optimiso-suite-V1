@@ -1,95 +1,24 @@
-
 import type { Entite, Poste, Personne } from '../types';
 import type { Node, Edge } from 'reactflow';
-import { hierarchy, tree } from 'd3-hierarchy';
 
-const NODE_WIDTH = 224; // w-56
-const NODE_HEIGHT = 120;
-const HORIZONTAL_SPACING = 50;
+const NODE_WIDTH = 220;
+const NODE_HEIGHT = 80;
+const HORIZONTAL_SPACING = 60;
 const VERTICAL_SPACING = 80;
 
-interface HierarchyDataItem {
+interface TreeNode {
     id: string;
     item: Entite | Poste;
-    children?: HierarchyDataItem[];
+    children: TreeNode[];
+    width: number;
+    x: number;
+    y: number;
 }
 
-const getEntitePeopleCount = (
-    entiteId: string,
-    entites: Entite[],
-    postes: Poste[],
-    entiteChildrenMap: Map<string, string[]>
-): number => {
-    let count = postes.filter(p => p.entiteId === entiteId)
-                      .reduce((sum, p) => sum + p.occupantsIds.length, 0);
-
-    const childrenIds = entiteChildrenMap.get(entiteId) || [];
-    for (const childId of childrenIds) {
-        count += getEntitePeopleCount(childId, entites, postes, entiteChildrenMap);
-    }
-    return count;
-};
-
-export const buildOrganigrammeLayout = (
-    entites: Entite[],
-    postes: Poste[],
-    personnes: Personne[],
-    layoutDirection: 'TB' | 'LR' = 'TB',
-    collapsedNodes: Set<string>,
-    onToggleNode: (nodeId: string) => void
-): { nodes: Node[], edges: Edge[] } => {
+export const buildOrganigrammeLayout = (entites: Entite[], postes: Poste[], personnes: Personne[]): { nodes: Node[], edges: Edge[] } => {
     if (entites.length === 0) return { nodes: [], edges: [] };
 
-    const allItems: (Entite | Poste)[] = [...entites, ...postes];
-    const itemMap = new Map(allItems.map(item => [item.id, item]));
-    const childrenMap = new Map<string, string[]>();
-
-    allItems.forEach(item => {
-        const parentId = 'type' in item ? item.parentId : (item.posteParentId || item.entiteId);
-        if (parentId && itemMap.has(parentId)) {
-            if (!childrenMap.has(parentId)) childrenMap.set(parentId, []);
-            childrenMap.get(parentId)!.push(item.id);
-        }
-    });
-
-    const buildHierarchy = (itemId: string): HierarchyDataItem | null => {
-        const item = itemMap.get(itemId);
-        if (!item) return null;
-
-        const dataItem: HierarchyDataItem = { id: itemId, item };
-        
-        if (!collapsedNodes.has(itemId)) {
-            const childrenIds = childrenMap.get(itemId) || [];
-            if (childrenIds.length > 0) {
-                dataItem.children = childrenIds.map(buildHierarchy).filter((c): c is HierarchyDataItem => c !== null);
-            }
-        }
-        return dataItem;
-    };
-    
-    const roots = allItems.filter(item => {
-        const parentId = 'type' in item ? item.parentId : (item.posteParentId || item.entiteId);
-        return !parentId || !itemMap.has(parentId);
-    });
-
-    const virtualRoot: HierarchyDataItem = {
-        id: '___virtual_root___',
-        item: { id: '___virtual_root___', nom: 'Root' } as any,
-        children: roots.map(root => buildHierarchy(root.id)).filter((c): c is HierarchyDataItem => c !== null),
-    };
-
-    const d3Hierarchy = hierarchy(virtualRoot);
-    const treeLayout = tree<HierarchyDataItem>();
-
-    if (layoutDirection === 'TB') {
-        treeLayout.nodeSize([NODE_WIDTH + HORIZONTAL_SPACING, NODE_HEIGHT + VERTICAL_SPACING]);
-    } else {
-        treeLayout.nodeSize([NODE_HEIGHT + VERTICAL_SPACING, NODE_WIDTH + HORIZONTAL_SPACING]);
-    }
-    
-    const layout = treeLayout(d3Hierarchy);
-    const descendants = layout.descendants();
-
+    // --- Data Pre-processing for counting ---
     const entiteChildrenMap = new Map<string, string[]>();
     entites.forEach(e => {
         if (e.parentId) {
@@ -98,47 +27,121 @@ export const buildOrganigrammeLayout = (
         }
     });
 
-    const nodes: Node[] = [];
-    const edges: Edge[] = [];
-    
-    descendants.forEach(d3Node => {
-        if (d3Node.data.id === '___virtual_root___') return;
+    const posteByEntiteMap = new Map<string, Poste[]>();
+    postes.forEach(p => {
+        if (!posteByEntiteMap.has(p.entiteId)) posteByEntiteMap.set(p.entiteId, []);
+        posteByEntiteMap.get(p.entiteId)!.push(p);
+    });
 
-        const item = d3Node.data.item;
-        const isEntite = 'type' in item;
-        const hasChildren = (childrenMap.get(item.id) || []).length > 0;
+    const countMemo = new Map<string, number>();
+    const getPeopleCountInEntite = (entiteId: string): number => {
+        if (countMemo.has(entiteId)) return countMemo.get(entiteId)!;
         
-        const peopleCount = isEntite
-            ? getEntitePeopleCount(item.id, entites, postes, entiteChildrenMap)
-            : (item as Poste).occupantsIds.length;
-        
-        const occupants = isEntite ? [] : personnes.filter(p => (item as Poste).occupantsIds.includes(p.id));
-        const responsable = isEntite ? personnes.find(p => p.id === (item as Entite).responsableId) : undefined;
-        
-        nodes.push({
-            id: item.id,
-            type: isEntite ? 'entite' : 'poste',
-            data: { 
-                item: item,
-                peopleCount: peopleCount,
-                occupants: occupants,
-                responsable: responsable,
-                isCollapsed: collapsedNodes.has(item.id),
-                onToggleCollapse: onToggleNode,
-                hasChildren: hasChildren,
-            },
-            position: layoutDirection === 'TB' ? { x: d3Node.x, y: d3Node.y } : { x: d3Node.y, y: d3Node.x },
-        });
+        let count = 0;
+        const directPostes = posteByEntiteMap.get(entiteId) || [];
+        count += directPostes.reduce((sum, p) => sum + p.occupantsIds.length, 0);
 
-        if (d3Node.parent && d3Node.parent.data.id !== '___virtual_root___') {
-            edges.push({
-                id: `e-${d3Node.parent.data.id}-${d3Node.data.id}`,
-                source: d3Node.parent.data.id,
-                target: d3Node.data.id,
-                type: 'smoothstep',
-            });
+        const childEntites = entiteChildrenMap.get(entiteId) || [];
+        count += childEntites.reduce((sum, childId) => sum + getPeopleCountInEntite(childId), 0);
+
+        countMemo.set(entiteId, count);
+        return count;
+    };
+
+    // --- Tree Building and Layouting ---
+    const allItems: (Entite | Poste)[] = [...entites, ...postes];
+    const itemMap = new Map(allItems.map(item => [item.id, item]));
+    const childrenMap = new Map<string, string[]>();
+
+    allItems.forEach(item => {
+        let parentId: string | undefined;
+        if ('type' in item) { // is Entite
+            parentId = item.parentId;
+        } else { // is Poste
+            parentId = item.posteParentId || item.entiteId;
+        }
+        if (parentId && itemMap.has(parentId)) {
+            if (!childrenMap.has(parentId)) childrenMap.set(parentId, []);
+            childrenMap.get(parentId)!.push(item.id);
         }
     });
+
+    const roots = allItems.filter(item => {
+        let parentId: string | undefined;
+        if ('type' in item) { parentId = item.parentId; } 
+        else { parentId = item.posteParentId || item.entiteId; }
+        return !parentId || !itemMap.has(parentId);
+    });
+
+    const buildTree = (itemId: string): TreeNode => {
+        const item = itemMap.get(itemId)!;
+        const children = (childrenMap.get(itemId) || []).map(childId => buildTree(childId));
+        return { id: itemId, item, children, width: 0, x: 0, y: 0 };
+    };
+    
+    const forest = roots.map(root => buildTree(root.id));
+
+    const calculateWidths = (node: TreeNode): void => {
+        if (node.children.length === 0) {
+            node.width = NODE_WIDTH;
+            return;
+        }
+        node.children.forEach(calculateWidths);
+        const childrenWidth = node.children.reduce((acc, child) => acc + child.width, 0) + (node.children.length - 1) * HORIZONTAL_SPACING;
+        node.width = Math.max(NODE_WIDTH, childrenWidth);
+    };
+    forest.forEach(calculateWidths);
+    
+    const assignPositions = (node: TreeNode, level: number, parentX: number) => {
+        node.y = level * (NODE_HEIGHT + VERTICAL_SPACING);
+        
+        const childrenWidth = node.children.reduce((acc, child) => acc + child.width, 0) + (node.children.length - 1) * HORIZONTAL_SPACING;
+        let currentX = parentX - childrenWidth / 2;
+
+        node.children.forEach(child => {
+            const childX = currentX + child.width / 2;
+            assignPositions(child, level + 1, childX);
+            currentX += child.width + HORIZONTAL_SPACING;
+        });
+        
+        node.x = parentX;
+    };
+    
+    let forestWidth = forest.reduce((acc, tree) => acc + tree.width, 0) + (forest.length - 1) * HORIZONTAL_SPACING * 2;
+    let currentX = -forestWidth / 2;
+
+    forest.forEach(tree => {
+        const treeX = currentX + tree.width / 2;
+        assignPositions(tree, 0, treeX);
+        currentX += tree.width + HORIZONTAL_SPACING * 2;
+    });
+
+    const nodes: Node[] = [];
+    const edges: Edge[] = [];
+    const flattenTree = (node: TreeNode) => {
+        const isEntite = 'type' in node.item;
+        const peopleCount = isEntite
+            ? getPeopleCountInEntite(node.item.id)
+            : (node.item as Poste).occupantsIds.length;
+
+        nodes.push({
+            id: node.id,
+            type: isEntite ? 'entite' : 'poste',
+            data: { item: node.item, peopleCount },
+            position: { x: node.x, y: node.y },
+            style: { width: NODE_WIDTH, height: NODE_HEIGHT },
+        });
+        node.children.forEach(child => {
+            edges.push({
+                id: `e-${node.id}-${child.id}`,
+                source: node.id,
+                target: child.id,
+                type: 'smoothstep',
+            });
+            flattenTree(child);
+        });
+    };
+    forest.forEach(flattenTree);
 
     return { nodes, edges };
 };

@@ -1,29 +1,26 @@
-import React, { useState, useMemo, useRef, useCallback, useEffect } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useDataContext } from '../context/AppContext';
 import type { Actualite } from '../types';
-import { Plus, Search, Edit, Trash2, Bell, LayoutGrid, List } from 'lucide-react';
+import { Plus, Search, Edit, Trash2, Bell } from 'lucide-react';
 import NewsFormModal from './NewsFormModal';
 import NewsDetailModal from './NewsDetailModal';
-import PageHeader from './PageHeader';
-import NewsDetailPanel from './NewsDetailPanel';
 
-const STATUT_COLORS: Record<Actualite['statut'], string> = { 'brouillon': 'bg-gray-200 text-gray-800', 'publie': 'bg-green-100 text-green-800', 'archive': 'bg-red-100 text-red-800', 'en_cours': 'bg-yellow-100 text-yellow-800', 'valide': 'bg-green-100 text-green-800', 'à_créer': 'bg-cyan-100 text-cyan-800', 'en_recrutement': 'bg-yellow-100 text-yellow-800', 'gelé': 'bg-purple-100 text-purple-800', 'figé': 'bg-indigo-100 text-indigo-800', 'planifié': 'bg-blue-100 text-blue-800', 'terminé': 'bg-green-100 text-green-800', 'non-conforme': 'bg-red-200 text-red-900', 'clôturé': 'bg-gray-300 text-gray-800', 'a_faire': 'bg-yellow-100 text-yellow-800', 'en_retard': 'bg-red-200 text-red-900', 'en_validation': 'bg-yellow-100 text-yellow-800', 'rejete': 'bg-red-100 text-red-800', };
+const STATUT_COLORS: Record<Actualite['statut'], string> = {
+    'brouillon': 'bg-gray-200 text-gray-800',
+    'publie': 'bg-green-100 text-green-800',
+    'archive': 'bg-red-100 text-red-800',
+    'en_cours': 'bg-yellow-100 text-yellow-800', 'valide': 'bg-green-100 text-green-800', 'à_créer': 'bg-cyan-100 text-cyan-800', 'en_recrutement': 'bg-yellow-100 text-yellow-800', 'gelé': 'bg-purple-100 text-purple-800', 'figé': 'bg-indigo-100 text-indigo-800', 'planifié': 'bg-blue-100 text-blue-800', 'terminé': 'bg-green-100 text-green-800', 'non-conforme': 'bg-red-200 text-red-900', 'clôturé': 'bg-gray-300 text-gray-800', 'a_faire': 'bg-yellow-100 text-yellow-800', 'en_retard': 'bg-red-200 text-red-900', 'en_validation': 'bg-yellow-100 text-yellow-800', 'rejete': 'bg-red-100 text-red-800',
+};
 
 const NewsPage: React.FC = () => {
     const { data, actions } = useDataContext();
     const { actualites, categoriesActualites, personnes } = data as { actualites: Actualite[], categoriesActualites: any[], personnes: any[] };
 
-    const [view, setView] = useState<'grid' | 'list'>('grid');
     const [isFormModalOpen, setIsFormModalOpen] = useState(false);
     const [editingNews, setEditingNews] = useState<Partial<Actualite> | null>(null);
     const [searchTerm, setSearchTerm] = useState('');
     const [filters, setFilters] = useState<{ categoryId: string, statut: string }>({ categoryId: 'all', statut: 'all' });
     const [selectedNews, setSelectedNews] = useState<Actualite | null>(null);
-    const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
-
-    const [isResizing, setIsResizing] = useState(false);
-    const containerRef = useRef<HTMLDivElement>(null);
-    const [dividerPosition, setDividerPosition] = useState(40);
 
     const filteredNews = useMemo(() => {
         return actualites.filter(actu =>
@@ -33,87 +30,101 @@ const NewsPage: React.FC = () => {
         ).sort((a, b) => new Date(b.datePublication).getTime() - new Date(a.datePublication).getTime());
     }, [actualites, searchTerm, filters]);
 
-    const handleOpenFormModal = (actu?: Actualite) => { setEditingNews(actu || { statut: 'brouillon' }); setIsFormModalOpen(true); };
-    const handleSaveNews = async (actuToSave: Actualite) => { await actions.saveActualite(actuToSave); setIsFormModalOpen(false); };
-    const handleDeleteNews = async (id: string) => { if (window.confirm("Supprimer cette actualité ?")) await actions.deleteActualite(id); };
-    const handleSelectNews = (actu: Actualite) => { if (view === 'list') { setSelectedNews(actu); } else { setSelectedNews(actu); setIsDetailModalOpen(true); }};
-    const isExpired = (actu: Actualite) => actu.dateExpiration && new Date(actu.dateExpiration) < new Date();
+    const handleOpenFormModal = (actu?: Actualite) => {
+        setEditingNews(actu || { statut: 'brouillon' });
+        setIsFormModalOpen(true);
+    };
 
-    const handleMouseDown = (e: React.MouseEvent) => { e.preventDefault(); setIsResizing(true); };
-    const handleMouseMove = useCallback((e: MouseEvent) => {
-        if (isResizing && containerRef.current) {
-            const rect = containerRef.current.getBoundingClientRect();
-            const newPos = ((e.clientX - rect.left) / rect.width) * 100;
-            if (newPos > 20 && newPos < 80) { setDividerPosition(newPos); }
-        }
-    }, [isResizing]);
-    const handleMouseUp = useCallback(() => setIsResizing(false), []);
+    const handleSaveNews = async (actuToSave: Actualite) => {
+        await actions.saveActualite(actuToSave);
+        setIsFormModalOpen(false);
+    };
 
-    useEffect(() => {
-        if (isResizing) {
-            window.addEventListener('mousemove', handleMouseMove);
-            window.addEventListener('mouseup', handleMouseUp);
+    const handleDeleteNews = async (id: string) => {
+        if (window.confirm("Êtes-vous sûr de vouloir supprimer cette actualité ?")) {
+            await actions.deleteActualite(id);
         }
-        return () => {
-            window.removeEventListener('mousemove', handleMouseMove);
-            window.removeEventListener('mouseup', handleMouseUp);
-        };
-    }, [isResizing, handleMouseMove, handleMouseUp]);
-    
-    const listPanel = (
-         <div className="bg-white flex flex-col h-full border-r">
-            <div className="p-2 border-b flex flex-wrap items-center gap-2">
-                <div className="relative flex-grow max-w-xs"><Search className="absolute left-2 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" /><input type="text" placeholder="Rechercher..." value={searchTerm} onChange={e => setSearchTerm(e.target.value)} className="pl-8 pr-2 py-1.5 border rounded-lg w-full text-sm"/></div>
-                <select onChange={e => setFilters(f => ({...f, categoryId: e.target.value}))} className="border rounded-lg py-1.5 px-2 text-sm"><option value="all">Toutes catégories</option>{categoriesActualites.map(c => <option key={c.id} value={c.id}>{c.nom}</option>)}</select>
-                <select onChange={e => setFilters(f => ({...f, statut: e.target.value}))} className="border rounded-lg py-1.5 px-2 text-sm"><option value="all">Tous statuts</option>{['brouillon', 'publie', 'archive'].map(s => <option key={s} value={s} className="capitalize">{s}</option>)}</select>
-            </div>
-            <div className="flex-1 overflow-auto">
-                {filteredNews.map(actu => <div key={actu.id} onClick={() => handleSelectNews(actu)} className={`p-3 border-b cursor-pointer ${selectedNews?.id === actu.id ? 'bg-blue-50' : 'hover:bg-gray-50'}`}><p>{actu.nom}</p></div>)}
-            </div>
-        </div>
-    );
-    
+    };
+
+    const isExpired = (actu: Actualite) => {
+        return actu.dateExpiration && new Date(actu.dateExpiration) < new Date();
+    };
+
     return (
-        <div className="h-full flex flex-col">
-            <PageHeader title="Actualités" icon={Bell}>
-                 <div className="flex items-center gap-4">
-                    <div className="flex bg-gray-100 rounded-lg p-1">
-                        <button onClick={() => setView('grid')} className={`px-3 py-1 rounded-md text-sm flex items-center gap-1 ${view === 'grid' ? 'bg-white shadow-sm' : ''}`}><LayoutGrid className="h-4 w-4"/>Grille</button>
-                        <button onClick={() => setView('list')} className={`px-3 py-1 rounded-md text-sm flex items-center gap-1 ${view === 'list' ? 'bg-white shadow-sm' : ''}`}><List className="h-4 w-4"/>Liste</button>
-                    </div>
-                    <button onClick={() => handleOpenFormModal()} className="flex items-center space-x-2 bg-blue-600 text-white px-3 py-1.5 rounded-lg hover:bg-blue-700 text-sm"><Plus className="h-4 w-4" /><span>Nouveau</span></button>
+        <div className="flex flex-col h-full">
+            <div className="p-4 border-b bg-white flex flex-wrap items-center justify-between gap-2">
+                <div className="flex items-center space-x-3">
+                    <Bell className="h-8 w-8 text-gray-600" />
+                    <h1 className="text-2xl font-bold text-gray-900">Actualités</h1>
                 </div>
-            </PageHeader>
-            <div className="flex-1 overflow-auto bg-gray-50">
-                {view === 'grid' && <div className="p-4 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <div className="flex items-center gap-2">
+                    <button onClick={() => handleOpenFormModal()} className="flex items-center space-x-2 bg-blue-600 text-white px-3 py-1.5 rounded-lg hover:bg-blue-700 text-sm font-medium">
+                        <Plus className="h-4 w-4" /><span>Nouvelle Actualité</span>
+                    </button>
+                </div>
+            </div>
+
+            <div className="p-2 border-b bg-white flex flex-wrap items-center gap-2">
+                <div className="relative flex-grow max-w-xs">
+                    <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+                    <input type="text" placeholder="Rechercher par titre..." value={searchTerm} onChange={e => setSearchTerm(e.target.value)} className="pl-8 pr-2 py-1.5 border rounded-lg w-full text-sm"/>
+                </div>
+                <select onChange={e => setFilters(f => ({...f, categoryId: e.target.value}))} className="border rounded-lg py-1.5 px-2 text-sm">
+                    <option value="all">Toutes les catégories</option>
+                    {categoriesActualites.map(c => <option key={c.id} value={c.id}>{c.nom}</option>)}
+                </select>
+                <select onChange={e => setFilters(f => ({...f, statut: e.target.value}))} className="border rounded-lg py-1.5 px-2 text-sm">
+                    <option value="all">Tous les statuts</option>
+                    {['brouillon', 'publie', 'archive'].map(s => <option key={s} value={s} className="capitalize">{s}</option>)}
+                </select>
+            </div>
+
+            <div className="flex-1 overflow-auto p-4 bg-gray-50">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                     {filteredNews.map(actu => {
-                        const inactive = isExpired(actu) || actu.statut === 'archive';
+                        const categorie = categoriesActualites.find(c => c.id === actu.categorieId);
+                        const auteur = personnes.find(p => p.id === actu.auteurId);
+                        const expired = isExpired(actu);
+                        const inactive = expired || actu.statut === 'archive';
+                        const statusText = actu.statut === 'archive' ? 'Archivée' : expired ? 'Expirée' : null;
+
                         return (
-                        <div key={actu.id} onClick={() => handleSelectNews(actu)} className={`bg-white rounded-lg shadow-sm border flex flex-col group transition-all duration-300 cursor-pointer ${inactive ? 'opacity-70' : 'hover:shadow-lg hover:-translate-y-1'}`}>
-                            <div className="relative"><img src={actu.imageURL} alt={actu.nom} className={`w-full h-40 object-cover rounded-t-lg bg-gray-200 ${inactive ? 'filter grayscale' : ''}`} /></div>
+                        <div 
+                            key={actu.id}
+                            onClick={() => setSelectedNews(actu)}
+                            className={`bg-white rounded-lg shadow-sm border flex flex-col group transition-all duration-300 cursor-pointer ${inactive ? 'opacity-70' : 'hover:shadow-lg hover:-translate-y-1'}`}
+                        >
+                            <div className="relative">
+                                <img src={actu.imageURL} alt={actu.nom} className={`w-full h-40 object-cover rounded-t-lg bg-gray-200 ${inactive ? 'filter grayscale' : ''}`} />
+                                {statusText && (
+                                    <span className="absolute top-2 right-2 bg-black bg-opacity-70 text-white text-xs font-bold px-2 py-1 rounded">
+                                        {statusText}
+                                    </span>
+                                )}
+                            </div>
                             <div className="p-4 flex flex-col flex-grow">
+                                <div className="flex justify-between items-start mb-2">
+                                    <span className={`px-2 py-0.5 text-xs rounded-full ${STATUT_COLORS[actu.statut]}`}>{actu.statut}</span>
+                                    <span className="text-xs text-gray-500">{categorie?.nom}</span>
+                                </div>
                                 <h3 className="font-semibold text-gray-800">{actu.nom}</h3>
-                                <div className="text-xs text-gray-500 mt-4 pt-2 border-t">Publié le {new Date(actu.datePublication).toLocaleDateString('fr-FR')}</div>
+                                <p className="text-sm text-gray-600 mt-2 flex-grow line-clamp-3">{actu.resume}</p>
+                                <div className="text-xs text-gray-500 mt-4 pt-2 border-t">
+                                    Publié le {new Date(actu.datePublication).toLocaleDateString('fr-FR')} par {auteur ? `${auteur.prenom} ${auteur.nom}` : 'Inconnu'}
+                                </div>
+                            </div>
+                            <div className="p-2 bg-gray-50/50 rounded-b-lg opacity-0 group-hover:opacity-100 transition-opacity flex justify-end gap-2">
+                                <button onClick={(e) => { e.stopPropagation(); handleOpenFormModal(actu); }} className="p-1 hover:bg-gray-200 rounded"><Edit className="h-4 w-4 text-blue-600"/></button>
+                                <button onClick={(e) => { e.stopPropagation(); handleDeleteNews(actu.id); }} className="p-1 hover:bg-gray-200 rounded"><Trash2 className="h-4 w-4 text-red-600"/></button>
                             </div>
                         </div>
                     )})}
-                </div>}
-                {view === 'list' && (
-                     <div ref={containerRef} className="flex h-full">
-                        <div style={{ width: `${dividerPosition}%` }} className="h-full flex-shrink-0">{listPanel}</div>
-                        <div onMouseDown={handleMouseDown} className="w-1.5 cursor-col-resize bg-gray-200 hover:bg-blue-500 transition-colors flex-shrink-0" />
-                        <div style={{ width: `${100 - dividerPosition}%` }} className="h-full flex-shrink-0 overflow-y-auto">
-                            {selectedNews ? (
-                                <NewsDetailPanel actualite={selectedNews} onClose={() => setSelectedNews(null)} onEdit={handleOpenFormModal} />
-                            ) : (
-                                <div className="flex h-full items-center justify-center text-center text-gray-500 bg-white"><p>Sélectionnez une actualité pour voir ses détails.</p></div>
-                            )}
-                        </div>
-                    </div>
-                )}
+                </div>
             </div>
+
             <NewsFormModal isOpen={isFormModalOpen} onClose={() => setIsFormModalOpen(false)} onSave={handleSaveNews} actualite={editingNews} />
-            {selectedNews && isDetailModalOpen && <NewsDetailModal actualite={selectedNews} onClose={() => setIsDetailModalOpen(false)} />}
+
+            {selectedNews && <NewsDetailModal actualite={selectedNews} onClose={() => setSelectedNews(null)} />}
         </div>
     );
 };

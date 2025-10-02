@@ -21,21 +21,15 @@ const StatCard: React.FC<{ title: string; value: number; icon: React.ElementType
 
 const AmeliorationsDashboard: React.FC<AmeliorationsDashboardProps> = ({ ameliorations }) => {
     const { data } = useDataContext();
-
-    const stats = React.useMemo(() => {
-        const nouveau = ameliorations.filter(a => a.statut === 'Nouveau').length;
-        const enCours = ameliorations.filter(a => a.statut === 'En cours').length;
-        const cloture = ameliorations.filter(a => a.statut === 'Clôturé').length;
-        const actionsEnRetard = ameliorations.flatMap(a => a.actions).filter(ac => ac.statut !== 'Fait' && new Date(ac.dateEcheance) < new Date()).length;
-        return { nouveau, enCours, cloture, actionsEnRetard };
-    }, [ameliorations]);
+    const stats = (data.dashboardStats as any).ameliorations;
+    const actionsEnRetard = ameliorations.flatMap(a => a.actions).filter(ac => ac.statut !== 'Fait' && new Date(ac.dateEcheance) < new Date());
 
     return (
         <div className="space-y-6">
              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                 <StatCard title="Améliorations Nouvelles" value={stats.nouveau} icon={TrendingUp} color="bg-blue-500" />
                 <StatCard title="En cours" value={stats.enCours} icon={Clock} color="bg-yellow-500" />
-                <StatCard title="Actions en retard" value={stats.actionsEnRetard} icon={AlertTriangle} color="bg-red-500" />
+                <StatCard title="Actions en retard" value={actionsEnRetard.length} icon={AlertTriangle} color="bg-red-500" />
                 <StatCard title="Clôturées" value={stats.cloture} icon={CheckCircle} color="bg-green-500" />
             </div>
         </div>

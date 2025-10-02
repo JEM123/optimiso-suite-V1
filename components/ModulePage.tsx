@@ -61,15 +61,15 @@ const ModulePage: React.FC<ModulePageProps> = ({ moduleId, onShowRelations, onSh
         switch (moduleId) {
             case 'personnes': return <PeoplePage onShowRelations={onShowRelations} setActiveModule={setActiveModule} />;
             case 'roles': return <RolesPage />;
-            case 'entites': return <EntitiesPage onShowRelations={onShowRelations} />;
-            case 'postes': return <PostesPage onShowRelations={onShowRelations} onShowImpactAnalysis={onShowImpactAnalysis} />;
-            case 'organigramme': return <OrganigrammePage onShowRelations={onShowRelations} />;
+            case 'entites': return <EntitiesPage />;
+            case 'postes': return <PostesPage onShowRelations={onShowRelations} />;
+            case 'organigramme': return <OrganigrammePage />;
             case 'missions': return <MissionsPage onShowRelations={onShowRelations} />;
             case 'processus': return <ProcessusPage onShowRelations={onShowRelations} />;
             case 'risques': return <RisksPage onShowRelations={onShowRelations} notifiedItemId={notifiedItemId} />;
             case 'documents': return <DocumentsPage onShowValidation={onShowValidation} onShowRelations={onShowRelations} notifiedItemId={notifiedItemId} />;
             case 'controles': return <ControlsPage onShowRelations={onShowRelations} />;
-            case 'procedures': return <ProceduresPage onShowRelations={onShowRelations} onShowValidation={onShowValidation} onShowImpactAnalysis={onShowImpactAnalysis} />;
+            case 'procedures': return <ProceduresPage onShowRelations={onShowRelations} onShowValidation={onShowValidation} onShowImpactAnalysis={onShowImpactAnalysis} setActiveModule={setActiveModule} />;
             case 'todo': return <ToDoPage notifiedItemId={notifiedItemId} />;
             case 'incidents': return <IncidentsPage onShowRelations={onShowRelations} notifiedItemId={notifiedItemId} />;
             case 'ameliorations': return <AmeliorationsPage onShowRelations={onShowRelations} />;
