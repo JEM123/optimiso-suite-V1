@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { mockData } from '../constants';
-import type { Indicateur } from '../types';
+import type { Indicateur, CustomFieldDef } from '../types';
 import { X } from 'lucide-react';
+import { useAppContext } from '../context/AppContext';
 
 interface IndicatorFormModalProps {
     isOpen: boolean;
@@ -13,10 +14,19 @@ interface IndicatorFormModalProps {
 const formInputClasses = "block w-full text-sm text-gray-800 bg-white border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-300 focus:border-transparent transition-colors";
 
 const IndicatorFormModal: React.FC<IndicatorFormModalProps> = ({ isOpen, onClose, onSave, indicator }) => {
+    const { settings } = useAppContext();
     const [formData, setFormData] = useState<Partial<Indicateur>>(indicator || {});
+
+    const customFieldDefs = settings.customFields.indicateurs || [];
     
     useEffect(() => {
-        if (isOpen) setFormData(indicator || { statut: 'brouillon', actif: false, categorieIds: [], processusIds: [], risqueIds: [], controleIds: [], mesures: [] });
+        if (isOpen) {
+            const initialData = indicator && Object.keys(indicator).length > 0 ? JSON.parse(JSON.stringify(indicator)) : { statut: 'brouillon', actif: false, categorieIds: [], processusIds: [], risqueIds: [], controleIds: [], mesures: [], champsLibres: {} };
+            if (!initialData.champsLibres) {
+                initialData.champsLibres = {};
+            }
+            setFormData(initialData);
+        }
     }, [indicator, isOpen]);
 
     if (!isOpen) return null;
@@ -31,10 +41,44 @@ const IndicatorFormModal: React.FC<IndicatorFormModalProps> = ({ isOpen, onClose
         setFormData(prev => ({ ...prev, [name]: selectedIds }));
     };
 
+    const handleCustomFieldChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
+        const { name, value } = e.target;
+        setFormData(prev => ({
+            ...prev,
+            champsLibres: {
+                ...prev.champsLibres,
+                [name]: value
+            }
+        }));
+    };
+
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
         onSave(formData as Indicateur);
     };
+    
+    const renderCustomField = (field: CustomFieldDef) => {
+        const value = formData.champsLibres?.[field.name] || '';
+        switch (field.type) {
+            case 'number':
+                return <input type="number" name={field.name} value={value} onChange={handleCustomFieldChange} className={formInputClasses} required={field.required} />;
+            case 'date':
+                return <input type="date" name={field.name} value={value} onChange={handleCustomFieldChange} className={formInputClasses} required={field.required} />;
+            case 'textarea':
+                 return <textarea name={field.name} value={value} onChange={handleCustomFieldChange} className={formInputClasses} required={field.required} rows={3}></textarea>;
+            case 'select':
+                return (
+                    <select name={field.name} value={value} onChange={handleCustomFieldChange} className={formInputClasses} required={field.required}>
+                        <option value="">Sélectionner...</option>
+                        {(field.options || []).map(opt => <option key={opt} value={opt}>{opt}</option>)}
+                    </select>
+                );
+            case 'text':
+            default:
+                return <input type="text" name={field.name} value={value} onChange={handleCustomFieldChange} className={formInputClasses} required={field.required} />;
+        }
+    };
+
 
     return (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
@@ -68,6 +112,20 @@ const IndicatorFormModal: React.FC<IndicatorFormModalProps> = ({ isOpen, onClose
                              <div><label className="block text-sm font-semibold text-gray-700 mb-1">Catégories</label><select name="categorieIds" value={formData.categorieIds} onChange={(e) => handleMultiSelectChange('categorieIds', [e.target.value])} className={formInputClasses}>{mockData.categoriesIndicateurs.map(c=><option key={c.id} value={c.id}>{c.nom}</option>)}</select></div>
                         </div>
                     </fieldset>
+                    
+                    {customFieldDefs.length > 0 && (
+                        <fieldset className="border p-4 rounded-lg">
+                            <legend className="px-2 text-base font-semibold text-gray-800">Champs Personnalisés</legend>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                {customFieldDefs.map(field => (
+                                    <div key={field.id}>
+                                        <label className="block text-sm font-semibold text-gray-700 mb-1">{field.name} {field.required && <span className="text-red-500">*</span>}</label>
+                                        {renderCustomField(field)}
+                                    </div>
+                                ))}
+                            </div>
+                        </fieldset>
+                    )}
                 </div>
                 <div className="flex justify-end space-x-2 pt-4 border-t mt-4">
                     <button type="button" onClick={onClose} className="px-4 py-2 bg-white text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50">Annuler</button>

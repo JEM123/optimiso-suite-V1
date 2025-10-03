@@ -1,4 +1,5 @@
 
+
 import React, { useState } from 'react';
 import type { Processus } from '../types';
 import { useDataContext, useAppContext } from '../context/AppContext';
@@ -28,7 +29,7 @@ const ProcessusDetailPanel: React.FC<ProcessusDetailPanelProps> = ({ processus, 
     const mission = (data.missions as any[]).find(m => m.id === processus.missionId);
     
     const customFieldDefs = settings.customFields.processus || [];
-    const hasCustomFields = customFieldDefs.length > 0 && processus.champsLibres && Object.keys(processus.champsLibres).some(key => processus.champsLibres[key]);
+    const hasCustomFields = customFieldDefs.length > 0 && processus.champsLibres && Object.keys(processus.champsLibres).some(key => processus.champsLibres![key]);
 
     return (
         <div className="w-full max-w-lg bg-white border-l shadow-lg flex flex-col h-full">

@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import type { Indicateur } from '../types';
-import { useDataContext } from '../context/AppContext';
+import { useDataContext, useAppContext } from '../context/AppContext';
 import { Edit, BarChart3, Settings, Database, Link as LinkIcon, Plus, User, CheckCircle, AlertTriangle, X } from 'lucide-react';
 import IndicatorChart from './IndicatorChart';
 
@@ -29,6 +29,7 @@ const StatCard: React.FC<{ title: string, value: string | number, subtext: strin
 
 const IndicatorDetailPanel: React.FC<IndicatorDetailPanelProps> = ({ indicator, onEdit, onAddMeasure, onShowRelations }) => {
     const { data } = useDataContext();
+    const { settings } = useAppContext();
     const [activeTab, setActiveTab] = useState('dashboard');
 
     const responsable = (data.personnes as any[]).find(p => p.id === indicator.responsableId);
@@ -37,6 +38,10 @@ const IndicatorDetailPanel: React.FC<IndicatorDetailPanelProps> = ({ indicator, 
     const lastValue = lastMeasure?.valeur ?? 0;
     const diff = lastMeasure ? (lastValue - indicator.objectif).toFixed(2) : 'N/A';
     const performanceColor = !lastMeasure ? 'text-gray-700' : lastValue >= indicator.objectif ? 'text-green-600' : lastValue >= indicator.seuilAlerte ? 'text-yellow-600' : 'text-red-600';
+
+    const customFieldDefs = settings.customFields.indicateurs || [];
+    const hasCustomFields = customFieldDefs.length > 0 && indicator.champsLibres && Object.keys(indicator.champsLibres).some(key => indicator.champsLibres![key]);
+
 
     return (
         <div className="flex flex-col h-full">
@@ -78,6 +83,18 @@ const IndicatorDetailPanel: React.FC<IndicatorDetailPanelProps> = ({ indicator, 
                         <DetailItem label="Responsable" value={responsable ? `${responsable.prenom} ${responsable.nom}` : '-'} />
                         <DetailItem label="Fréquence" value={indicator.frequence} />
                         <DetailItem label="Source des données" value={indicator.sourceDonnee} />
+                        {hasCustomFields && (
+                            <div className="pt-4 border-t">
+                                <h4 className="text-base font-semibold text-gray-800 mb-3">Champs Personnalisés</h4>
+                                <div className="space-y-3">
+                                    {customFieldDefs.map(field => {
+                                        const value = indicator.champsLibres?.[field.name];
+                                        if (!value) return null;
+                                        return <DetailItem key={field.id} label={field.name} value={String(value)} />;
+                                    })}
+                                </div>
+                            </div>
+                        )}
                     </div>
                 )}
                 {activeTab === 'data' && (

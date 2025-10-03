@@ -55,7 +55,7 @@ const PosteDetailPanel: React.FC<PosteDetailPanelProps> = ({ poste, onClose, onE
     const history = occupationHistory.filter(h => h.posteId === poste.id);
 
     const customFieldDefs = settings.customFields.postes || [];
-    const hasCustomFields = customFieldDefs.length > 0 && poste.champsLibres && Object.keys(poste.champsLibres).some(key => poste.champsLibres[key]);
+    const hasCustomFields = customFieldDefs.length > 0 && poste.champsLibres && Object.keys(poste.champsLibres).some(key => poste.champsLibres![key]);
 
 
 

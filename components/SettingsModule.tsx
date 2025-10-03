@@ -7,7 +7,7 @@ import PageHeader from './PageHeader';
 import Button from './ui/Button';
 
 const formInputClasses = "block w-full text-sm text-gray-800 bg-white border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-300 focus:border-transparent transition-colors";
-const modulesWithCustomFields = ['personnes', 'postes', 'processus', 'competences', 'risques', 'entites'];
+const modulesWithCustomFields = ['personnes', 'postes', 'processus', 'competences', 'risques', 'entites', 'indicateurs'];
 
 const SettingsModule: React.FC = () => {
     const { settings, setSettings } = useAppContext();

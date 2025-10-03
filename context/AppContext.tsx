@@ -70,6 +70,7 @@ const initialSettings: ISettings = {
         processus: [],
         competences: [],
         entites: [],
+        indicateurs: [],
     },
 };
 

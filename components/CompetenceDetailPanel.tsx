@@ -33,7 +33,7 @@ const CompetenceDetailPanel: React.FC<CompetenceDetailPanelProps> = ({ competenc
     const [editingPlan, setEditingPlan] = useState<Partial<PlanFormation> | null>(null);
 
     const customFieldDefs = settings.customFields.competences || [];
-    const hasCustomFields = customFieldDefs.length > 0 && competence.champsLibres && Object.keys(competence.champsLibres).some(key => competence.champsLibres[key]);
+    const hasCustomFields = customFieldDefs.length > 0 && competence.champsLibres && Object.keys(competence.champsLibres).some(key => competence.champsLibres![key]);
 
     // Logic for Évaluations tab
     const evaluations = evaluationsCompetences
